@@ -1,2 +1,7 @@
 .Rproject
 .Rproj.user
+.Rhistory
+.Rapp.history
+.RData
+.Ruserdata
+data/
