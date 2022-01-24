@@ -17,10 +17,50 @@ library(purrr)
 library(lubridate)
 library(stringr)
 library(tidyverse)
+library(readxl)
+library(plyr)
 
 data_dir <- "data/ICP_MS/"
 
 
 # 2. Read the data --------------------------------------------------------
+
+file_paths <- list.files(paste0(data_dir), full.names = TRUE)
+
+download_fun <- function(file_paths){
+ 
+   temp <- read_xlsx(paste0(file_paths),
+                    skip = 10,
+                    col_types = "text") %>% 
+    as.tibble() %>% 
+    select(-c(Bottle, Rep, Sample_ID)) %>% 
+    mutate(sample_month = str_sub(Sample_Date, start = 5, end = 6))
+   
+   temp
+}
+
+data <- file_paths %>% 
+  map(download_fun) %>% 
+  reduce(bind_rows)
+
+
+# 3. Clean up data----------------------------------------------------------------------
+
+month_levels <- c("01", "02", "03", "04", "05", "06", 
+                  "07", "08", "09", "10", "11", "12")
+
+data <- data %>% 
+  mutate(sample_month = as.factor(sample_month), levels = month_levels) 
+
+
+
+
+
+# 4. ----------------------------------------------------------------------
+
+
+
+
+
 
 
