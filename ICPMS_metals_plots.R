@@ -19,6 +19,7 @@ library(stringr)
 library(tidyverse)
 library(readxl)
 library(plyr)
+library(rlang)
 
 data_dir <- "data/ICP_MS/"
 
@@ -56,21 +57,36 @@ data <- data %>%
                             pattern = "([.])",
                             replacement = "")) %>% 
   mutate(Dates = str_trunc(Date, width = 6, side = "right", ellipsis = "")) %>%
+  mutate(Sample_Date_Factor = as.factor(Dates)) %>% 
   #Turn into a datetime
   mutate(Sample_Date = ym(Dates)) %>% 
-  select(-c(Date, Dates))
+  select(-c(Date, Dates)) 
+
 
 #Turn the negative values to 0
 data[data < 0] <- 0
 
-# 4. Plot with xts ----------------------------------------------------------------------
+# 4. Plot ggplot ----------------------------------------------------------------------
+
+dt <- data %>% 
+  filter(Flag < 1) %>% 
+  #!!!Which type of site!!!
+  filter(str_detect(Site_ID, "SW"))
 
 
+boxy_ploty <- function(df, x_var , y_var){
+  
+              ggplot2::ggplot(data = df, 
+                              aes( x = {{x_var}}, 
+                              y = {{y_var}},
+                              color = {{x_var}})) +
+                       geom_boxplot() +
+                       theme_bw() 
+  
+}
 
 
-Analyte <- "54Fe"
-
-
+boxy_ploty(df = dt, x_var = Sample_Date_Factor, y_var = `54Fe`)
 
 
 
