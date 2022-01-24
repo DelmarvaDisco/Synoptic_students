@@ -46,19 +46,29 @@ data <- file_paths %>%
 
 # 3. Clean up data----------------------------------------------------------------------
 
-month_levels <- c("01", "02", "03", "04", "05", "06", 
-                  "07", "08", "09", "10", "11", "12")
+#Convert the analyte columns to numeric
+data[ ,c(5:32,34)] <- lapply(data[ ,c(5:32,34)], as.numeric)
 
+#Turn Sample_Date to a Datetime
 data <- data %>% 
-  mutate(sample_month = as.factor(sample_month), levels = month_levels) 
+  #Silly sample dates were in scientific notation. 
+  mutate(Date = str_replace(Sample_Date, 
+                            pattern = "([.])",
+                            replacement = "")) %>% 
+  mutate(Dates = str_trunc(Date, width = 6, side = "right", ellipsis = "")) %>%
+  #Turn into a datetime
+  mutate(Sample_Date = ym(Dates)) %>% 
+  select(-c(Date, Dates))
+
+#Turn the negative values to 0
+data[data < 0] <- 0
+
+# 4. Plot with xts ----------------------------------------------------------------------
 
 
 
 
-
-# 4. ----------------------------------------------------------------------
-
-
+Analyte <- "54Fe"
 
 
 
