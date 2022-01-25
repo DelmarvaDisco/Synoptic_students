@@ -27,7 +27,9 @@ data_dir <- "data/ICP_MS/"
 
 # 2. Read the data --------------------------------------------------------
 
-file_paths <- list.files(paste0(data_dir), full.names = TRUE)
+file_paths <- list.files(paste0(data_dir), full.names = TRUE) 
+
+file_paths <- file_paths[str_detect(file_paths,"Spectroscopy")]
 
 download_fun <- function(file_paths){
  
@@ -51,6 +53,9 @@ data <- file_paths %>%
 #Convert the analyte columns to numeric
 data[ ,c(5:32,34)] <- lapply(data[ ,c(5:32,34)], as.numeric)
 
+#Turn the negative values to 0
+data[data < 0] <- 0
+
 #Turn Sample_Date to a Datetime
 data <- data %>% 
   #Silly sample dates were in scientific notation. 
@@ -63,16 +68,29 @@ data <- data %>%
   mutate(Sample_Date = ym(Dates)) %>% 
   select(-c(Date, Dates)) 
 
+#Designate Catchments
 
-#Turn the negative values to 0
-data[data < 0] <- 0
+#!!! Be sure to include the Site Directory in data folder!!!
+site_data_path <- paste0(data_dir, "Site_Directory_Core.xlsx")
+
+sheet_names <- excel_sheets(path = site_data_path)  
+
+sheet_names <- sheet_names[1:3] %>% 
+  as.list()
+ 
+Site_data <- lapply(sheet_names, function(x) read_excel(path = site_data_path, sheet = x)) %>% 
+  reduce(rbind) %>% 
+  select(c(Site_ID, Catchment))
+
+#Join site data
+data <- left_join(data, Site_data, by = "Site_ID")
 
 # 4. Plot ggplot ----------------------------------------------------------------------
 
 
 # 4b. Make plotting functions ---------------------------------------------
 
-
+#Box plot function
 boxy_ploty <- function(df, x_var , y_var){
   
   boxy <- ggplot(data = df, 
@@ -86,6 +104,7 @@ boxy_ploty <- function(df, x_var , y_var){
   
 }
 
+#Bar plot function
 barz_plotz <- function(df, x_var, y_var){
   
   dt <- df %>% 
@@ -96,7 +115,10 @@ barz_plotz <- function(df, x_var, y_var){
                  aes(x = reorder({{x_var}}, y_mean),
                      y = y_mean,
                      color = {{x_var}})) +
-    geom_col(aes(fill = {{x_var}}))
+    geom_col(aes(fill = {{x_var}})) +
+    xlab("Site ID") +
+    ylab()
+    
   
   (dt)
   (barz)
