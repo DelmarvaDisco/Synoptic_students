@@ -6,8 +6,7 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Notes:
-#   - let's see
-
+# 
 
 # 1. Libraries and Packages -----------------------------------------------
 
@@ -56,9 +55,9 @@ data[ ,c(5:32,34)] <- lapply(data[ ,c(5:32,34)], as.numeric)
 #Turn the negative values to 0
 data[data < 0] <- 0
 
-#Turn Sample_Date to a Datetime
+#Sample_Date to a Datetime
 data <- data %>% 
-  #Silly sample dates were in scientific notation. 
+  #Silly sample dates were in scientific notation. Needed to fix.
   mutate(Date = str_replace(Sample_Date, 
                             pattern = "([.])",
                             replacement = "")) %>% 
@@ -78,47 +77,62 @@ sheet_names <- excel_sheets(path = site_data_path)
 sheet_names <- sheet_names[1:3] %>% 
   as.list()
  
-Site_data <- lapply(sheet_names, function(x) read_excel(path = site_data_path, sheet = x)) %>% 
+Site_data <- lapply(sheet_names, 
+                    function(x) read_excel(path = site_data_path, 
+                                           sheet = x)) %>% 
   reduce(rbind) %>% 
   select(c(Site_ID, Catchment))
 
 #Join site data
 data <- left_join(data, Site_data, by = "Site_ID")
 
-# 4. Plot ggplot ----------------------------------------------------------------------
+rm(site_data_path, sheet_names, Site_data, data_dir, file_paths)
 
 
-# 4b. Make plotting functions ---------------------------------------------
+# 4. Make plotting functions ---------------------------------------------
 
 #Box plot function
-boxy_ploty <- function(df, x_var , y_var){
+boxy_ploty <- function(df, x_var , y_var, title){
   
   boxy <- ggplot(data = df, 
                          aes( x = {{x_var}}, 
-                              y = {{y_var}},
-                              color = {{x_var}})) +
-    geom_boxplot(outlier.shape = NA) +
-    scale_y_continuous(limits = quantile(df %>% pull({{y_var}}), c(0.05, 0.95)))
+                              y = {{y_var}})) +
+    geom_boxplot(aes(fill = {{x_var}})) +
+    theme_bw() +
+    theme(axis.text = element_text(size = 14, 
+                                   face = "bold", 
+                                   angle = 45),
+          plot.title = element_text(size = 36)) +
+    scale_y_continuous(limits = quantile(df %>% pull({{y_var}}), c(0.1, 0.90))) +
+    ggtitle({{title}})
   
   (boxy)         
   
 }
 
 #Bar plot function
-barz_plotz <- function(df, x_var, y_var){
+barz_plotz <- function(df, x_var, y_var, title){
   
   dt <- df %>% 
     dplyr::group_by({{x_var}}) %>% 
     dplyr::summarise(y_mean = mean({{y_var}}))
   
+  dt <- dt %>% 
+    mutate("Site_type" = str_sub(Site_ID, 4, 5))
+    
+  
   barz <- ggplot(data = dt,
                  aes(x = reorder({{x_var}}, y_mean),
                      y = y_mean,
-                     color = {{x_var}})) +
-    geom_col(aes(fill = {{x_var}})) +
+                     color = Site_type)) +
+    geom_col(aes(fill = Site_type)) +
+    ggtitle({{title}}) +
+    theme(axis.text = element_text(size = 14, 
+                                   face = "bold", 
+                                   angle = 90),
+          plot.title = element_text(size = 36)) +
     xlab("Site ID") +
-    ylab()
-    
+    ylab("ppb")
   
   (dt)
   (barz)
@@ -126,25 +140,74 @@ barz_plotz <- function(df, x_var, y_var){
 }
 
 
-# 4a. SW Boxplots ---------------------------------------------------------
+# 5. Baltimore Corner Catchment-------------------------------------------------------------
 
-data_sw <- data %>% 
-  filter(Flag < 1) %>% 
-  #!!!Which type of site!!!
-  filter(str_detect(Site_ID, "SW")) %>% 
-  filter(!str_detect(Site_ID, "AG-SW")) %>% 
-  filter(!str_detect(Site_ID, "TR-SW")) %>% 
-  filter(!str_detect(Site_ID, "CR-SW")) %>% 
-  mutate("Site_ID" = as.factor(Site_ID))
+data_BC <- data %>% 
+  filter(Catchment == "Baltimore Corner")
+
+#Make bar plots
+BC_23Na_bar <- barz_plotz(data_BC, Site_ID, `23Na`, "23Na BC all sites")
+(BC_23Na_bar)
+BC_27Al_bar <- barz_plotz(data_BC, Site_ID, `27Al`, "27Al BC all sites")
+(BC_27Al_bar)
+BC_29Si_bar <- barz_plotz(data_BC, Site_ID, `29Si`, "29Si BC all sites")
+(BC_29Si_bar)
+BC_54Fe_bar <- barz_plotz(data_BC, Site_ID, `54Fe`, "54Fe BC all sites")
+(BC_54Fe_bar)
+BC_55Mn_bar <- barz_plotz(data_BC, Site_ID, `55Mn`, "55MN BC all sites")
+(BC_55Mn_bar)
+
+rm(BC_23Na_bar, BC_27Al_bar, BC_29Si_bar, BC_54Fe_bar, BC_55Mn_bar)
+
+#Make box plots
+BC_23Na_box <- boxy_ploty(data_BC, Sample_Date_Factor, `23Na`, "BC 23Na overtime")
+(BC_23Na_box)
+BC_54Fe_box <- boxy_ploty(data_BC, Sample_Date_Factor, `54Fe`, "BC 54Fe overtime")
+(BC_54Fe_box)
+
+rm(BC_23Na_box, BC_54Fe_box, data_BC)
+
+# 6. Jackson Lane Catchment -----------------------------------------------
+
+data_JL <- data %>% 
+  filter(Catchment == "Jackson Lane")
+
+#Bar plots
+JL_23Na_bar <- barz_plotz(data_JL, Site_ID, `23Na`, "23Na JL all sites")
+(JL_23Na_bar)
+JL_27Al_bar <- barz_plotz(data_JL, Site_ID, `27Al`, "27Al JL all sites")
+(JL_27Al_bar)
+JL_29Si_bar <- barz_plotz(data_JL, Site_ID, `29Si`, "29Si JL all sites")
+(JL_29Si_bar)
+JL_54Fe_bar <- barz_plotz(data_JL, Site_ID, `54Fe`, "54Fe JL all sites")
+(JL_54Fe_bar)
+JL_55Mn_bar <- barz_plotz(data_JL, Site_ID, `55Mn`, "55Mn JL all sites")
+(JL_55Mn_bar)
+
+rm(JL_23Na_bar, JL_27Al_bar, JL_29Si_bar, JL_54Fe_bar, JL_55Mn_bar)
+
+#Box plots
+JL_54Fe_box <- boxy_ploty(data_JL, Sample_Date_Factor, `54Fe`, "54Fe at JL")
+(JL_54Fe_box)
+
+rm(JL_54Fe_box)
+
+# 7. Synoptic Sites -------------------------------------------------------
+
+data_synop <- data %>% 
+  filter(!Catchment == "Jackson Lane") %>% 
+  filter(!Catchment == "Baltimore Corner") %>% 
+  filter(!Site_ID == "TR-SW") %>% 
+  filter(!Site_ID == "CR-SW") %>% 
+  filter(!Site_ID == "TR-SW") %>% 
+  filter(!Sample_Date_Factor == "202109") %>% 
+  filter(!Sample_Date_Factor == "202110")
 
 
+synop_54Fe_bar <- barz_plotz(data_synop, Site_ID, `54Fe`, "54Fe spatial at synoptic sites")
+(synop_54Fe_bar)
 
-SW_54Fe_box <- boxy_ploty(data_sw, Sample_Date_Factor, `54Fe`)
-SW_54Fe_bar <- barz_plotz(data_sw, Site_ID, `54Fe`)
-
-
-
-# SW Barplots -------------------------------------------------------------
-
+synop_54Fe_box <- boxy_ploty(data_synop, Site_ID, `54Fe`, "54Fe temporal at synoptic sites")
+(synop_54Fe_box)
 
 
