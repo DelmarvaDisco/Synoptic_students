@@ -118,11 +118,12 @@ barz_plotz <- function(df, x_var, y_var, title){
     dplyr::summarise(y_mean = mean({{y_var}}))
   
   dt <- dt %>% 
-    mutate("Site_type" = str_sub(Site_ID, 4, 6))
+    mutate("Site_type" = str_sub(Site_ID, 4, 6)) %>% 
+    mutate("Site_type" = as.factor(Site_type))
     
   
   barz <- ggplot(data = dt,
-                 aes(x = reorder({{x_var}}, y_mean),
+                 aes(x = reorder({{x_var}}, Site_type),
                      y = y_mean,
                      color = Site_type)) +
     geom_col(aes(fill = Site_type)) +
@@ -162,7 +163,6 @@ rm(BC_23Na_bar, BC_27Al_bar, BC_29Si_bar, BC_54Fe_bar, BC_55Mn_bar)
 #Make box plots
 BC_23Na_box <- boxy_ploty(data_BC, Sample_Date_Factor, `23Na`, "BC 23Na overtime")
 (BC_23Na_box)
-
 BC_54Fe_box <- boxy_ploty(data_BC, Sample_Date_Factor, `54Fe`, "BC 54Fe overtime")
 (BC_54Fe_box)
 
@@ -188,8 +188,16 @@ JL_55Mn_bar <- barz_plotz(data_JL, Site_ID, `55Mn`, "55Mn JL all sites")
 rm(JL_23Na_bar, JL_27Al_bar, JL_29Si_bar, JL_54Fe_bar, JL_55Mn_bar)
 
 #Box plots
+JL_23Na_box <- boxy_ploty(data_JL, Sample_Date_Factor, `23Na`, "23Na at JL")
+(JL_23Na_box)
+JL_27Al_box <- boxy_ploty(data_JL, Sample_Date_Factor, `27Al`, "27Al at JL")
+(JL_27Al_box)
+JL_29Si_box <- boxy_ploty(data_JL, Sample_Date_Factor, `29Si`, "29Si at JL")
+(JL_29Si_box)
 JL_54Fe_box <- boxy_ploty(data_JL, Sample_Date_Factor, `54Fe`, "54Fe at JL")
 (JL_54Fe_box)
+JL_55Mn_box <- boxy_ploty(data_JL, Sample_Date_Factor, `55Mn`, "55Mn at JL")
+(JL_55Mn_box)
 
 rm(JL_54Fe_box)
 
@@ -200,15 +208,31 @@ data_synop <- data %>%
   filter(!Catchment == "Baltimore Corner") %>% 
   filter(!Site_ID == "TR-SW") %>% 
   filter(!Site_ID == "CR-SW") %>% 
-  filter(!Site_ID == "TR-SW") %>% 
+  filter(!Site_ID == "AG-SW") %>% 
   filter(!Sample_Date_Factor == "202109") %>% 
   filter(!Sample_Date_Factor == "202110")
 
-
+#Bar plots
+synop_23Na_bar <- barz_plotz(data_synop, Site_ID, `23Na`, "23Na spatial at synoptic sites")
+(synop_23Na_bar)
+synop_27Al_bar <- barz_plotz(data_synop, Site_ID, `27Al`, "27Al spatial at synoptic sites")
+(synop_27Al_bar)
+synop_29Si_bar <- barz_plotz(data_synop, Site_ID, `29Si`, "29Si spatial at synoptic sites")
+(synop_29Si_bar)
 synop_54Fe_bar <- barz_plotz(data_synop, Site_ID, `54Fe`, "54Fe spatial at synoptic sites")
 (synop_54Fe_bar)
+synop_55Mn_bar <- barz_plotz(data_synop, Site_ID, `55Mn`, "55Mn spatial at synoptic sites")
+(synop_55Mn_bar)
 
-synop_54Fe_box <- boxy_ploty(data_synop, Site_ID, `54Fe`, "54Fe temporal at synoptic sites")
+#Box plots
+synop_23Na_box <- boxy_ploty(data_synop, Sample_Date_Factor, `23Na`, "23Na temporal at synoptic sites")
+(synop_23Na_box)
+synop_27Al_box <- boxy_ploty(data_synop, Sample_Date_Factor, `27Al`, "27Al temporal at synoptic sites")
+(synop_27Al_box)
+synop_29Si_box <- boxy_ploty(data_synop, Sample_Date_Factor, `29Si`, "29Si temporal at synoptic sites")
+(synop_29Si_box)
+synop_54Fe_box <- boxy_ploty(data_synop, Sample_Date_Factor, `54Fe`, "54Fe temporal at synoptic sites")
 (synop_54Fe_box)
-
+synop_55Mn_box <- boxy_ploty(data_synop, Sample_Date_Factor, `55Mn`, "55Mn temporal at synoptic sites")
+(synop_55Mn_box)
 
