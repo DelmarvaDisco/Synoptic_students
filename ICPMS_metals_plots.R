@@ -118,7 +118,7 @@ barz_plotz <- function(df, x_var, y_var, title){
     dplyr::summarise(y_mean = mean({{y_var}}))
   
   dt <- dt %>% 
-    mutate("Site_type" = str_sub(Site_ID, 4, 5))
+    mutate("Site_type" = str_sub(Site_ID, 4, 6))
     
   
   barz <- ggplot(data = dt,
@@ -162,6 +162,7 @@ rm(BC_23Na_bar, BC_27Al_bar, BC_29Si_bar, BC_54Fe_bar, BC_55Mn_bar)
 #Make box plots
 BC_23Na_box <- boxy_ploty(data_BC, Sample_Date_Factor, `23Na`, "BC 23Na overtime")
 (BC_23Na_box)
+
 BC_54Fe_box <- boxy_ploty(data_BC, Sample_Date_Factor, `54Fe`, "BC 54Fe overtime")
 (BC_54Fe_box)
 
