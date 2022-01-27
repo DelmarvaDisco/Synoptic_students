@@ -17,6 +17,7 @@ library(lubridate)
 library(stringr)
 library(tidyverse)
 library(readxl)
+library(cowplot)
 library(plyr)
 library(rlang)
 library(dplyr)
@@ -35,7 +36,7 @@ download_fun <- function(file_paths){
    temp <- read_xlsx(paste0(file_paths),
                     skip = 10,
                     col_types = "text") %>% 
-    as.tibble() %>% 
+    as_tibble() %>% 
     select(-c(Bottle, Rep, Sample_ID)) %>% 
     mutate(sample_month = str_sub(Sample_Date, start = 5, end = 6))
    
@@ -94,10 +95,13 @@ rm(site_data_path, sheet_names, Site_data, data_dir, file_paths)
 #Box plot function
 boxy_ploty <- function(df, x_var , y_var, title){
   
+  df <- df %>% 
+    mutate(UW_SW = str_sub(Site_ID, 4,5)) 
+  
   boxy <- ggplot(data = df, 
                          aes( x = {{x_var}}, 
                               y = {{y_var}})) +
-    geom_boxplot(aes(fill = {{x_var}})) +
+    geom_boxplot(aes(fill = UW_SW)) +
     theme_bw() +
     theme(axis.text = element_text(size = 14, 
                                    face = "bold", 
@@ -118,22 +122,28 @@ barz_plotz <- function(df, x_var, y_var, title){
     dplyr::summarise(y_mean = mean({{y_var}}))
   
   dt <- dt %>% 
-    mutate("Site_type" = str_sub(Site_ID, 4, 6)) %>% 
-    mutate("Site_type" = as.factor(Site_type))
+    mutate("Site_type_char" = str_sub(Site_ID, 4, 6)) %>% 
+    mutate(Site_type = as.factor(Site_type_char)) %>% 
+    mutate(Wetland = str_sub(Site_ID, 1, 2)) %>% 
+    mutate(Wetland = as.factor(Wetland))
     
   
   barz <- ggplot(data = dt,
-                 aes(x = reorder({{x_var}}, Site_type),
+                 aes(x = Wetland,
                      y = y_mean,
-                     color = Site_type)) +
-    geom_col(aes(fill = Site_type)) +
-    ggtitle({{title}}) +
-    theme(axis.text = element_text(size = 14, 
+                     fill = Site_type)) +
+    geom_col(position = position_dodge(width = 0.75, 
+                                       preserve = "single"),
+             color = "black",
+             width = 0.75) +
+    #ggtitle({{title}}) +
+    theme_bw() +
+    theme(axis.text = element_text(size = 6, 
                                    face = "bold", 
-                                   angle = 90),
-          plot.title = element_text(size = 36)) +
-    xlab("Site ID") +
-    ylab("ppb")
+                                   angle = 0),
+          axis.title.x = element_blank(),
+          plot.title = element_text(size = 18)) +
+    ylab({{title}}) 
   
   (dt)
   (barz)
@@ -144,21 +154,32 @@ barz_plotz <- function(df, x_var, y_var, title){
 # 5. Baltimore Corner Catchment-------------------------------------------------------------
 
 data_BC <- data %>% 
-  filter(Catchment == "Baltimore Corner")
+  filter(Catchment == "Baltimore Corner") %>% 
+#Huge outlier in XB-CH might want to remove in some instances
+  #filter(!Site_ID == "XB-CH")
 
 #Make bar plots
-BC_23Na_bar <- barz_plotz(data_BC, Site_ID, `23Na`, "23Na BC all sites")
+BC_23Na_bar <- barz_plotz(data_BC, Site_ID, `23Na`, "23Na at Baltimore Corner sites")
 (BC_23Na_bar)
-BC_27Al_bar <- barz_plotz(data_BC, Site_ID, `27Al`, "27Al BC all sites")
+BC_27Al_bar <- barz_plotz(data_BC, Site_ID, `27Al`, "27Al at Baltimore Corner sites")
 (BC_27Al_bar)
-BC_29Si_bar <- barz_plotz(data_BC, Site_ID, `29Si`, "29Si BC all sites")
+BC_29Si_bar <- barz_plotz(data_BC, Site_ID, `29Si`, "29Si at Baltimore Corner sites")
 (BC_29Si_bar)
-BC_54Fe_bar <- barz_plotz(data_BC, Site_ID, `54Fe`, "54Fe BC all sites")
+BC_34S_bar <- barz_plotz(data_BC, Site_ID, `34S`, "34S at Baltimore Corner sites")
+(BC_34S_bar)
+BC_54Fe_bar <- barz_plotz(data_BC, Site_ID, `54Fe`, "54Fe at Baltimore Corner sites")
 (BC_54Fe_bar)
-BC_55Mn_bar <- barz_plotz(data_BC, Site_ID, `55Mn`, "55MN BC all sites")
+BC_55Mn_bar <- barz_plotz(data_BC, Site_ID, `55Mn`, "55MN at Baltimore Corner sites")
 (BC_55Mn_bar)
 
-rm(BC_23Na_bar, BC_27Al_bar, BC_29Si_bar, BC_54Fe_bar, BC_55Mn_bar)
+# Pick your analytes to stack up
+BC_metals_space <- plot_grid(BC_27Al_bar, BC_54Fe_bar, BC_55Mn_bar,
+                             ncol = 1, axis = "b")
+(BC_metals_space)
+                              
+
+rm(BC_23Na_bar, BC_27Al_bar, BC_29Si_bar, BC_34S_bar, BC_54Fe_bar, 
+   BC_55Mn_bar, BC_metals_space)
 
 #Make box plots
 BC_23Na_box <- boxy_ploty(data_BC, Sample_Date_Factor, `23Na`, "BC 23Na overtime")
@@ -174,16 +195,21 @@ data_JL <- data %>%
   filter(Catchment == "Jackson Lane")
 
 #Bar plots
-JL_23Na_bar <- barz_plotz(data_JL, Site_ID, `23Na`, "23Na JL all sites")
+JL_23Na_bar <- barz_plotz(data_JL, Site_ID, `23Na`, "23Na at JL sites")
 (JL_23Na_bar)
-JL_27Al_bar <- barz_plotz(data_JL, Site_ID, `27Al`, "27Al JL all sites")
+JL_27Al_bar <- barz_plotz(data_JL, Site_ID, `27Al`, "27Al at JL sites")
 (JL_27Al_bar)
-JL_29Si_bar <- barz_plotz(data_JL, Site_ID, `29Si`, "29Si JL all sites")
+JL_29Si_bar <- barz_plotz(data_JL, Site_ID, `29Si`, "29Si at JL sites")
 (JL_29Si_bar)
-JL_54Fe_bar <- barz_plotz(data_JL, Site_ID, `54Fe`, "54Fe JL all sites")
+JL_54Fe_bar <- barz_plotz(data_JL, Site_ID, `54Fe`, "54Fe at JL sites")
 (JL_54Fe_bar)
-JL_55Mn_bar <- barz_plotz(data_JL, Site_ID, `55Mn`, "55Mn JL all sites")
+JL_55Mn_bar <- barz_plotz(data_JL, Site_ID, `55Mn`, "55Mn at JL sites")
 (JL_55Mn_bar)
+
+JL_metals_space <- plot_grid(JL_27Al_bar, JL_54Fe_bar, JL_55Mn_bar,
+                             ncol = 1, axis = "b")
+(JL_metals_space)
+
 
 rm(JL_23Na_bar, JL_27Al_bar, JL_29Si_bar, JL_54Fe_bar, JL_55Mn_bar)
 
