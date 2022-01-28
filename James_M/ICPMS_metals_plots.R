@@ -89,7 +89,6 @@ data <- left_join(data, Site_data, by = "Site_ID")
 
 rm(site_data_path, sheet_names, Site_data, data_dir, file_paths)
 
-
 # 4. Make plotting functions ---------------------------------------------
 
 #Box plot function
@@ -149,7 +148,6 @@ barz_plotz <- function(df, x_var, y_var, title){
   (barz)
   
 }
-
 
 # 5. Baltimore Corner Catchment-------------------------------------------------------------
 
