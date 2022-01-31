@@ -177,13 +177,17 @@ BC_55Mn_bar <- barz_plotz(data_BC, Site_ID, `55Mn`, "55MN at Baltimore Corner si
 (BC_55Mn_bar)
 
 # Pick your analytes to stack up
-BC_metals_space <- plot_grid(BC_27Al_bar, BC_54Fe_bar, BC_55Mn_bar,
+BC_redox_space <- plot_grid(BC_27Al_bar, BC_54Fe_bar, BC_55Mn_bar,
                              ncol = 1, axis = "b")
-(BC_metals_space)
-                              
+(BC_redox_space)
 
+BC_funstuff_space <- plot_grid(BC_23Na_bar, BC_29Si_bar, BC_34S_bar,
+                            ncol = 1, axis = "b")
+(BC_funstuff_space)
+                              
+#Clean up some environment
 rm(BC_23Na_bar, BC_27Al_bar, BC_29Si_bar, BC_34S_bar, BC_54Fe_bar, 
-   BC_55Mn_bar, BC_metals_space)
+   BC_55Mn_bar, BC_redox_space, BC_funstuff_space)
 
 #Make box plots
 BC_23Na_box <- boxy_ploty(data_BC, Sample_Date_Factor, `23Na`, "BC 23Na overtime")
@@ -266,10 +270,25 @@ synop_27Al_bar <- barz_plotz(data_synop, Site_ID, `27Al`, "27Al at synoptic site
 (synop_27Al_bar)
 synop_29Si_bar <- barz_plotz(data_synop, Site_ID, `29Si`, "29Si at synoptic sites")
 (synop_29Si_bar)
+synop_34S_bar <- barz_plotz(data_synop, Site_ID, `34S`, "34S at synoptic sites")
+(synop_34S_bar)
 synop_54Fe_bar <- barz_plotz(data_synop, Site_ID, `54Fe`, "54Fe at synoptic sites")
 (synop_54Fe_bar)
 synop_55Mn_bar <- barz_plotz(data_synop, Site_ID, `55Mn`, "55Mn at synoptic sites")
 (synop_55Mn_bar)
+
+#Combine plots
+synop_redox_space <- plot_grid(synop_27Al_bar, synop_54Fe_bar, synop_55Mn_bar,
+                               ncol = 1, axis = "b")
+(synop_redox_space)
+
+synop_funstuff_space <- plot_grid(synop_23Na_bar, synop_29Si_bar, synop_34S_bar,
+                                  ncol = 1, axis = "b")
+(synop_funstuff_space)
+
+#Clean up directory
+rm(synop_23Na_bar, synop_27Al_bar, synop_29Si_bar, synop_34S_bar, synop_54Fe_bar,
+   synop_55Mn_bar, synop_redox_space, synop_funstuff_space)
 
 #Box plots
 synop_23Na_box <- boxy_ploty(data_synop, Sample_Date_Factor, `23Na`, "23Na synoptic sites")
@@ -285,6 +304,7 @@ synop_54Fe_box <- boxy_ploty(data_synop, Sample_Date_Factor, `54Fe`, "54Fe synop
 synop_55Mn_box <- boxy_ploty(data_synop, Sample_Date_Factor, `55Mn`, "55Mn synoptic sites")
 (synop_55Mn_box)
 
+#Combine plots
 synop_redox_time <- plot_grid(synop_27Al_box, synop_54Fe_box, synop_55Mn_box,
                               ncol = 1, axis = "b")
 (synop_redox_time)
@@ -293,5 +313,8 @@ synop_funstuff_time <- plot_grid(synop_23Na_box, synop_29Si_box, synop_34S_box,
                               ncol = 1, axis = "b")
 (synop_funstuff_time)
 
+#Clean up directory
+rm(synop_23Na_box, synop_27Al_box, synop_29Si_box, synop_34S_box, synop_54Fe_box,
+   synop_55Mn_box, synop_redox_time, synop_redox_space)
 
 
