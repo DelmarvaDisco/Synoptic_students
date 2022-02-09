@@ -15,17 +15,17 @@
 remove(list = ls())
 
 library(readxl)
+library(tidyverse)
+library(dplyr)
 
 data_dir <- "data/Sampledates_FR_Stage/"
 
 
 # 2. Read the data --------------------------------------------------------
 
-  
 # Read the stage file 
 FR_Stage <- read_excel(paste0(data_dir, "FR_Stage.xlsx"),
                        skip = 4)
-
 
 #Select necessary columns
 FR_Stage <- FR_Stage[ , 1:2]
@@ -36,8 +36,27 @@ FR_Stage <- FR_Stage %>%
   mutate(Date_time = `Date Time, GMT-05:00`) %>% 
   select(c(Date_time, Stage_inch_FR))
 
+#Read the sampling dates
+sampling <- read_excel(paste0(data_dir, "sampling_schedule.xlsx"))
 
-#Plot stage with sampling campaings
+
+
+
+# 3. Join the Sampling Schedule to FR Stage -------------------------------
+
+
+
+# 4. Make some plots ------------------------------------------------------
+
+
+
+
+
+
+
+
+
+#Plot stage with sampling campaings (not automated)
 FR_Stage_ts <- ggplot(data = FR_Stage, 
        mapping = aes(x = Date_time, 
                      y = Stage_inch_FR)) +
@@ -78,24 +97,8 @@ FR_Stage_ts <- ggplot(data = FR_Stage,
 (FR_Stage_ts)
 
 
-# Create histogram matching sampling dates to stage value
-#!!! Need to finish!!!###
-sampling <- read_excel(paste0(data_dir, "sampling_schedule.xlsx")) %>% 
-  mutate(Date_chr = as.character(Sample_date)) %>% 
-  select(Date_chr, Sample_type)
 
-FR_points <- FR_Stage %>% 
-  mutate(Date_chr = as.character(Date_time)) %>% 
-  select(Date_chr, Stage_inch_FR) %>% 
-  mutate(Date_chr = str_trunc(Date_chr, width = 10, side = "right", ellipsis = ""))
 
-points <- left_join(sampling, FR_points, by = "Date_chr")
-
-stage_histo <- ggplot(data = points, 
-                      mapping = aes(x = Stage_inch_FR),
-                                    color = Sample_type) +
-  theme_bw() +
-  geom_histogram(color = red)
 
 
 
