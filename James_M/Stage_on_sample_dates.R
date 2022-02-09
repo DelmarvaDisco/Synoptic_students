@@ -15,6 +15,7 @@
 remove(list = ls())
 
 library(readxl)
+library(lubridate)
 library(tidyverse)
 library(dplyr)
 
@@ -37,13 +38,19 @@ FR_Stage <- FR_Stage %>%
   select(c(Date_time, Stage_inch_FR))
 
 #Read the sampling dates
-sampling <- read_excel(paste0(data_dir, "sampling_schedule.xlsx"))
-
-
-
+sampling <- read_excel(paste0(data_dir, "sampling_schedule.xlsx")) %>% 
+  mutate(Date = as.character(Sample_date))
 
 # 3. Join the Sampling Schedule to FR Stage -------------------------------
 
+# Get daily stage values from FR-SW to make the join feasible
+FR_Stage_daily <- FR_Stage %>% 
+  mutate(Date = str_sub(as.character(Date_time), 1, 10)) %>% 
+  group_by(Date) %>% 
+  summarize(FR_daily_mean_stage_in = mean(Stage_inch_FR)) #%>% 
+  #mutate(Date = ymd(Date))
+
+sampling <- right_join(FR_Stage_daily, sampling) 
 
 
 # 4. Make some plots ------------------------------------------------------
