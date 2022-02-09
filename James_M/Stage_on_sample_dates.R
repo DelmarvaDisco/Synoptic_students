@@ -24,22 +24,24 @@ data_dir <- "data/Sampledates_FR_Stage/"
 
 # 2. Read the data --------------------------------------------------------
 
-# Read the stage file 
+# Read the FR stage file 
 FR_Stage <- read_excel(paste0(data_dir, "FR_Stage.xlsx"),
                        skip = 4)
 
-#Select necessary columns
+#Select necessary columns from FR stage file
 FR_Stage <- FR_Stage[ , 1:2]
 
-#Rename columns to make code manageable
+#Rename FR_Stage columns to make coding manageable
 FR_Stage <- FR_Stage %>% 
   mutate(Stage_inch_FR = `Stage (in)`) %>% 
   mutate(Date_time = `Date Time, GMT-05:00`) %>% 
   select(c(Date_time, Stage_inch_FR))
 
-#Read the sampling dates
+#Read the sampling dates file
 sampling <- read_excel(paste0(data_dir, "sampling_schedule.xlsx")) %>% 
   mutate(Date = as.character(Sample_date))
+
+
 
 # 3. Join the Sampling Schedule to FR Stage -------------------------------
 
@@ -50,18 +52,22 @@ FR_Stage_daily <- FR_Stage %>%
   summarize(FR_daily_mean_stage_in = mean(Stage_inch_FR)) #%>% 
   #mutate(Date = ymd(Date))
 
+#Join stage values to sample dates
 sampling <- right_join(FR_Stage_daily, sampling) 
 
+#Add stage estimates for last data points
+stage_guesses <- data.frame()
 
 # 4. Make some plots ------------------------------------------------------
 
+#Histogram of stage and
+Stage_sampling_histo <- ggplot(data = sampling,
+                               mapping = aes(x = FR_daily_mean_stage_in)) +
+                        geom_histogram(aes(fill = Sample_type)) +
+                        theme_bw()
 
-
-
-
-
-
-
+(Stage_sampling_histo)
+  
 
 #Plot stage with sampling campaings (not automated)
 FR_Stage_ts <- ggplot(data = FR_Stage, 
