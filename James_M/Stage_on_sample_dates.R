@@ -1,5 +1,5 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Name: Stage_on_sample_dates
+# Name: Stage on sample dates
 # Coder: James Maze
 # Date: 25 Jan 2021
 # Purpose: To enumerate hydrologic conditions durring sampling campaigns
@@ -10,11 +10,22 @@
 #   - Need to finish the summary table & plot for stage on sampling dates. 
 
 
-data_dir <- "Sampledates_FR_Stage"
+# 1. Libraries and work space ----------------------------------------------
+
+remove(list = ls())
+
+library(readxl)
+
+data_dir <- "data/Sampledates_FR_Stage/"
+
+
+# 2. Read the data --------------------------------------------------------
+
   
 # Read the stage file 
 FR_Stage <- read_excel(paste0(data_dir, "FR_Stage.xlsx"),
                        skip = 4)
+
 
 #Select necessary columns
 FR_Stage <- FR_Stage[ , 1:2]
