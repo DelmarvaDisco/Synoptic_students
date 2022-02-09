@@ -42,27 +42,28 @@ sampling <- read_excel(paste0(data_dir, "sampling_schedule.xlsx")) %>%
   mutate(Date = as.character(Sample_date))
 
 
-
 # 3. Join the Sampling Schedule to FR Stage -------------------------------
 
-# Get daily stage values from FR-SW to make the join feasible
+# Group daily stage values from FR-SW to make the join feasible
 FR_Stage_daily <- FR_Stage %>% 
   mutate(Date = str_sub(as.character(Date_time), 1, 10)) %>% 
   group_by(Date) %>% 
-  summarize(FR_daily_mean_stage_in = mean(Stage_inch_FR)) #%>% 
-  #mutate(Date = ymd(Date))
+  summarize(Stage_in_FR = mean(Stage_inch_FR)) 
 
-#Join stage values to sample dates
+#Join stage values to sample dates.
 sampling <- right_join(FR_Stage_daily, sampling) 
 
 #Add stage estimates for last data points
-stage_guesses <- data.frame()
+sampling_guess <- data.frame(Date = c("2021-10-17", "2021-11-12", "2021-12-14"),
+                             Stage_in_FR = c("1", "10", "12"))
+
+
 
 # 4. Make some plots ------------------------------------------------------
 
 #Histogram of stage and
 Stage_sampling_histo <- ggplot(data = sampling,
-                               mapping = aes(x = FR_daily_mean_stage_in)) +
+                               mapping = aes(x = Stage_in_FR)) +
                         geom_histogram(aes(fill = Sample_type)) +
                         theme_bw()
 
