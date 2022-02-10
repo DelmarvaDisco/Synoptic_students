@@ -6,6 +6,7 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #Notes:
+#   - !!! Data folder isn't on Google Drive. Reach out if you want to recreate any of this. 
 #   - Need to automate sampling dates on the stage time series
 #   - Need to finish the summary table & plot for stage on sampling dates. 
 
@@ -42,7 +43,7 @@ sampling <- read_excel(paste0(data_dir, "sampling_schedule.xlsx")) %>%
   mutate(Datez = as.character(Sample_date))
 
 
-# 3. Join the Sampling Schedule to FR Stage -------------------------------
+# 3. Join Schedule to Stage -------------------------------
 
 # Group daily stage values from FR-SW to make the join feasible
 FR_Stage_daily <- FR_Stage %>% 
@@ -51,14 +52,19 @@ FR_Stage_daily <- FR_Stage %>%
   summarize(Stage_in_FR = mean(Stage_inch_FR)) 
 
 #Join stage values to sample dates.
-sampling <- right_join(FR_Stage_daily, sampling, by = sampling$Datez) 
+sampling <- right_join(FR_Stage_daily, sampling) %>% 
+  select(-Sample_date)
 
 #Add stage estimates for last data points
 
+#Had to make a new data frame
 sample_guess <- data.frame(Datez = c("2021-10-18", "2021-11-12", "2021-12-14"),
-                           Stage_in_FR = c("11.5", "14", "15"))
+                           Stage_in_FR = c("11.5", "14", "15"),
+                           Sample_type = c("BC + JL", "Synoptic", "BC + JL"),
+                           )
 
-
+sampling <- sampling %>% 
+  rows_patch()
 
 
 # 4. Make some plots ------------------------------------------------------
