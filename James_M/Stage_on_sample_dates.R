@@ -39,23 +39,25 @@ FR_Stage <- FR_Stage %>%
 
 #Read the sampling dates file
 sampling <- read_excel(paste0(data_dir, "sampling_schedule.xlsx")) %>% 
-  mutate(Date = as.character(Sample_date))
+  mutate(Datez = as.character(Sample_date))
 
 
 # 3. Join the Sampling Schedule to FR Stage -------------------------------
 
 # Group daily stage values from FR-SW to make the join feasible
 FR_Stage_daily <- FR_Stage %>% 
-  mutate(Date = str_sub(as.character(Date_time), 1, 10)) %>% 
-  group_by(Date) %>% 
+  mutate(Datez = str_sub(as.character(Date_time), 1, 10)) %>% 
+  group_by(Datez) %>% 
   summarize(Stage_in_FR = mean(Stage_inch_FR)) 
 
 #Join stage values to sample dates.
-sampling <- right_join(FR_Stage_daily, sampling) 
+sampling <- right_join(FR_Stage_daily, sampling, by = sampling$Datez) 
 
 #Add stage estimates for last data points
-sampling_guess <- data.frame(Date = c("2021-10-17", "2021-11-12", "2021-12-14"),
-                             Stage_in_FR = c("1", "10", "12"))
+
+sample_guess <- data.frame(Datez = c("2021-10-18", "2021-11-12", "2021-12-14"),
+                           Stage_in_FR = c("11.5", "14", "15"))
+
 
 
 
@@ -109,7 +111,6 @@ FR_Stage_ts <- ggplot(data = FR_Stage,
   ggtitle("Sampling campaigns plotted with stage at FR-SW")
 
 (FR_Stage_ts)
-
 
 
 
