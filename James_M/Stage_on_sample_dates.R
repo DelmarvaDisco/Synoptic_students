@@ -34,43 +34,47 @@ FR_Stage <- FR_Stage[ , 1:2]
 
 #Rename FR_Stage columns to make coding manageable
 FR_Stage <- FR_Stage %>% 
-  mutate(Stage_inch_FR = `Stage (in)`) %>% 
+  mutate(Stage_in_FR = `Stage (in)`) %>% 
   mutate(Date_time = `Date Time, GMT-05:00`) %>% 
-  select(c(Date_time, Stage_inch_FR))
+  select(c(Date_time, Stage_in_FR))
 
 #Read the sampling dates file
 sampling <- read_excel(paste0(data_dir, "sampling_schedule.xlsx")) %>% 
-  mutate(Datez = as.character(Sample_date))
+  mutate(Datezzz = as.character(Sample_date))
 
 
 # 3. Join Schedule to Stage -------------------------------
 
 # Group daily stage values from FR-SW to make the join feasible
 FR_Stage_daily <- FR_Stage %>% 
-  mutate(Datez = str_sub(as.character(Date_time), 1, 10)) %>% 
-  group_by(Datez) %>% 
-  summarize(Stage_in_FR = mean(Stage_inch_FR)) 
+  mutate(Datezzz = str_sub(as.character(Date_time), 1, 10)) %>% 
+  group_by(Datezzz) %>% 
+  summarize(Stage_in_FR = mean(Stage_in_FR)) 
 
 #Join stage values to sample dates.
-sampling <- right_join(FR_Stage_daily, sampling) %>% 
+sampling <- right_join(FR_Stage_daily, sampling, by = "Datezzz") %>% 
   select(-Sample_date)
 
 #Add stage estimates for last data points
 
-#Had to make a new data frame
-sample_guess <- data.frame(Datez = c("2021-10-18", "2021-11-12", "2021-12-14"),
-                           Stage_in_FR = c("11.5", "14", "15"),
-                           Sample_type = c("BC + JL", "Synoptic", "BC + JL"),
-                           )
+#Had to make a new data frame with guesses for stage
+sample_guess <- tibble(Datezzz = c("2021-10-18", "2021-11-12", "2021-12-14"),
+                       Stage_in_FR = c("11.5", "14", "15"),
+                       Sample_type = c("BC + JL", "Synoptic", "BC + JL"),
+                       Jackson_lane = c("T", "F", "T"),
+                       Synoptic = c("F", "T", "F"),
+                       Baltimore_corner = c("T", "F", "T"))
 
-sampling <- sampling %>% 
-  rows_patch()
+sampling_g <- rbind(sampling, sample_guess) %>% 
+  filter(!is.na(Stage_in_FR)) %>% 
+  mutate(Stage_in_FR = as.numeric(Stage_in_FR))
 
+rm(sample_guess, sampling)
 
 # 4. Make some plots ------------------------------------------------------
 
 #Histogram of stage and
-Stage_sampling_histo <- ggplot(data = sampling,
+Stage_sampling_histo <- ggplot(data = sampling_g,
                                mapping = aes(x = Stage_in_FR)) +
                         geom_histogram(aes(fill = Sample_type)) +
                         theme_bw()
