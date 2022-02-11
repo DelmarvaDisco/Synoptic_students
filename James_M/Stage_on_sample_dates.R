@@ -98,7 +98,7 @@ JL_sampling_histo <- ggplot(data = sampling_g_JL,
                      geom_histogram(data = FR_Stage_daily, 
                                    mapping = aes(x = Stage_in_FR)) +
                      geom_dotplot(color = "blue",
-                     fill = "blue") +
+                                  fill = "blue") +
                      ggtitle("JL Sampling compared to FR-SW stage (Nov 2019 - Oct 2021)") +
                      theme(plot.title = element_text(size = 8)) +
                      xlab("Stage (inches)") +
@@ -144,17 +144,6 @@ FR_Stage_ts <- ggplot(data = FR_Stage,
 
 (FR_Stage_ts)
 
-
-# 5. Other stuff ----------------------------------------------------------
-
-synop_szn <- sampling_g_synop %>%  
-  select(c(Datezzz, Stage_in_FR)) %>% 
-  mutate(month = as.numeric(str_sub(Datezzz, 6, 7))) %>% 
-  ggplot(aes(x = month)) +
-  geom_dotplot() +
-  theme_bw () 
-
-(synop_szn)  
 
 
 
