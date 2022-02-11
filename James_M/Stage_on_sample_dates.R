@@ -73,14 +73,23 @@ rm(sample_guess, sampling)
 
 # 4. Make some plots ------------------------------------------------------
 
-#Histogram of stage and
-Stage_sampling_histo <- ggplot(data = sampling_g,
+#Histograms of stage at sampling dates
+sampling_g_synop <- sampling_g %>% 
+  filter(Synoptic == "T")
+
+synop_sampling_histo <- ggplot(data = sampling_g_synop,
                                mapping = aes(x = Stage_in_FR)) +
-                        geom_histogram(aes(fill = Sample_type)) +
+                        geom_histogram(data = FR_Stage_daily, 
+                                       mapping = aes(x = Stage_in_FR)) +
+                        geom_dotplot(color = "red",
+                                     fill = "red") +
+                        ggtitle("Synoptic Sampling compared to FR-SW stage (Nov 2019 - Oct 2021)") +
+                        theme(plot.title = element_text(size = 8)) +
+                        xlab("Stage (inches)") +
                         theme_bw()
 
-(Stage_sampling_histo)
-  
+(synop_sampling_histo)
+                        
 
 #Plot stage with sampling campaings (not automated)
 FR_Stage_ts <- ggplot(data = FR_Stage, 
