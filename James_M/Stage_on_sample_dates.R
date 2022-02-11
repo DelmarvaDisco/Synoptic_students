@@ -8,7 +8,6 @@
 #Notes:
 #   - !!! Data folder isn't on Google Drive. Reach out if you want to recreate any of this. 
 #   - Need to automate sampling dates on the stage time series
-#   - Need to finish the summary table & plot for stage on sampling dates. 
 
 
 # 1. Libraries and work space ----------------------------------------------
@@ -89,49 +88,61 @@ synop_sampling_histo <- ggplot(data = sampling_g_synop,
                         theme_bw()
 
 (synop_sampling_histo)
-                        
 
-#Plot stage with sampling campaings (not automated)
+# Same plot, but with Jackson Lane sites
+sampling_g_JL <- sampling_g %>% 
+  filter(Jackson_lane == "T")
+
+JL_sampling_histo <- ggplot(data = sampling_g_JL, 
+                            mapping = aes(x = Stage_in_FR)) +
+                     geom_histogram(data = FR_Stage_daily, 
+                                   mapping = aes(x = Stage_in_FR)) +
+                     geom_dotplot(color = "blue",
+                     fill = "blue") +
+                     ggtitle("JL Sampling compared to FR-SW stage (Nov 2019 - Oct 2021)") +
+                     theme(plot.title = element_text(size = 8)) +
+                     xlab("Stage (inches)") +
+                     theme_bw()
+
+(JL_sampling_histo)
+                        
+#Don't need to make the BC histogram yet
+sampling_g_BC <- sampling_g %>% 
+  filter(Baltimore_corner == "T")
+
+#Plot stage with sampling campaigns (not automated)
+
+
 FR_Stage_ts <- ggplot(data = FR_Stage, 
        mapping = aes(x = Date_time, 
-                     y = Stage_inch_FR)) +
+                     y = Stage_in_FR)) +
   geom_line(size = 1) +
   theme_bw() +
   scale_x_datetime(limits = as.POSIXct(c("2020-01-01", "2022-01-01"))) +
   ### At some point, fix this manual entry
-  geom_vline(xintercept = as.POSIXct(c("2020-01-15 23:00:00", 
-                                       "2020-03-10 23:00:00",
-                                       "2020-07-28 23:00:00",
-                                       "2020-09-24 00:00:00",
-                                       "2020-11-04 00:00:00",
-                                       "2021-02-28 00:00:00",
-                                       "2021-05-12 00:00:00",
-                                       "2021-06-21 00:00:00",
-                                       "2021-11-12 23:00:00")), 
-             size = 3, 
-             color = "darkred") +
-  ### At some point, fix this manual entry
-  geom_vline(xintercept = as.POSIXct(c("2020-09-20 12:00:00",
-                                       "2020-11-01 12:00:00",
-                                       "2021-02-25 12:00:00",
-                                       "2021-05-09 12:00:00",
-                                       "2021-06-18 12:00:00",
-                                       "2021-09-10 12:00:00",
-                                       "2021-10-15 12:00:00",
-                                       "2021-12-13 12:00:00")),
-             size = 3, 
-             color = "seagreen") +
-  ### At some point, fix this manual entry
-  geom_vline(xintercept = as.POSIXct(c("2021-09-13 12:00:00",
-                                       "2021-10-18 12:00:00",
-                                       "2021-12-16 12:00:00")),
-             size = 3, 
-             color = "midnightblue") +
-  ggtitle("Sampling campaigns plotted with stage at FR-SW")
+  geom_point(data = sampling_g_synop,
+             mapping = aes(x = as.POSIXct(Datezzz),
+                           y = Stage_in_FR), 
+             size = 5,
+             shape = 24,
+             color = "black",
+             fill = "red") +
+  geom_point(data = sampling_g_JL,
+             mapping = aes(x = as.POSIXct(Datezzz),
+                           y = Stage_in_FR),
+             size = 14,
+             shape = 13,
+             color = "blue") + 
+  geom_point(data = sampling_g_BC,
+             mapping = aes(x = as.POSIXct(Datezzz),
+                           y = Stage_in_FR),
+             size = 5,
+             shape = 19,
+             color = "green") +
+  ggtitle("Sampling events with Stage at FR-SW")
+  
 
 (FR_Stage_ts)
-
-
 
 
 
