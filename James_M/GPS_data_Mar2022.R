@@ -6,7 +6,8 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Notes:
-# Just seeing if this works. Should I use leaflet or something else?
+# Not sure whether I properly applied the CRS
+
 
 # 1. Packages and workspace -----------------------------------------------
 
@@ -29,14 +30,41 @@ p <- "+proj=utm +zone=17 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
 # 2. Read data -----------------------------------------------------
 
 #Read in the area shapefiles
-area_gen <- st_read(paste0(data_dir, "Area_gen.shp"))
+area_gen <- st_read(paste0(data_dir, "Area_gen.shp"), crs = 2248) %>% 
+  st_transform(.,p) %>% 
+  st_zm(.)
 
-points_ge <- st_read(paste0(data_dir, "Point_ge.shp"))
+points_ge <- st_read(paste0(data_dir, "Point_ge.shp"), crs = 2248) %>% 
+  st_transform(.,p) %>% 
+  st_zm(.)
 
-Generic <- st_read(paste0(data_dir, "Generic_.shp"))
+generic <- st_read(paste0(data_dir, "Generic_.shp"), crs = 2248) %>% 
+  st_transform(.,p) %>% 
+  st_zm(.)
 
-flooded_map <- leaflet(Generic) %>% 
-  addProviderTiles("Esri.WorldImagery", group = "ESRI")
+both <- st_join(area_gen, generic)
+
+BC_flooded <- area_gen %>% 
+  filter(Comment %in% c("OB-SW", "MB-SW", "HB-SW"))
+
+JL_flooded <- area_gen %>% 
+  filter(Comment %in% c("BD-SW", "TS-SW", "DK-SW", "ND-SW"))
+
+BC_flooded %>% st_geometry() %>% plot()
+JL_flooded %>% st_geometry() %>% plot()
+
+# 3. Make a leaflet map ---------------------------------------------------
+area_gen <- area_gen %>% 
+  st_transform(., crs = 4326)
+
+generic <- generic %>% 
+  st_transform(., crs = 4326)
+
+area_gen <- readOGR(paste0(data_dir, "Area_gen.shp"))
+
+flooded_map <- leaflet(area_gen) %>% 
+  addProviderTiles("Esri.WorldImagery", group = "ESRI") %>% 
+  addPolygons(area_gen)
 
 (flooded_map)
 
