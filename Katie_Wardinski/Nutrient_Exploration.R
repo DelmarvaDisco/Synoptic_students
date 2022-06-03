@@ -53,7 +53,12 @@ df %>%
 df %>%
   ggplot(aes(factor(Date_M),TDN_mgN_L,fill=Type))+
   geom_boxplot()+
-  theme_classic()
+  theme_classic()+  
+  ylab("TDN (mg N/L)")+
+  xlab(element_blank())+
+  theme_classic()+
+  theme(axis.title.y = element_text(size = 14),
+        axis.text = element_text(size = 10))
 
 #oPO4
 df %>%
@@ -65,7 +70,12 @@ df %>%
 df %>%
   ggplot(aes(factor(Date_M),TDP_mgP_L,fill=Type))+
   geom_boxplot()+
-  theme_classic()
+  theme_classic()+
+  ylab("TDP (mg P/L)")+
+  xlab(element_blank())+
+  theme_classic()+
+  theme(axis.title.y = element_text(size = 14),
+        axis.text = element_text(size = 10))
 
 #2.1 TDN over time by sample type ----------
 summary <- df %>% 

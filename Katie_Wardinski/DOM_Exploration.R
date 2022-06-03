@@ -106,7 +106,11 @@ ggplot()+
 df %>%
   ggplot(aes(factor(Date_M),NPOC_mgC_L,fill=Type))+
   geom_boxplot()+
-  theme_classic()
+  ylab("DOC (mg C/L)")+
+  xlab(element_blank())+
+  theme_classic()+
+  theme(axis.title.y = element_text(size = 14),
+        axis.text = element_text(size = 10))
 
 #filter to just one property
 df %>% 
@@ -143,7 +147,9 @@ df %>%
   drop_na(wet_order) %>% 
   ggplot(aes(factor(wet_order),NPOC_mgC_L,fill=Type))+
   geom_boxplot()+
-  theme_classic()
+  theme_classic()+
+  ylab("DOC (mg C/L)")+
+  xlab("Wetland Order")
 
 
 #filter to just one month
@@ -153,5 +159,32 @@ df %>%
   ggplot(aes(wet_order,NPOC_mgC_L,col=property))+
   geom_point()+
   theme_classic()
+
+#filter to just one property
+df %>% 
+  filter(property == "Jackson Lane") %>% 
+  ggplot(aes(wet_order,NPOC_mgC_L,col=Type))+
+  geom_point()+
+  geom_smooth(method='lm')+
+  theme_classic()+
+  ggtitle("Jackson Lane Catchment - All Dates")
+
+#one property and one month
+df %>% 
+  filter(property == "Jackson Lane") %>% 
+  filter(Date_M == 202203) %>% 
+  ggplot(aes(wet_order,NPOC_mgC_L,col=Type))+
+  geom_point()+
+  theme_classic()+
+  ggtitle("Jackson Lane Catchment - March 2022")
+
+df %>% 
+  filter(property == "Jackson Lane") %>% 
+  filter(Date_M == 202203) %>% 
+  ggplot(aes(wet_order,NPOC_mgC_L))+
+  geom_point()+
+  geom_smooth(method='lm')+ 
+  theme_classic()+
+  ggtitle("Jackson Lane Catchment - March 2022")
 
 
