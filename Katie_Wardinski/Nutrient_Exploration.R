@@ -2,7 +2,7 @@
 #Title: Synoptic Data Exploration
 #Coder: Katie Wardinski
 #Created: 2022-06-02
-#Purpose: Get familiar with DOC trends in data to assist with PhD planning
+#Purpose: Get familiar with nutrient trends in data to assist with PhD planning
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -29,13 +29,51 @@ df <- left_join(synoptic,site,by="Site")
 #2.0 Temporal -----------------------------------------------------------
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#2.1 DOC over time by sample type ----------
+#2.1 Boxplots by sample type --------------
+#NO3
+df %>%
+  ggplot(aes(factor(Date_M),NO3_mgN_L,fill=Type))+
+  geom_boxplot()+
+  theme_classic()
+
+#no river
+df %>%
+  filter(Type != "River") %>% 
+  ggplot(aes(factor(Date_M),NO3_mgN_L,fill=Type))+
+  geom_boxplot()+
+  theme_classic()
+
+#NH3
+df %>%
+  ggplot(aes(factor(Date_M),NH3_mgN_L,fill=Type))+
+  geom_boxplot()+
+  theme_classic()
+
+#TDN
+df %>%
+  ggplot(aes(factor(Date_M),TDN_mgN_L,fill=Type))+
+  geom_boxplot()+
+  theme_classic()
+
+#oPO4
+df %>%
+  ggplot(aes(factor(Date_M),oPO4_mgP_L,fill=Type))+
+  geom_boxplot()+
+  theme_classic()
+
+#TDP
+df %>%
+  ggplot(aes(factor(Date_M),TDP_mgP_L,fill=Type))+
+  geom_boxplot()+
+  theme_classic()
+
+#2.1 TDN over time by sample type ----------
 summary <- df %>% 
   mutate(Date_Month = ym(Date_M)) %>%
   group_by(Type,Date_Month) %>% 
-  summarize(mean = mean(NPOC_mgC_L, na.rm = T),
-            lwr  = mean - sd(NPOC_mgC_L, na.rm = T)/sqrt(n()), 
-            upr  = mean + sd(NPOC_mgC_L, na.rm = T)/sqrt(n())) %>%
+  summarize(mean = mean(TDN_mgN_L, na.rm = T),
+            lwr  = mean - sd(TDN_mgN_L, na.rm = T)/sqrt(n()), 
+            upr  = mean + sd(TDN_mgN_L, na.rm = T)/sqrt(n())) %>%
   drop_na() 
 
 Channel <- summary %>% filter(Type == "Channel")
@@ -97,61 +135,7 @@ ggplot()+
             col=line_col) +
   #set theme
   theme_classic()+
-  ylab("DOC (mg C /L)")+
+  ylab("TDN (mg N /L)")+
   xlab(element_blank())+
   theme(axis.title.y = element_text(size = 18),
         axis.text = element_text(size = 16))
-
-#boxplot by date ****like this one
-df %>%
-  ggplot(aes(factor(Date_M),NPOC_mgC_L,fill=Type))+
-  geom_boxplot()+
-  theme_classic()
-
-#filter to just one property
-df %>% 
-  filter(property == "Jackson Lane") %>% 
-  ggplot(aes(ym(Date_M),NPOC_mgC_L,col=Type))+
-  geom_point()+
-  theme_classic()
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#3.0 Wetland Order -----------------------------------------------------------
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-#3.1 DOC versus wetland order ----------------
-df %>%
-  drop_na(wet_order) %>% 
-  ggplot(aes(factor(wet_order),NPOC_mgC_L))+
-  geom_boxplot()+
-  theme_classic()
-
-df %>%
-  drop_na(wet_order) %>% 
-  ggplot(aes(wet_order,NPOC_mgC_L,col=SW_GW))+
-  geom_point()+
-  geom_smooth(method='lm')+
-  theme_classic()
-
-df %>%
-  drop_na(wet_order) %>% 
-  ggplot(aes(factor(wet_order),NPOC_mgC_L,col=property))+
-  geom_point()+
-  theme_classic()
-
-df %>%
-  drop_na(wet_order) %>% 
-  ggplot(aes(factor(wet_order),NPOC_mgC_L,fill=Type))+
-  geom_boxplot()+
-  theme_classic()
-
-
-#filter to just one month
-df %>% 
-  filter(Date_M == 202203) %>% 
-  drop_na(wet_order) %>% 
-  ggplot(aes(wet_order,NPOC_mgC_L,col=property))+
-  geom_point()+
-  theme_classic()
-
-
