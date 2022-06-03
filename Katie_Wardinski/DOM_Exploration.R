@@ -124,11 +124,21 @@ df %>%
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #3.1 DOC versus wetland order ----------------
+#Boxplot
 df %>%
   drop_na(wet_order) %>% 
   ggplot(aes(factor(wet_order),NPOC_mgC_L))+
   geom_boxplot()+
   theme_classic()
+#Boxplot by type
+df %>%
+  drop_na(wet_order) %>% 
+  ggplot(aes(factor(wet_order),NPOC_mgC_L,fill=Type))+
+  geom_boxplot()+
+  theme_classic()+
+  ylab("DOC (mg C/L)")+
+  xlab("Wetland Order")
+
 
 df %>%
   drop_na(wet_order) %>% 
@@ -143,14 +153,13 @@ df %>%
   geom_point()+
   theme_classic()
 
+#SW only
 df %>%
   drop_na(wet_order) %>% 
-  ggplot(aes(factor(wet_order),NPOC_mgC_L,fill=Type))+
-  geom_boxplot()+
-  theme_classic()+
-  ylab("DOC (mg C/L)")+
-  xlab("Wetland Order")
-
+  filter(SW_GW == "SW") %>% 
+  ggplot(aes(factor(wet_order),NPOC_mgC_L,col=property))+
+  geom_point()+
+  theme_classic()
 
 #filter to just one month
 df %>% 
@@ -187,4 +196,68 @@ df %>%
   theme_classic()+
   ggtitle("Jackson Lane Catchment - March 2022")
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#4.0 Wetland size -----------------------------------------------------------
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+df %>%
+  drop_na(wetland_storage_volume_m3) %>% 
+  filter(SW_GW == "SW") %>% 
+  ggplot(aes(wetland_storage_volume_m3,NPOC_mgC_L,col=Site))+
+  geom_point()+
+  theme_classic()
+
+#storage volume
+df %>%
+  drop_na(wetland_storage_volume_m3) %>% 
+  filter(SW_GW == "SW") %>% 
+  ggplot(aes(wetland_storage_volume_m3,NPOC_mgC_L))+
+  geom_point()+
+  geom_smooth(method="lm")+
+  theme_classic()
+
+#wetland area
+df %>%
+  drop_na(area_m2) %>% 
+  filter(SW_GW == "SW") %>% 
+  ggplot(aes(area_m2,NPOC_mgC_L))+
+  geom_point()+
+  geom_smooth(method="lm")+
+  theme_classic()
+
+#watershed area
+df %>%
+  drop_na(watershed_area_m2) %>% 
+  filter(SW_GW == "SW") %>% 
+  ggplot(aes(watershed_area_m2,NPOC_mgC_L))+
+  geom_point()+
+  geom_smooth(method="lm")+
+  theme_classic()
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#4.0 DOC versus other variables ---------------------------------------------------
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#DOC vs TDN
+synoptic %>%
+  filter(Type != "River" & Type != "Channel") %>% 
+  ggplot(aes(TDN_mgN_L,NPOC_mgC_L,col=SW_GW))+
+  geom_point()+
+  geom_smooth(method="lm")+
+  theme_classic()
+
+#DOC vs CO2
+synoptic %>%
+  filter(Type != "River" & Type != "Channel") %>% 
+  ggplot(aes(NPOC_mgC_L,CO2,col=SW_GW))+
+  geom_point()+
+  geom_smooth(method="lm")+
+  theme_classic()
+
+#DOC vs CH4
+synoptic %>%
+  filter(Type != "River" & Type != "Channel") %>% 
+  ggplot(aes(NPOC_mgC_L,CH4,col=SW_GW))+
+  geom_point()+
+  geom_smooth(method="lm")+
+  theme_classic()
 

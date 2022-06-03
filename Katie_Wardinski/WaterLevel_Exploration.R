@@ -97,6 +97,9 @@ Syn_Summary <- join_WL_syn %>%
 #join WL and synoptic summary
 Mean_Join <- left_join(Syn_Summary,WL_Summary,by=c("Sample_Name" = "Site_Name"))
 
+#Join in site info
+Site_Syn <- left_join(synoptic,site,by="Site")
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #3.0 Plot WL data -----------------------------------------------------------
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -199,4 +202,3 @@ Mean_Join %>%
 Mean_Join %>% 
   ggplot(aes(mean_WL,mean_TDP,col=SW_GW))+
   geom_point()
-
