@@ -358,9 +358,11 @@ rm(synop_23Na_box, synop_27Al_box, synop_29Si_box, synop_34S_box, synop_54Fe_box
    synop_55Mn_box, synop_redox_time, synop_funstuff_time, data_synop)
 
 
-# 8. Plot varaibility for each metal ----------------------------------
+# 8. Plot variability for each metal ----------------------------------
+
 
 data_wetland <- data %>% 
+  #Remove the rivers and AG ditch for more representative dataset. 
   filter(!Site_ID %in% c("TR-SW", "CR-SW", "AG-SW")) %>% 
   select(-c("Flag", "Flag_Notes", "Catchment")) 
 
@@ -377,25 +379,56 @@ wetland_long <- pivot_longer(data = data_wetland,
                              values_to = "value_ppb") %>% 
   filter(!is.na(value_ppb)) %>% 
   mutate(Site_type = str_sub(Site_ID, 4, 5)) %>% 
-  filter(value_ppb >= 1)
+  #Remove the noisy low conc. values
+  filter(value_ppb >= 3)
 
-everythang <- wetland_long %>% 
+
+# 8.1 Coefficient of variation plot ---------------------------------------
+
+#Summary stats grouped by analyte and site type
+summary_analyte_type <- wetland_long %>% 
   dplyr :: group_by(Analyte, Site_type) %>% 
   dplyr :: summarize(mean_value_ppb = mean(value_ppb),
-                     sd_value_ppb = sd(value_ppb)) 
+                     sd_value_ppb = sd(value_ppb)) %>% 
+  mutate(coeff_var = (sd_value_ppb / mean_value_ppb) * 100)
 
-everythang <- everythang %>% 
-  mutate(coeff_var = (mean_value_ppb / sd_value_ppb))
+#Summary stats grouped by analyte only
+summary_analyte <- wetland_long %>% 
+  dplyr :: group_by(Analyte) %>% 
+  dplyr :: summarize(mean_value_ppb = mean(value_ppb),
+                     sd_value_ppb = sd(value_ppb)) %>% 
+  mutate(coeff_var = (sd_value_ppb / mean_value_ppb) * 100)
 
 
- everythang_plot <- ggplot(data = everythang,
-                           mapping = aes(x = Analyte,
-                                         y = coeff_var,
-                                         color = Site_type)) +
-  geom_point(size = 6) +
-  theme_bw()
+#Compare the coefficient of variation across analytes
+coeff_var_plot <- ggplot(data = summary_analyte,
+                           mapping = aes(x = reorder(Analyte, 
+                                                     -coeff_var),
+                                         y = coeff_var)) +
+  geom_point(size = 24, 
+             shape = "-") +
+  geom_point(data = summary_analyte_type,
+             aes(x = Analyte,
+                 y = coeff_var, 
+                 color = Site_type),
+             size = 5,
+             shape = 4,
+             stroke = 1) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 10, 
+                                 face = "bold", 
+                                 angle = 0)) +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()) +
+  xlab("Analyte") +
+  ylab("Coefficient of Variation %") 
+  
+(coeff_var_plot)
 
-(everythang_plot)
+#Calculate the z-score for each observation and plot
 
+# 8.2 z-score of observations plot ----------------------------------------
+
+wetland_long <- left_join(wetland_long, summary_analyte)
 
 
