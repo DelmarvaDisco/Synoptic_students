@@ -123,6 +123,16 @@ df %>%
 #3.0 Wetland Order -----------------------------------------------------------
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+#number of samples for each wetland order
+site %>%
+  drop_na(Site) %>% 
+  ggplot(aes(wet_order))+
+  geom_histogram()+
+  theme_classic()+
+  ylab("Count")+
+  scale_x_discrete(name ="Wetland Order", 
+                   limits=c("1","2","3","4","5","6","7"))
+
 #3.1 DOC versus wetland order ----------------
 #Boxplot
 df %>%
