@@ -55,9 +55,14 @@ stage_SpC <- ggplot(data = temp,
                                   y = SpC_low_range_dly,
                                   color = Site_ID)) +
   geom_point() +
-  scale_y_continuous(limits = c(0, 100)) +
-  scale_x_continuous(limits = c(0, 1.25)) +
-  theme_bw()
+  scale_y_continuous(name = "SpC dly mean (uS/cm)",
+                     limits = c(0, 100)) +
+  scale_x_continuous(name = "Stage dly mean (m)",
+                     limits = c(0, 1.1)) +
+  ggtitle("Correlations between Stage (m) and SpC (uS/cm)") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank())
 
 (stage_SpC)
 
@@ -72,10 +77,19 @@ BC_stage_SpC <- ggplot(data = temp,
                            color = Site_ID)) +
   geom_line(aes(y = dly_mean_wtrlvl * 100)) +
   geom_point(aes(y = SpC_low_range_dly)) +
-  scale_y_continuous(name = "SpC_low_range",
-                     sec.axis = sec_axis(~./100, name = "Daily stage (m)")) +
+  geom_hline(yintercept = 0,
+             color = "black",
+             size = 2) +
+  scale_y_continuous(name = "Daily SpC (uS/cm)",
+                     sec.axis = sec_axis(~./100, name = "Daily stage (m)"),
+                     limits = c(-15, 150)) +
   scale_x_date(limits = as.Date(c("2021-09-21", "2022-05-02"))) +
-  theme_bw()
+  theme_bw() +
+  ggtitle("Stage (lines) & SpC (dots) at BC
+          - filling stage gaps (dead PT batteries) with correlations 
+          - SpC gaps from winter sensor pull") +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank())
 
 (BC_stage_SpC)
 
