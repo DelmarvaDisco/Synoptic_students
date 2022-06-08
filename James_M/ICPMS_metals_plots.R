@@ -376,22 +376,26 @@ wetland_long <- pivot_longer(data = data_wetland,
                              names_to = "Analyte",
                              values_to = "value_ppb") %>% 
   filter(!is.na(value_ppb)) %>% 
-  mutate(Site_type = str_sub(Site_ID, 4, 6)) 
+  mutate(Site_type = str_sub(Site_ID, 4, 5)) %>% 
+  filter(value_ppb >= 1)
 
 everythang <- wetland_long %>% 
   dplyr :: group_by(Analyte, Site_type) %>% 
   dplyr :: summarize(mean_value_ppb = mean(value_ppb),
-                     variance_value = )
+                     sd_value_ppb = sd(value_ppb)) 
 
- everythang <- ggplot(data = everythang,
-                     mapping = aes(x = Analyte,
-                                   y = value_ppb,
-                                   color = Site_type)) +
-  geom_box() +
-  scale_y_continous()
+everythang <- everythang %>% 
+  mutate(coeff_var = (mean_value_ppb / sd_value_ppb))
+
+
+ everythang_plot <- ggplot(data = everythang,
+                           mapping = aes(x = Analyte,
+                                         y = coeff_var,
+                                         color = Site_type)) +
+  geom_point(size = 6) +
   theme_bw()
 
-(everythang)
+(everythang_plot)
 
 
 
