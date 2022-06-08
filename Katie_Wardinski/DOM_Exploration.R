@@ -246,18 +246,39 @@ synoptic %>%
   theme_classic()
 
 #DOC vs CO2
-synoptic %>%
+DOC_CO2 <- synoptic %>%
   filter(Type != "River" & Type != "Channel") %>% 
   ggplot(aes(NPOC_mgC_L,CO2,col=SW_GW))+
   geom_point()+
+  ylab("CO2")+
+  xlab(element_blank())+
   geom_smooth(method="lm")+
-  theme_classic()
+  stat_regline_equation()+
+  stat_cor(label.x = 45)+
+  theme_classic()+
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12),
+        axis.title.y = element_text(size=14),
+        axis.title.x = element_text(size=14),
+        legend.text = element_text(size=12),
+        legend.title = element_text(size=14))
 
 #DOC vs CH4
-synoptic %>%
+DOC_CH4 <- synoptic %>%
   filter(Type != "River" & Type != "Channel") %>% 
   ggplot(aes(NPOC_mgC_L,CH4,col=SW_GW))+
   geom_point()+
+  ylab("CH4")+
+  xlab("DOC (mg C/L")+
   geom_smooth(method="lm")+
-  theme_classic()
+  stat_regline_equation()+
+  stat_cor(label.x = 45)+
+  theme_classic()+
+  theme(axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12),
+        axis.title.y = element_text(size=14),
+        axis.title.x = element_text(size=14),
+        legend.text = element_text(size=12),
+        legend.title = element_text(size=14))
 
+DOC_CO2 / DOC_CH4
