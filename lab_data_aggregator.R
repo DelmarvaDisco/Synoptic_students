@@ -9,7 +9,9 @@
 # - Drops some meta-data specific to analyses. Granularity sacrficed for maleability. 
 # - Eliminated all CBL data to avoid duplicates. If someone wants to do comps between CBL & VT,
 # then be my guest. 
-# _ 
+# - !!!Not sure how the gas data works, ask Carla what columns mean!!!
+# - !!!Syntax is still screwed for Sample_IDs and Observation_IDs (i h8 g-sheets)!!!
+
 
 
 # 1. Libraries and Packages -----------------------------------------------
@@ -23,13 +25,13 @@ library(readxl)
 library(purrr)
 library(dplyr)
 
+
 data_dir <- "data/lab_data_combo/"
 
 # 2. Read in the data ----------------------------------------------------------------------
 
 # Download function for Isotopes, Nutrients, DOC (quantity), SO4-, Cl-
 download_fun1 <- function(file_paths){
-  
   
   trash <- read_xlsx(file_paths,
                      col_types = "text") 
@@ -48,7 +50,8 @@ download_fun1 <- function(file_paths){
     mutate("Sample_ID" = paste0(Site_ID, "-", Bottle, "-", Rep, "-", Sample_Date)) %>% 
     mutate("Observation_ID" = paste0(Sample_ID, "-", Analyte)) %>% 
     mutate("Units" = print(unit)) %>% 
-    select(c(Sample_ID, Observation_ID, Value, Flag, Flag_notes, Units))
+    select(c(Sample_ID, Observation_ID, Value, Flag, Site_ID, 
+             Sample_Date, Flag_notes, Units))
 
   (temp)
   
@@ -74,7 +77,7 @@ nutrient_files <- nutrient_files[!str_detect(nutrient_files, "CBL")]
 
 #Concatonate file paths
 file_paths <- c(anion_files, isotope_files, NPOC_files, nutrient_files)
-rm(anion_files, isotope_files, NPOC_files)
+rm(anion_files, isotope_files, NPOC_files, nutrient_files)
 
 #Run the download function
 df <- file_paths %>% 
@@ -83,20 +86,93 @@ df <- file_paths %>%
 
 # 3. Read in the ICPMS metals data ----------------------------------------
 
+Spectroscopy_files <- list.files(paste0(data_dir, "Spectroscopy"), full.names = TRUE) 
+Spectroscopy_files <- Spectroscopy_files[str_detect(Spectroscopy_files,".xlsx")]
+
+#Download function for ICPMS data (slight modifacation)
+download_fun_spec <- function(file_paths){
+  
+  trash <- read_xlsx(file_paths,
+                     col_types = "text") 
+  
+  unit <- trash %>% 
+    select(`Units`) %>%
+    slice_head(n = 1) %>% 
+    pull(1)
+  
+  rm(trash)
+  
+  temp <- read_xlsx(paste0(file_paths),
+                    skip = 10,
+                    col_types = "text") %>% 
+    as_tibble() %>% 
+    mutate("Sample_ID" = paste0(Site_ID, "-", Bottle, "-", Rep, "-", Sample_Date)) %>%
+    mutate("Units" = print(unit)) %>% 
+    select(-c(Bottle, Rep))
+    
+  (temp)
+}
+
+#Run the download function
+dt <- Spectroscopy_files %>% 
+  map(download_fun_spec) %>% 
+  reduce(bind_rows)
+  
+#Wide to Long format
+dt <- dt %>% 
+  tidyr::pivot_longer(cols = -c(Sample_ID, Flag, Flag_Notes, Units, 
+                                Sample_Date, Site_ID), 
+               names_to = "Analyte", 
+               values_to = "Value")
+
+dt <- dt %>% 
+  mutate("Observation_ID" = paste0(Sample_ID, "-", Analyte)) %>% 
+  select(-c(Analyte)) 
+  #filter(!is.na(Value))
 
 # 4. Read in the GHG data ----------------------------------------------------
+GHG_files <- list.files(paste0(data_dir, "Dissolved Gases/Complete"), full.names = TRUE) 
+
+# download_fun_ghg <- function(file_paths) {
+#   
+#   read_xlsx(file_paths, 
+#             col_types = "text") %>% 
+#     as_tibble() %>% 
+#     select(c(Sample_ID, Flag, ))
+# }
+
+# dx <- GHG_files %>% 
+#   map(download_fun_ghg) %>% 
+#   reduce(bind_rows)
+
+# 5. Combine & reformat the data -------------------------------------------------
+
+dt <- dt %>% 
+  rename("Flag_notes" = `Flag_Notes`)
+
+data <- rbind(dt, df)
+
+data <- data %>% 
+  #Sample dates were in scientific notation, because Google Sheets is dumb af 
+  mutate(Date = str_replace(Sample_Date, 
+                            pattern = "([.])",
+                            replacement = "")) %>% 
+  mutate(Dates = str_trunc(Date, width = 8, side = "right", ellipsis = "")) %>%
+  mutate(Year = str_sub(Dates, 1, 4),
+         Month = str_sub(Dates, 5, 6),
+         Day = str_sub(Dates, 7, 8)) %>% 
+  mutate(Day = str_replace(Day, "E", "0")) %>% 
+  mutate(Sample_Date = lubridate::ymd(paste0(Year, "-", Month, "-", Day))) %>% 
+  select(-c(Date, Dates, Day)) 
+
+#Dates failed to parse on a few calibration chk samples
+hmm <- data %>% 
+  filter(is.na(Sample_Date))
 
 
-# 5. Combine all the data -------------------------------------------------
+# 6. Export to new csv --------------------------------------------------------
 
-
-# 6. Reformat everything --------------------------------------------------
-
-
-# 7. Export to new csv --------------------------------------------------------
-
-
-
+write_csv(data, file = paste0(data_dir, "lab_data_aggregated_JM.csv"))
 
 
 
