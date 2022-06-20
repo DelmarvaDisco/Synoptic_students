@@ -6,7 +6,7 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Notes:
-# 
+# - Replace all of thee Sample_month_factor with Yr_Mon
 
 # 1. Libraries and Packages -----------------------------------------------
 
@@ -204,7 +204,7 @@ rm(BC_23Na_bar, BC_27Al_bar, BC_29Si_bar, BC_34S_bar, BC_54Fe_bar,
 # 5.2 BC box plots --------------------------------------------------------
 
 #Make box plots
-BC_23Na_box <- boxy_ploty(data_BC, Sample_Date_Factor, `23Na`, "23Na at Baltimore Corner Sites")
+BC_23Na_box <- boxy_ploty(data_BC, Yr_Mon, `23Na`, "23Na at Baltimore Corner Sites")
 (BC_23Na_box)
 BC_27Al_box <- boxy_ploty(data_BC, Site_ID, `27Al`, "27Al at Baltimore Corner Sites")
 (BC_27Al_box)
@@ -263,7 +263,7 @@ rm(JL_23Na_bar, JL_27Al_bar, JL_29Si_bar, JL_34S_bar, JL_54Fe_bar,
 # 6.2 JL box plots --------------------------------------------------------
 
 #Box plots
-JL_23Na_box <- boxy_ploty(data_JL, Sample_Date_Factor, `23Na`, "23Na at JL Sites")
+JL_23Na_box <- boxy_ploty(data_JL, Yr_Mon, `23Na`, "23Na at JL Sites")
 (JL_23Na_box)
 JL_27Al_box <- boxy_ploty(data_JL, Sample_Date_Factor, `27Al`, "27Al at JL Sites")
 (JL_27Al_box)
