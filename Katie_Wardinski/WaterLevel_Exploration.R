@@ -30,7 +30,6 @@ WL <- read_csv("all_data_JM_2019-2022.csv") #daily mean water level
 synoptic <-read_csv("SynopticCurrent.csv") #synoptic data through 2022-03
 site <- read_csv("wetland_info.csv") #site info including wetland order
 
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #2.0 Data manipulation -----------------------------------------------------------
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
