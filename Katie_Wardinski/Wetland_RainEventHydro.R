@@ -99,3 +99,11 @@ WL_Plot <- Oct20 %>%
   geom_line(aes(Timestamp,waterLevel))
 
 PrecipPlot/WL_Plot
+
+#zoom in on one storm event in late may
+Oct20 %>% 
+  filter(Site_Name == "ND-SW") %>%
+  filter(Timestamp > ymd_hms("2020-05-21 00:00:00") & Timestamp < ymd_hms("2020-05-25 00:00:00")) %>% 
+  ggplot()+
+  geom_line(aes(Timestamp,waterLevel))
+
