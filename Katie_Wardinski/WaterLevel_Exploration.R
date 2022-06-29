@@ -11,8 +11,8 @@
 #clear environment
 remove(list=ls())
 
-#set theme classic
-theme_set(theme_classic())
+#set working directory
+setwd("C:/Workspace/Synoptic_students/Katie_Wardinski")
 
 #load relevant packages
 library(tidyverse)
@@ -21,6 +21,9 @@ library(dplyr)
 library(ggpubr)
 library(lubridate)
 library(raster)
+
+#set theme classic
+theme_set(theme_classic())
 
 #Read data
 WL <- read_csv("all_data_JM_2019-2022.csv") #daily mean water level
@@ -111,6 +114,12 @@ SW_Clean %>%
 
 #all SW data
 SW_Clean %>% 
+  ggplot(aes(Date,dly_mean_wtrlvl,col=Site_Name))+
+  geom_line()
+
+#zoom in on summer storm events
+SW_Clean %>% 
+  filter(Date > "2020-06-30" & Date < "2020-08-15") %>% 
   ggplot(aes(Date,dly_mean_wtrlvl,col=Site_Name))+
   geom_line()
 

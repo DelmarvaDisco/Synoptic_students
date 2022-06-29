@@ -2,7 +2,7 @@
 #Title: Synoptic Data Exploration
 #Coder: Katie Wardinski
 #Created: 2022-06-02
-#Purpose: Get familiar with DOC trends in data to assist with PhD planning
+#Purpose: Get familiar with DOM trends in data to assist with PhD planning
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
