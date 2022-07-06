@@ -6,7 +6,7 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Notes:
-# - Replace all of thee Sample_month_factor with Yr_Mon
+# - Replace all of the Sample_month_factor with Yr_Mon
 
 # 1. Libraries and Packages -----------------------------------------------
 
@@ -206,15 +206,15 @@ rm(BC_23Na_bar, BC_27Al_bar, BC_29Si_bar, BC_34S_bar, BC_54Fe_bar,
 #Make box plots
 BC_23Na_box <- boxy_ploty(data_BC, Yr_Mon, `23Na`, "23Na at Baltimore Corner Sites")
 (BC_23Na_box)
-BC_27Al_box <- boxy_ploty(data_BC, Site_ID, `27Al`, "27Al at Baltimore Corner Sites")
+BC_27Al_box <- boxy_ploty(data_BC, Yr_Mon, `27Al`, "27Al at Baltimore Corner Sites")
 (BC_27Al_box)
-BC_29Si_box <- boxy_ploty(data_BC, Site_ID, `29Si`, "29Si at Baltimore Corner Sites")
+BC_29Si_box <- boxy_ploty(data_BC, Yr_Mon, `29Si`, "29Si at Baltimore Corner Sites")
 (BC_29Si_box)
-BC_34S_box <- boxy_ploty(data_BC, Sample_Date_Factor, `34S`, "34S at Baltimore Corner Sites")
+BC_34S_box <- boxy_ploty(data_BC, Yr_Mon, `34S`, "34S at Baltimore Corner Sites")
 (BC_34S_box)
-BC_54Fe_box <- boxy_ploty(data_BC, Sample_Date_Factor, `54Fe`, "54Fe at Baltimore Corner Sites")
+BC_54Fe_box <- boxy_ploty(data_BC, Yr_Mon, `54Fe`, "54Fe at Baltimore Corner Sites")
 (BC_54Fe_box)
-BC_55Mn_box <- boxy_ploty(data_BC, Sample_Date_Factor, `55Mn`, "55Mn at Baltimore Corner Sites")
+BC_55Mn_box <- boxy_ploty(data_BC, Yr_Mon, `55Mn`, "55Mn at Baltimore Corner Sites")
 (BC_55Mn_box)
 
 BC_redox_time <- plot_grid(BC_34S_box, BC_54Fe_box, BC_55Mn_box,
@@ -265,15 +265,15 @@ rm(JL_23Na_bar, JL_27Al_bar, JL_29Si_bar, JL_34S_bar, JL_54Fe_bar,
 #Box plots
 JL_23Na_box <- boxy_ploty(data_JL, Yr_Mon, `23Na`, "23Na at JL Sites")
 (JL_23Na_box)
-JL_27Al_box <- boxy_ploty(data_JL, Sample_Date_Factor, `27Al`, "27Al at JL Sites")
+JL_27Al_box <- boxy_ploty(data_JL, Yr_Mon, `27Al`, "27Al at JL Sites")
 (JL_27Al_box)
-JL_29Si_box <- boxy_ploty(data_JL, Sample_Date_Factor, `29Si`, "29Si at JL Sites")
+JL_29Si_box <- boxy_ploty(data_JL, Yr_Mon, `29Si`, "29Si at JL Sites")
 (JL_29Si_box)
-JL_34S_box <- boxy_ploty(data_JL, Sample_Date_Factor, `34S`, "34S at JL Sites")
+JL_34S_box <- boxy_ploty(data_JL, Yr_Mon, `34S`, "34S at JL Sites")
 (JL_34S_box)
-JL_54Fe_box <- boxy_ploty(data_JL, Sample_Date_Factor, `54Fe`, "54Fe at JL Sites")
+JL_54Fe_box <- boxy_ploty(data_JL, Yr_Mon, `54Fe`, "54Fe at JL Sites")
 (JL_54Fe_box)
-JL_55Mn_box <- boxy_ploty(data_JL, Sample_Date_Factor, `55Mn`, "55Mn at JL Sites")
+JL_55Mn_box <- boxy_ploty(data_JL, Yr_Mon, `55Mn`, "55Mn at JL Sites")
 (JL_55Mn_box)
 
 JL_redox_time <- plot_grid(JL_34S_box, JL_54Fe_box, JL_55Mn_box,
@@ -331,17 +331,17 @@ rm(synop_23Na_bar, synop_27Al_bar, synop_29Si_bar, synop_34S_bar, synop_54Fe_bar
 # 7.2 Synop Box Plots -----------------------------------------------------
 
 #Box plots
-synop_23Na_box <- boxy_ploty(data_synop, Sample_Date_Factor, `23Na`, "23Na synoptic sites")
+synop_23Na_box <- boxy_ploty(data_synop, Yr_Mon, `23Na`, "23Na synoptic sites")
 (synop_23Na_box)
-synop_27Al_box <- boxy_ploty(data_synop, Sample_Date_Factor, `27Al`, "27Al synoptic sites")
+synop_27Al_box <- boxy_ploty(data_synop, Yr_Mon, `27Al`, "27Al synoptic sites")
 (synop_27Al_box)
-synop_29Si_box <- boxy_ploty(data_synop, Sample_Date_Factor, `29Si`, "29Si synoptic sites")
+synop_29Si_box <- boxy_ploty(data_synop, Yr_Mon, `29Si`, "29Si synoptic sites")
 (synop_29Si_box)
-synop_34S_box <- boxy_ploty(data_synop, Sample_Date_Factor, `34S`, "34S synoptic sites")
+synop_34S_box <- boxy_ploty(data_synop, Yr_Mon, `34S`, "34S synoptic sites")
 (synop_34S_box)
-synop_54Fe_box <- boxy_ploty(data_synop, Sample_Date_Factor, `54Fe`, "54Fe synoptic sites")
+synop_54Fe_box <- boxy_ploty(data_synop, Yr_Mon, `54Fe`, "54Fe synoptic sites")
 (synop_54Fe_box)
-synop_55Mn_box <- boxy_ploty(data_synop, Sample_Date_Factor, `55Mn`, "55Mn synoptic sites")
+synop_55Mn_box <- boxy_ploty(data_synop, Yr_Mon, `55Mn`, "55Mn synoptic sites")
 (synop_55Mn_box)
 
 #Combine plots
