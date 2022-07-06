@@ -19,9 +19,8 @@ data_dir <- "data/Stage_SpC/"
 
 # 2. Read in the data -----------------------------------------------------
 
-Stage_data <- read_csv(file = paste0(data_dir, "Stage_data_dly_mean.csv")) %>% 
-  rename("Site_ID" = Site_Name) %>% 
-  select(-c("version"))
+Stage_data <- read_csv(paste0(data_dir, "dly_mean_output_JM_2019_2022.csv")) %>% 
+  rename("Site_ID" = Site_Name)
 
 SpC_data <- read_csv(file = paste0(data_dir, "SpC_output_2021_2022.csv")) %>% 
   mutate(Date = ymd(str_sub(Timestamp, 1, 10))) %>% 
