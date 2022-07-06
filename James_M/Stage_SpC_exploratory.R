@@ -85,7 +85,6 @@ BC_stage_SpC <- ggplot(data = temp,
   scale_x_date(limits = as.Date(c("2021-09-21", "2022-05-02"))) +
   theme_bw() +
   ggtitle("Stage (lines) & SpC (dots) at BC
-          - filling stage gaps (dead PT batteries) with correlations 
           - SpC gaps from winter sensor pull") +
   theme(panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank())
