@@ -48,6 +48,8 @@ data <- file_paths %>%
   map(download_fun) %>% 
   reduce(bind_rows)
 
+rm(file_paths)
+
 # 3. Clean up data----------------------------------------------------------------------
 
 # 3.1 Rename and reformat columns -----------------------------------------
@@ -60,14 +62,17 @@ data[data < 0] <- 0
 
 #Sample_Date to a Datetime
 data <- data %>% 
-  #Sample dates were in scientific notation, because google sheets is dumb. 
+  #Sample dates were in scientific notation, because Google sheets is dumb. 
   mutate(Date = str_replace(Sample_Date, 
+  #Removes the period from the Dates that read in as Sci notation
                             pattern = "([.])",
                             replacement = "")) %>% 
+  #Extracts the first eight characters to remove the E^x part of Sci notation
   mutate(Dates = str_trunc(Date, width = 8, side = "right", ellipsis = "")) %>%
   mutate(Year = str_sub(Dates, 1, 4),
          Month = str_sub(Dates, 5, 6),
          Day = str_sub(Dates, 7, 8)) %>% 
+  #Dates with E as last character are actually zero (e.g. 2021092E becomes 20210720)
   mutate(Day = str_replace(Day, "E", "0")) %>% 
   mutate(Sample_Date = ymd(paste0(Year, "-", Month, "-", Day))) %>% 
   select(-c(Date, Dates, Day)) %>% 
@@ -93,10 +98,10 @@ Site_data <- lapply(sheet_names,
   reduce(rbind) %>% 
   select(c(Site_ID, Catchment))
 
-#Join site data
+#Join site attributes to the data
 data <- left_join(data, Site_data, by = "Site_ID")
 
-rm(site_data_path, sheet_names, Site_data, data_dir, file_paths)
+rm(site_data_path, sheet_names, Site_data)
 
 # 4. Make plotting functions ---------------------------------------------
 
@@ -131,25 +136,34 @@ boxy_ploty <- function(df, x_var , y_var, title){
 #Bar plot function
 barz_plotz <- function(df, x_var, y_var, title){
   
-  dt <- df %>% 
-    dplyr::group_by({{x_var}}) %>% 
+  dt <- df %>%
+    dplyr::group_by({{x_var}}) %>%
     dplyr::summarise(y_mean = mean({{y_var}}))
   
-  dt <- dt %>% 
-    mutate("Site_type_char" = str_sub(Site_ID, 4, 6)) %>% 
-    mutate(Site_type = as.factor(Site_type_char)) %>% 
-    mutate(Wetland = str_sub(Site_ID, 1, 2)) %>% 
-    mutate(Wetland = as.factor(Wetland)) 
-    
+  dt <- dt %>%
+    mutate("Site_type_char" = str_sub(Site_ID, 4, 6)) %>%
+    mutate(Site_type = as.factor(Site_type_char)) %>%
+    mutate(Wetland = str_sub(Site_ID, 1, 2)) %>%
+    mutate(Wetland = as.factor(Wetland))
+  
+  df <- df %>%
+    mutate("Site_type_char" = str_sub(Site_ID, 4, 6)) %>%
+    mutate(Site_type = as.factor(Site_type_char)) %>%
+    mutate(Wetland = str_sub(Site_ID, 1, 2)) %>%
+    mutate(Wetland = as.factor(Wetland))
   
   barz <- ggplot(data = dt,
                  aes(x = Wetland,
                      y = y_mean,
                      fill = Site_type)) +
-    geom_col(position = position_dodge(width = 0.75, 
+    geom_col(position = position_dodge(width = 0.75,
                                        preserve = "single"),
              color = "black",
              width = 0.75) +
+    geom_point(data = df, 
+               aes(y = {{y_var}},
+                   x = Wetland),
+               color = "black") +
     #ggtitle({{title}}) +
     theme_bw() +
     theme(axis.text = element_text(size = 8, 
