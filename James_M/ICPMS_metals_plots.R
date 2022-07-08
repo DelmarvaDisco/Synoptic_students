@@ -6,7 +6,7 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Notes:
-# - Replace all of the Sample_month_factor with Yr_Mon
+
 
 # 1. Libraries and Packages -----------------------------------------------
 
@@ -439,10 +439,6 @@ coeff_var_plot <- ggplot(data = summary_analyte,
   
 (coeff_var_plot)
 
-#Calculate the z-score for each observation and plot
-
-# 8.2 z-score of observations plot ----------------------------------------
-
-wetland_long <- left_join(wetland_long, summary_analyte)
+)
 
 
