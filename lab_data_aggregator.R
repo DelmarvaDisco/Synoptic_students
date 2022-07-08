@@ -86,9 +86,9 @@ df <- file_paths %>%
   map(download_fun1) %>% 
   reduce(bind_rows)
 
+#Can't figure out what is wrong with the 202007_NPOC file?!?!?
 hmm <- df %>% 
   filter(is.na(Units))
-  
   
 # 3. Read in the ICPMS metals data ----------------------------------------
 
@@ -136,6 +136,8 @@ dt <- dt %>%
   select(-c(Analyte)) 
   #filter(!is.na(Value))
 
+rm(Spectroscopy_files)
+
 # 4. Read in the GHG data ----------------------------------------------------
 GHG_files <- list.files(paste0(data_dir, "Dissolved Gases/Complete"), full.names = TRUE) 
 
@@ -157,16 +159,21 @@ dt <- dt %>%
   rename("Flag_notes" = `Flag_Notes`)
 
 data <- rbind(dt, df)
+rm(dt,df)
 
 data <- data %>% 
-  #Sample dates were in scientific notation, because Google Sheets is dumb af 
+  #Sample dates were in scientific notation, because Google Sheets is dumb 
+  #Removes period from dates read as sci notation
   mutate(Date = str_replace(Sample_Date, 
                             pattern = "([.])",
                             replacement = "")) %>% 
+  #Removes the e^x portion of dates read as sci notation
   mutate(Dates = str_trunc(Date, width = 8, side = "right", ellipsis = "")) %>%
   mutate(Year = str_sub(Dates, 1, 4),
          Month = str_sub(Dates, 5, 6),
          Day = str_sub(Dates, 7, 8)) %>% 
+  #For dates that end in 0, E replaced 0 when date was sci notation. 
+  #This line replaces the E with correct value (e.g. 2021092E becomes 20210920)
   mutate(Day = str_replace(Day, "E", "0")) %>% 
   mutate(Sample_Date = lubridate::ymd(paste0(Year, "-", Month, "-", Day))) %>% 
   select(-c(Date, Dates, Day)) 

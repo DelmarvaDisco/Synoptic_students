@@ -72,7 +72,7 @@ data <- data %>%
   mutate(Year = str_sub(Dates, 1, 4),
          Month = str_sub(Dates, 5, 6),
          Day = str_sub(Dates, 7, 8)) %>% 
-  #Dates with E as last character are actually zero (e.g. 2021092E becomes 20210720)
+  #Dates with E as last character are actually zero (e.g. 2021092E becomes 20210920)
   mutate(Day = str_replace(Day, "E", "0")) %>% 
   mutate(Sample_Date = ymd(paste0(Year, "-", Month, "-", Day))) %>% 
   select(-c(Date, Dates, Day)) %>% 
