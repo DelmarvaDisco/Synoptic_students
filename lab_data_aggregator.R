@@ -48,12 +48,25 @@ download_fun1 <- function(file_paths){
                    skip = 10, 
                    col_types = "text") %>% 
     as_tibble() %>% 
-    mutate("Sample_ID" = paste0(Site_ID, "-", Bottle, "-", Rep, "-", Sample_Date)) %>%
-    #Multiple analytes for some sample bottles requires additional distinction
-    mutate("Observation_ID" = paste0(Sample_ID, "-", Analyte)) %>% 
+    #Sample dates were in scientific notation, because Google Sheets is dumb 
+    #Removes period from dates read as sci notation
+    mutate(Date = str_replace(Sample_Date, 
+                              pattern = "([.])",
+                              replacement = "")) %>% 
+    #Removes the e^x portion of dates read as sci notation
+    mutate(Dates = str_trunc(Date, width = 8, side = "right", ellipsis = "")) %>%
+    mutate(Year = str_sub(Dates, 1, 4),
+           Month = str_sub(Dates, 5, 6),
+           Day = str_sub(Dates, 7, 8)) %>% 
+    #For dates that end in 0, E replaced 0 when date was sci notation. 
+    #This line replaces the E with correct value (e.g. 2021092E becomes 20210920)
+    mutate(Day = str_replace(Day, "E", "0")) %>% 
+    mutate(Sample_Date = lubridate::ymd(paste0(Year, "-", Month, "-", Day))) %>% 
+    select(-c(Date, Dates)) %>% 
+    mutate("Sample_ID" = paste0(Site_ID, "-", Bottle, "-", Rep, "-", Year, Month, Day)) %>%
     mutate("Units" = print(unit)) %>% 
-    select(c(Sample_ID, Observation_ID, Value, Flag, Site_ID, 
-             Sample_Date, Flag_notes, Units))
+    mutate("Observation_ID" = paste0(Sample_ID, "-", Analyte)) %>%
+    select(c(Site_ID, Sample_Date, Sample_ID, Observation_ID, Units, Value, Flag, Flag_notes))
 
   (temp)
   
@@ -112,9 +125,24 @@ download_fun_spec <- function(file_paths){
                     skip = 10,
                     col_types = "text") %>% 
     as_tibble() %>% 
-    mutate("Sample_ID" = paste0(Site_ID, "-", Bottle, "-", Rep, "-", Sample_Date)) %>%
+    #Sample dates were in scientific notation, because Google Sheets is dumb 
+    #Removes period from dates read as sci notation
+    mutate(Date = str_replace(Sample_Date, 
+                              pattern = "([.])",
+                              replacement = "")) %>% 
+    #Removes the e^x portion of dates read as sci notation
+    mutate(Dates = str_trunc(Date, width = 8, side = "right", ellipsis = "")) %>%
+    mutate(Year = str_sub(Dates, 1, 4),
+           Month = str_sub(Dates, 5, 6),
+           Day = str_sub(Dates, 7, 8)) %>% 
+    #For dates that end in 0, E replaced 0 when date was sci notation. 
+    #This line replaces the E with correct value (e.g. 2021092E becomes 20210920)
+    mutate(Day = str_replace(Day, "E", "0")) %>% 
+    mutate(Sample_Date = lubridate::ymd(paste0(Year, "-", Month, "-", Day))) %>% 
+    select(-c(Date, Dates)) %>% 
+    mutate("Sample_ID" = paste0(Site_ID, "-", Bottle, "-", Rep, "-", Year, Month, Day)) %>%
     mutate("Units" = print(unit)) %>% 
-    select(-c(Bottle, Rep))
+    select(-c(Bottle, Rep, Year, Month, Day))
     
   (temp)
 }
@@ -133,7 +161,7 @@ dt <- dt %>%
 
 dt <- dt %>% 
   mutate("Observation_ID" = paste0(Sample_ID, "-", Analyte)) %>% 
-  select(-c(Analyte)) 
+  select(-c(Analyte))
   #filter(!is.na(Value))
 
 rm(Spectroscopy_files)
@@ -160,28 +188,6 @@ dt <- dt %>%
 
 data <- rbind(dt, df)
 rm(dt,df)
-
-data <- data %>% 
-  #Sample dates were in scientific notation, because Google Sheets is dumb 
-  #Removes period from dates read as sci notation
-  mutate(Date = str_replace(Sample_Date, 
-                            pattern = "([.])",
-                            replacement = "")) %>% 
-  #Removes the e^x portion of dates read as sci notation
-  mutate(Dates = str_trunc(Date, width = 8, side = "right", ellipsis = "")) %>%
-  mutate(Year = str_sub(Dates, 1, 4),
-         Month = str_sub(Dates, 5, 6),
-         Day = str_sub(Dates, 7, 8)) %>% 
-  #For dates that end in 0, E replaced 0 when date was sci notation. 
-  #This line replaces the E with correct value (e.g. 2021092E becomes 20210920)
-  mutate(Day = str_replace(Day, "E", "0")) %>% 
-  mutate(Sample_Date = lubridate::ymd(paste0(Year, "-", Month, "-", Day))) %>% 
-  select(-c(Date, Dates, Day)) 
-
-#Dates failed to parse on a few calibration chk samples
-hmm <- data %>% 
-  filter(is.na(Sample_Date))
-
 
 # 6. Export to new csv --------------------------------------------------------
 
