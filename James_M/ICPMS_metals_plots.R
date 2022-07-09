@@ -123,7 +123,9 @@ boxy_ploty <- function(df, x_var , y_var, title){
                                    face = "bold", 
                                    angle = 45),
           plot.title = element_text(size = 36),
-          axis.title.x = element_blank()) +
+          axis.title.x = element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank()) +
     #Trimming some outliers to improve readability
     scale_y_continuous(limits = quantile(df %>% pull({{y_var}}), c(0.1, 0.90))) +
     ylab({{title}})
@@ -160,17 +162,23 @@ barz_plotz <- function(df, x_var, y_var, title){
                                        preserve = "single"),
              color = "black",
              width = 0.75) +
-    geom_point(data = df, 
+    geom_jitter(data = df, 
                aes(y = {{y_var}},
-                   x = Wetland),
-               color = "black") +
+                   x = Wetland,
+                   color = Site_type),
+               pch = 21,
+               color = "black",
+               size = 2.5,
+               width = 0.1) +
     #ggtitle({{title}}) +
     theme_bw() +
     theme(axis.text = element_text(size = 8, 
                                    face = "bold", 
                                    angle = 0),
           axis.title.x = element_blank(),
-          plot.title = element_text(size = 18)) +
+          plot.title = element_text(size = 18),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank()) +
     ylab({{title}}) 
   
   (dt)
@@ -309,8 +317,7 @@ data_synop <- data %>%
   filter(!Site_ID == "TR-SW") %>% 
   filter(!Site_ID == "CR-SW") %>% 
   filter(!Site_ID == "AG-SW") %>% 
-  filter(!Sample_Date_Factor == "202109") %>% 
-  filter(!Sample_Date_Factor == "202110")
+  filter(!Yr_Mon %in% c("2021-09", "2021-10"))
 
 # 7.1 Synop bar plots -----------------------------------------------------
 
