@@ -109,7 +109,7 @@ rm(site_data_path, sheet_names, Site_data)
 boxy_ploty <- function(df, x_var , y_var, title){
   
   df <- df %>% 
-    mutate(Site_type = str_sub(Site_ID, 4, 5)) 
+    mutate(Site_type = str_sub(Site_ID, 4, 6)) 
   
   boxy <- ggplot(data = df, 
                          aes( x = {{x_var}}, 
@@ -317,7 +317,7 @@ data_synop <- data %>%
   filter(!Site_ID == "TR-SW") %>% 
   filter(!Site_ID == "CR-SW") %>% 
   filter(!Site_ID == "AG-SW") %>% 
-  filter(!Yr_Mon %in% c("2021-09", "2021-10"))
+  filter(!Yr_Mon %in% c("2021-09", "2021-10", "2021-12", "2022-02"))
 
 # 7.1 Synop bar plots -----------------------------------------------------
 
