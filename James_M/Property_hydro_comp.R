@@ -6,7 +6,8 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Notes:
-# - Should be fun!
+# - Not much difference between UW at catchments, but big difference in SW.
+# - Is SW differences just due to elevation, or are there drainage dynamics at play?
 
 
 # 1. Libraries and workspace -----------------------------------------------
@@ -15,6 +16,7 @@ rm(list = ls())
 
 library(tidyverse)
 library(lubridate)
+library(stringr)
 library(dplyr)
 
 data_dir <- "data/"
@@ -68,13 +70,7 @@ SW_means <- df %>%
                    low = avg - sd(dly_mean_wtrlvl)/sqrt(n()),
                    up = avg + sd(dly_mean_wtrlvl)/sqrt(n()))
 
-
-JL <- SW_means %>% filter(Property == "Jackson Lane")
-BC <- SW_means %>% filter(Property == "Baltimore Corner")
-
-band_alpha <- 0.5
-
-plot <- ggplot() +
+SW_plot <- ggplot() +
   geom_line(data = SW_means,
             aes(x = Date,
                 y = avg, 
@@ -84,7 +80,34 @@ plot <- ggplot() +
                   ymax = up,
                   x = Date,
                   fill = Property,
-                  alpha = band_alpha)) +
+                  alpha = 0.42)) +
+  ggtitle("Mean SW water level comparing BC & JL") +
+  theme_bw()
+
+(plot)
+
+# 5. Compare UW hydrographs between properties ----------------------------------------
+
+UW_means <- df %>% 
+  filter(str_detect(Site_ID, "UW")) %>%
+  filter(Date >= "2021-03-18") %>% 
+  group_by(Property, Date) %>% 
+  dplyr::summarise(avg = mean(dly_mean_wtrlvl),
+                   low = avg - sd(dly_mean_wtrlvl)/sqrt(n()),
+                   up = avg + sd(dly_mean_wtrlvl)/sqrt(n()))
+
+UW_plot <- ggplot() +
+  geom_line(data = UW_means,
+            aes(x = Date,
+                y = avg, 
+                color = Property)) +
+  geom_ribbon(data = UW_means,
+              aes(ymin = low,
+                  ymax = up,
+                  x = Date,
+                  fill = Property,
+                  alpha = 0.42)) +
+  ggtitle("Mean UW water level comparing BC & JL") +
   theme_bw()
 
 (plot)
