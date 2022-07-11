@@ -55,7 +55,8 @@ df <- left_join(wtr_data, Site_data) %>%
   filter(Property %in% c("Jackson Lane", "Baltimore Corner"))
 
 Site_numbers <- Site_data %>% 
-  group_by(Property) %>% 
+  mutate(site_type = str_sub(Site_ID, 4, 5)) %>% 
+  group_by(Property, site_type) %>% 
   dplyr::summarise(counts = n())
 
 rm(Site_numbers, Site_data, wtr_data)
@@ -70,7 +71,7 @@ SW_means <- df %>%
                    low = avg - sd(dly_mean_wtrlvl)/sqrt(n()),
                    up = avg + sd(dly_mean_wtrlvl)/sqrt(n()))
 
-SW_plot <- ggplot() +
+SW_time_plot <- ggplot() +
   geom_line(data = SW_means,
             aes(x = Date,
                 y = avg, 
@@ -81,15 +82,38 @@ SW_plot <- ggplot() +
                   x = Date,
                   fill = Property,
                   alpha = 0.42)) +
+  labs(y = "Average surface water level (meters)") +
   ggtitle("Mean SW water level comparing BC & JL") +
   theme_bw()
 
-(plot)
+(SW_time_plot)
+
+SW_corr <- SW_means %>% 
+  select(c(avg, Property, Date)) %>% 
+  pivot_wider(names_from = Property, 
+              values_from = avg) %>% 
+  mutate(month = as.integer(as.factor(str_sub(Date, 6, 7))))
+
+SW_plot_corr <- ggplot(data = SW_corr,
+                    mapping = aes(x = `Jackson Lane`,
+                                  y = `Baltimore Corner`,
+                                  color = month)) +
+  geom_point() +
+  theme_bw() +
+  ggtitle("Correlation of SW water levels between TNC properties (Spring 2021-Spring 2022)") +
+  labs(x = "Mean SW waterlevel for JL sites (meters)",
+       y = "Mean SW waterlevel for BC sites (meters)") +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank())
+
+(SW_plot_corr)
+
+rm(SW_means, SW_corr, SW_time_plot, SW_plot_corr)
 
 # 5. Compare UW hydrographs between properties ----------------------------------------
 
 UW_means <- df %>% 
-  filter(str_detect(Site_ID, "UW")) %>%
+  filter(!str_detect(Site_ID, "SW")) %>%
   filter(Date >= "2021-03-18") %>% 
   group_by(Property, Date) %>% 
   dplyr::summarise(avg = mean(dly_mean_wtrlvl),
@@ -107,8 +131,31 @@ UW_plot <- ggplot() +
                   x = Date,
                   fill = Property,
                   alpha = 0.42)) +
+  labs(y = "Average groundwater level (meters)") +
   ggtitle("Mean UW water level comparing BC & JL") +
   theme_bw()
 
-(plot)
+(UW_plot)
+
+UW_corr <- UW_means %>% 
+  select(c(avg, Property, Date)) %>% 
+  pivot_wider(names_from = Property, 
+              values_from = avg) %>% 
+  mutate(month = as.integer(as.factor(str_sub(Date, 6, 7))))
+
+UW_plot_corr <- ggplot(data = UW_corr,
+                    mapping = aes(x = `Jackson Lane`,
+                                  y = `Baltimore Corner`,
+                                  color = month)) +
+  geom_point() +
+  theme_bw() +
+  ggtitle("Correlation of UW water levels between TNC properties (Spring 2021-Spring 2022)") +
+  labs(x = "Mean UW waterlevel for JL sites (meters)",
+       y = "Mean UW waterlevel for BC sites (meters)") +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank())
+
+(UW_plot_corr)
+
+rm(UW_corr, UW_means, UW_plot, UW_plot_corr)
 
