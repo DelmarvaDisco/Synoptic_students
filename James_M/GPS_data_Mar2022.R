@@ -6,7 +6,7 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Notes:
-# Not sure whether I properly applied the CRS
+# !!! No crs on the files from Keystone. Not sure if I properly applied the right crs???
 
 
 # 1. Packages and workspace -----------------------------------------------
@@ -24,21 +24,29 @@ library(tidyverse)
 data_dir <- "data/geospatial/"
 
 #Define master projection
-p <- "+proj=utm +zone=17 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
-
+p <- "??????????????????"
 
 # 2. Read data -----------------------------------------------------
 
-#Read in the area shapefiles
+#Read the points shapefiles
+points_ge <- st_read(dsn = paste0(data_dir, "Point_ge.shp"), crs = 2248) %>%
+  #Ughh different columns in points shapefiles
+  rename("Flag_Label" = `Comment`)
+generic <- st_read(dsn = paste0(data_dir, "Generic_.shp"), crs = 2248) %>% 
+  #Ughh different columns in points shapefiles
+  select(-Descriptio)
 
-points_ge <- st_read(dsn = paste0(data_dir, "Point_ge.shp"), crs = 2248) 
+#Merge the points shapefiles
+points_gen <- rbind(points_ge, generic)
+#Clean up environment
+rm(points_ge, generic)
 
-generic <- st_read(dsn = paste0(data_dir, "Generic_.dbf"), crs = 2248)
+#Read the area shapefiles
+Area_gen <- st_read(dsn = paste0(data_dir, "Area_gen.shp"), crs = 2248)
 
-Area_gen <- st_read(dsn = paste0(data_dir, "Area_gen.dbf"), crs = 2248)
+# 3. Convert points from projection to lat/long ---------------------------------------------------
 
-
-# 3. Make a leaflet map ---------------------------------------------------
+points <- st_transform(x = points_gen, crs = "+proj=longlat +datum=WGS84 +no_defs")
 
 
 
