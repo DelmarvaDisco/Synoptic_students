@@ -46,7 +46,15 @@ Area_gen <- st_read(dsn = paste0(data_dir, "Area_gen.shp"), crs = 2248)
 
 # 3. Convert points from projection to lat/long ---------------------------------------------------
 
-points <- st_transform(x = points_gen, crs = "+proj=longlat +datum=WGS84 +no_defs")
+points <- st_transform(x = points_gen, crs = "+proj=longlat +datum=NAD83 +no_defs") %>% 
+  as_tibble() %>% 
+  mutate(long = str_extract(as.character(geometry),
+                           #LOL I'm so bad at strings
+                           pattern ="\\-\\d\\d\\.\\d\\d\\d\\d\\d\\d\\d\\d\\d\\d\\d\\d"),
+         lat = str_extract(as.character(geometry),
+                           pattern = "\\,\\s\\d\\d\\.\\d\\d\\d\\d\\d\\d\\d\\d\\d\\d\\d")) %>% 
+                           #Dumbest syntax ever
+  mutate(lat = str_extract(lat, pattern = "\\d\\d\\.\\d\\d\\d\\d\\d\\d\\d\\d\\d\\d\\d"))
 
 
 
