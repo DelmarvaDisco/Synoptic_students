@@ -28,7 +28,7 @@ plots_dir <- "data\\Head_gradients\\plots\\"
 #Waterlevel dataset 
 water_levels <- read_csv(paste0(data_dir, "dly_mean_output_JM_2019_2022.csv")) %>% 
   #The modeled data (used for gap filling) is not appropriate for this analysis
-  filter(!Flag == 1) %>% 
+  # filter(!Flag == 1) %>% 
   #No longer need flag column
   select(-Flag)
 
@@ -67,21 +67,23 @@ df <- left_join(water_levels, survey_data, by = "Site_ID") %>%
 #Join GPS points to df
 df <- left_join(df, site_data, by = c("Site_ID", "Catchment")) %>% 
   #Remove notes column explaining relative elevations.
-  select(-Notes)
+  select(-Notes) %>% 
+  mutate(site_type = str_sub(Site_ID, 4, 6)) %>% 
+  mutate(wetland = str_sub(Site_ID, 1, 2))
 
 #Clean up the environment
 rm(water_levels, survey_data, site_data)
 
-# 4.0 Calculate the head gradient relative to the catchment bottom --------------------------------------------------------------------
+# 4.0 Calculate the elevation head to datum --------------------------------------------------------------------
 
 # 4.1 Jackson Lane --------------------------------------------------------
-JL_heads <- df %>% 
+JL_rel_wtrlvl <- df %>% 
   filter(Catchment == "Jackson Lane") %>% 
   select(-Catchment) %>% 
   mutate(Wtrlvl_rel_DKSW_bottom = dly_mean_wtrlvl + Elevation_m)
 
 # 4.2 Baltimore Corner ----------------------------------------------------
-BC_heads <- df %>% 
+BC_rel_wtrlvl <- df %>% 
   filter(Catchment == "Baltimore Corner") %>% 
   select(-Catchment) %>% 
   mutate(Wtrlvl_rel_TPCH_bottom = dly_mean_wtrlvl + Elevation_m)
@@ -89,18 +91,28 @@ BC_heads <- df %>%
 # 5.0 Quick plot of site's relative water levels ---------------------------------
 
 #Quick time series ggplot function might be helpful later
-ts_quick <- function(data, y_var, color_var, title) {
+ts_quick_plot <- function(data, y_var, color_var, title) {
   
-  data <- data
-  
+#This step adds na's to missing timesteps.
+#Prevents geom_line from arbitrarily drawing lines between data gaps. 
+  data <- data %>% 
+    pivot_wider(id_cols = Date, 
+                names_from = {{color_var}},
+                values_from = {{y_var}}) %>% 
+    pivot_longer(cols = -c(Date), 
+                 names_to = "Site", 
+                 values_to = "meters")
+
+#Done with data wrangling, time to plot!!!
   ts_plot <- ggplot(data = data, 
                     aes(x = Date,
-                        y = {{y_var}},
-                        color = {{color_var}})) +
-    geom_line(size = 0.5) +
+                        y = meters,
+                        color = Site)) +
+    geom_line(size = 1,
+              na.rm = TRUE) +
     theme_bw() +
     theme(panel.grid = element_blank(),
-          plot.title = element_text(size = 28))
+          plot.title = element_text(size = 28)) +
     ggtitle({{title}})
   
   return(ts_plot)
@@ -108,28 +120,101 @@ ts_quick <- function(data, y_var, color_var, title) {
     
 }
 
+# 5.1 Jackson Lane --------------------------------------------------------
+
 #Look at time series of head gradients relative to outlets. 
-JL_ts <- ts_quick(data = JL_heads %>% filter(Date >= "2021-03-04",
-                                             Site_ID %in% c("DK-SW", "TS-SW", "TS-CH", 
-                                                            "BD-CH", "BD-SW")), 
+JL_SW_CH_elheads <- ts_quick_plot(data = JL_rel_wtrlvl %>% 
+                                    #Filter data with full well installations
+                                    filter(Date >= "2021-03-04",
+                                    #Filter sites of interest
+                                           Site_ID %in% c("DK-SW", "TS-SW", "TS-CH", 
+                                                          "BD-CH", "BD-SW")), 
                  y_var = Wtrlvl_rel_DKSW_bottom,
                  color_var = Site_ID, 
-                 title = "Elevation heads (cm) relative to DK-SW")
-(JL_ts)
+                 title = "Elevation heads (m) relative to datum at DK-SW")
+#Print plot
+(JL_SW_CH_elheads)
 
-BC_ts <- ts_quick(data = BC_heads %>% filter(Date >= "2021-03-04"), 
+JL_UW_elheads <- ts_quick_plot(data = JL_rel_wtrlvl %>% 
+                                 filter(Date >= "2021-03-04", 
+                                      #Filter out UW sites
+                                        site_type %in% c("UW1", "UW2", "UW3"),
+                                      !(Site_ID == "TS-UW1" &
+                                          Wtrlvl_rel_DKSW_bottom <= 0.045)),
+                               y_var = Wtrlvl_rel_DKSW_bottom,
+                               color_var = Site_ID, 
+                               title = "Elevation heads (m) relative to datum at DK-SW")
+
+#Print the plot
+(JL_UW_elheads)
+
+# 5.2 Baltimore Corner ----------------------------------------------------
+
+BC_SW_CH_elheads <- ts_quick_plot(data = BC_rel_wtrlvl %>% 
+                                    filter(Date >= "2021-03-04",
+                                           Site_ID %in% c("TP-CH", "HB-SW", "MB-SW",
+                                                          "XB-SW", "OB-SW", "MB-CH",
+                                                          "OB-CH"),
+                                        #Filter out points where site is dry
+                                          !(Site_ID == "TP-CH" &
+                                             Wtrlvl_rel_TPCH_bottom <= -0.30)), 
                   y_var = Wtrlvl_rel_TPCH_bottom,
                   color_var = Site_ID, 
-                  title = "Elevation heads (cm) relative to TP-CH")
-(BC_ts)
+                  title = "Elevation heads (m) relative to datum at TP-CH")
+
+#Print the plot
+(BC_SW_CH_elheads)
+
+BC_UW_elheads <- ts_quick_plot(data = BC_rel_wtrlvl %>% 
+                                 filter(Date >= "2021-03-04",
+                                        Site_ID == "TP-CH" |
+                                        site_type == "UW1",
+                              #Filter out points where site is dry
+                              !(Site_ID == "TP-CH" &
+                                 Wtrlvl_rel_TPCH_bottom <= -0.30)), 
+                  y_var = Wtrlvl_rel_TPCH_bottom,
+                  color_var = Site_ID, 
+                  title = "Elevation heads (m) relative to datum at TP-CH")
+#Print the plot
+(BC_UW_elheads)
+
+#Clean up environment
+rm(BC_SW_CH_elheads, BC_UW_elheads, JL_SW_CH_elheads, JL_UW_elheads)
+
+# 6.0 Calculate head gradients between sites ---------------------------------------------------------------------
+
+# 6.1 Jackson Lane --------------------------------------------------------
+
+JL_heads <- JL_rel_wtrlvl %>% 
+  pivot_wider(id_cols = Date,
+              names_from = Site_ID, 
+              values_from = Wtrlvl_rel_DKSW_bottom) %>% 
+  mutate(BDSW_BDCH = `BD-SW` - `BD-CH`,
+         TSSW_TSCH = `TS-SW` - `TS-CH`,
+         TSSW_TSUW1 = `TS-SW` - `TS-UW1`,
+         DKSW_DKUW1 = `DK-SW` - `DK-UW1`,
+         DKSW_DKUW2 = `DK-SW` - `DK-UW2`,
+         DKUW1_DKUW2 = `DK-UW1` - `DK-UW2`,
+         DKSW_DKCH = `DK-SW` - `DK-CH`) %>% 
+  select(-c("DK-SW", "DK-CH", "DK-UW1", "DK-UW2", "TS-CH", "TS-SW", "TS-UW1", 
+            "BD-SW", "BD-CH", "ND-SW", "ND-UW1", "ND-UW2", "ND-UW3"))
+
+JL_heads <- JL_heads %>% 
+  pivot_longer(cols = -c(Date),
+               names_to = "Site_IDs",
+               values_to = "Head_diff_m")
+
+hmmm <- ts_quick_plot(data = JL_heads %>% 
+                        filter(Date >= "2021-03-04",
+                               Site_IDs %in% c("DKSW_DKUW2", "DKSW_DKUW1", "DKSW_DKCH")),
+                      y_var = Head_diff_m, 
+                      color_var = Site_IDs,
+                      title = "hmmm")
+(hmmm)
+
+# 6.2 Baltimore Corner ----------------------------------------------------
 
 
-
-
-
-
-
-
-
+  
 
 
