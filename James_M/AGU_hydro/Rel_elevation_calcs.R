@@ -17,7 +17,7 @@ library(stringr)
 library(lubridate)
 library(tidyverse)
 
-data_dir <- "data\\Head_gradients\\"
+data_dir <- "data\\AGU_hydro\\"
 
 # 2.0 Read in the data ----------------------------------------------------
 
@@ -68,12 +68,14 @@ df <- left_join(df, site_data, by = c("Site_ID", "Catchment")) %>%
   mutate(well_type = str_sub(Site_ID, 4, 5)) %>% 
   mutate(wetland = str_sub(Site_ID, 1, 2)) %>% 
   #Only want data after the installation of Catchment Wells
-  filter(Date >= "2021-03-01")
+  filter(Date >= "2021-03-01") %>% 
+  #Make Flag a factor not numeric
+  mutate(Flag = as.factor(Flag))
 
 #Clean up the environment
 rm(water_levels, survey_data, site_data)
 
-# 4.0 Calculate the elevation head to datum --------------------------------------------------------------------
+# 4.0 Calculate the elevation head to datum and aggregate wtr lvls--------------------------------------------------------------------
 
 # 4.1 Jackson Lane --------------------------------------------------------
 JL_rel_wtrlvl <- df %>% 
@@ -120,10 +122,14 @@ JL_heads <- JL_rel_wtrlvl %>%
          TSSW_TSUW1 = `TS-SW` - `TS-UW1`,
          TSSW_DKSW = `TS-SW` - `DK-SW`,
          TSSW_NDSW = `TS-SW` - `ND-SW`,
+         TSSW_NDUW3 = `TS-SW` - `ND-UW3`,
+         TSSW_BDSW = `TS-SW` - `BD-SW`,
          DKSW_DKUW1 = `DK-SW` - `DK-UW1`,
          DKSW_DKUW2 = `DK-SW` - `DK-UW2`,
          DKSW_DKCH = `DK-SW` - `DK-CH`, 
+         DKSW_TSCH = `DK-SW` - `TS-CH`,
          NDSW_DKSW = `ND-SW` - `DK-SW`,
+         NDSW_TSUW1 = `ND-SW` - `TS-UW1`,
          NDSW_DKCH = `ND-SW` - `DK-CH`,
          NDSW_NDUW1 = `ND-SW` - `ND-UW1`,
          NDSW_NDUW2 = `ND-SW` - `ND-UW2`,
@@ -133,10 +139,22 @@ JL_heads <- JL_rel_wtrlvl %>%
   select(-c("DK-SW", "DK-CH", "DK-UW1", "DK-UW2", "TS-CH", "TS-SW", "TS-UW1", 
             "BD-SW", "BD-CH", "ND-SW", "ND-UW1", "ND-UW2", "ND-UW3"))
 
+#Pair daily mean water level to the head gradients
+temp <- df %>% 
+  filter(Catchment == "Jackson Lane") %>% 
+  select(Date, dly_mean_wtrlvl_allsites) 
+
+JL_heads <- left_join(JL_heads, temp)
+
+#Remove temp
+rm(temp)
+
+#Pivot to the long format
 JL_heads_long <- JL_heads %>% 
   pivot_longer(cols = -c(Date),
                names_to = "Site_IDs",
                values_to = "Head_diff_m")
+
 
 # 6.2 Baltimore Corner calcs ----------------------------------------------------
 
@@ -169,17 +187,38 @@ BC_heads <- BC_rel_wtrlvl %>%
   select(-c("TP-CH", "HB-CH", "HB-SW", "HB-UW1", "MB-CH", "MB-SW", "MB-UW1", "OB-CH",
             "OB-SW", "OB-UW1", "XB-SW", "XB-UW1", "XB-CH"))
 
-#Pivot data longer for ggplot
+#Pair daily mean water level to the head gradients
+temp <- df %>%
+  filter(Catchment == "Baltimore Corner") %>%
+  select(Date, dly_mean_wtrlvl_allsites)
+
+BC_heads <- left_join(BC_heads, temp)
+
+#Remove temp
+rm(temp)
+
+#Pivot data to the long format
 BC_heads_long <- BC_heads %>% 
   pivot_longer(cols = -c(Date),
                names_to = "Site_IDs",
                values_to = "Head_diff_m")
 
+
 # 7.0 Export data ---------------------------------------------------------
 
 write_csv(df, file = paste0(data_dir, "output//Rel_wtr_lvls.csv"))
 
+#Clean up NA's and duplicates before writing .csv
+JL_heads_long <- JL_heads_long  %>% 
+  filter(!is.na(Head_diff_m)) %>% 
+  unique()
+
 write_csv(JL_heads_long, file = paste0(data_dir, "output//JL_head_diffs.csv"))
+
+#Clean up NA's and duplicates before writing .csv
+BC_heads_long  <- BC_heads_long  %>% 
+  filter(!is.na(Head_diff_m)) %>% 
+  unique()
 
 write_csv(BC_heads_long, file = paste0(data_dir, "output//BC_head_diffs.csv"))
 
