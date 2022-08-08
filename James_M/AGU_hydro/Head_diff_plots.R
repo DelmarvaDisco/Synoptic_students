@@ -15,6 +15,7 @@ remove(list = ls())
 
 library(readxl)
 library(RColorBrewer)
+library(ggrepel)
 library(cowplot)
 library(stringr)
 library(lubridate)
@@ -91,7 +92,6 @@ ts_quick_plot <- function(data, y_var, color_var, title) {
                  names_to = "Sites",
                  values_to = "meters")
 
-
   #Done with data wrangling, time to plot!!!
   ts_plot <- ggplot(data = data, 
                     aes(x = Date,
@@ -112,7 +112,7 @@ ts_quick_plot <- function(data, y_var, color_var, title) {
           legend.text = element_text(size = 14,
                                      face = "bold")) +
     guides(color = guide_legend(override.aes = list(size = 10))) +
-    ggtitle({{title}})
+    ggtitle({{title}}) 
   
   return(ts_plot)
   (ts_plot)
@@ -149,6 +149,44 @@ JL_UW_elheads <- ts_quick_plot(data = df %>%
 #Print the plot
 (JL_UW_elheads)
 
+#All sites colored by well type
+#Quick plot function won't work here
+JL_all_eheads <- ggplot(data = df %>% filter(Catchment == "Jackson Lane"),
+                        mapping = aes(x = Date, 
+                                      y = Wtrlvl_rel_datum,
+                                      shape = Site_ID,
+                                      color = well_type)) +
+  geom_line(size = 1) +
+  geom_label_repel(data = df %>% filter(Date == max(Date)),
+                   aes(label = Site_ID),
+                   min.segment.length = 0.05,
+                   direction = "y") +
+  geom_label_repel(data = df %>% 
+                     filter(Catchment == "Jackson Lane") %>% 
+                     filter(Date == median(Date)),
+                   aes(label = Site_ID),
+                   min.segment.length = 0.05,
+                   direction = "y") +
+  geom_label_repel(data = df %>% 
+                     filter(Catchment == "Jackson Lane") %>% 
+                     filter(Date == "2021-04-15 12:00:00"),
+                   aes(label = Site_ID),
+                   min.segment.length = 0.05,
+                   direction = "y") +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        plot.title = element_text(size = 28),
+        axis.text = element_text(size = 18,
+                                 face = "bold"),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 16),
+        legend.text = element_text(size = 14,
+                                   face = "bold")) +
+  ggtitle("All Elevation Heads at Jackson Lane by Well Type") +
+  ylab("Wtrlvl Relative to DK-SW Bottom (m)")
+  
+(JL_all_eheads)
+
 # 3.2 Baltimore Corner Elevation Head Time series ----------------------------------------------------
 
 BC_SW_CH_elheads <- ts_quick_plot(data = df %>% 
@@ -172,12 +210,63 @@ BC_UW_elheads <- ts_quick_plot(data = df %>%
 #Print the plot
 (BC_UW_elheads)
 
+#Baltimore Corner Elevation Heads by well type
+#Quick plot function doesn't work...
+BC_all_eheads <- ggplot(data = df %>% filter(Catchment == "Baltimore Corner"),
+                        mapping = aes(x = Date, 
+                                      y = Wtrlvl_rel_datum,
+                                      shape = Site_ID,
+                                      color = well_type)) +
+  geom_line(size = 1) +
+  geom_label_repel(data = df %>% 
+                     filter(Catchment == "Baltimore Corner") %>% 
+                     filter(Date == max(Date)),
+                   aes(label = Site_ID),
+                   min.segment.length = 0.05,
+                   direction = "y") +
+  geom_label_repel(data = df %>% 
+                     filter(Catchment == "Baltimore Corner") %>% 
+                     filter(Date == median(Date)),
+                   aes(label = Site_ID),
+                   min.segment.length = 0.05,
+                   direction = "y") +
+  geom_label_repel(data = df %>% 
+                     filter(Catchment == "Baltimore Corner") %>% 
+                     filter(Date == "2021-03-15 12:00:00"),
+                   aes(label = Site_ID),
+                   min.segment.length = 0.05,
+                   direction = "y") +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        plot.title = element_text(size = 28),
+        axis.text = element_text(size = 18,
+                                 face = "bold"),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 16),
+        legend.text = element_text(size = 14,
+                                   face = "bold")) +
+  ggtitle("All Elevation Heads at Baltimore Corner by Well Type") +
+  ylab("Wtrlvl Relative to TP-CH Bottom (m)")
+
+(BC_all_eheads)
+
 #Clean up environment
 rm(BC_SW_CH_elheads, BC_UW_elheads, JL_SW_CH_elheads, JL_UW_elheads)
 
 
 
 # 3.4 JL Head Difference Timeseries ------------------------------------------
+
+#Baby Doll Individually
+BD_head_ts <- ts_quick_plot(data = JL_head_diffs %>% 
+                              filter(Site_IDs %in% c("BDSW_DKSW", "BDSW_BDCH", "BDSW_TSSW",
+                                                     "BDSW_TSUW1")),
+                            y_var = Head_diff_m,
+                            color_var = Site_IDs,
+                            title = "Head differences between BD-SW & Adjacent Wells")
+
+#View plot
+(BD_head_ts)
 
 #North Dog Bone Individually
 ND_heads_ts <- ts_quick_plot(data = JL_head_diffs %>% 
@@ -191,9 +280,8 @@ ND_heads_ts <- ts_quick_plot(data = JL_head_diffs %>%
 
 #Treestand Individually
 TS_heads_ts <- ts_quick_plot(data = JL_head_diffs %>% 
-                               filter(Site_IDs %in% c("TSSW_DKSW", "TSSW_TSUW1", "TSSW_BDCH", 
-                                                      "TSSW_TSCH", "TSSW_BDSW", "TSSW_NDSW",
-                                                      "TSSW_NDUW3")),
+                               filter(Site_IDs %in% c("TSSW_TSUW1", "TSSW_BDCH", "TSSW_TSCH", 
+                                                      "TSSW_DKUW1", "TSSW_DKSW")),
                              y_var = Head_diff_m, 
                              color_var = Site_IDs,
                              title = "Head differences between TS-SW & Adjacent Wells ")
