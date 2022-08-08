@@ -77,7 +77,7 @@ BC_aggregate_wtrlvl <- ggplot(data = BC_head_diffs %>% filter(Site_IDs == "dly_m
 
 rm(JL_aggregate_wtrlvl, BC_aggregate_wtrlvl)
 
-# 3.0 Time Series of Heads -------------------------------------
+# 3.0 Plotting function for timeseries data -------------------------------------
 
 #Quick time series ggplot function might be helpful later
 ts_quick_plot <- function(data, y_var, color_var, title) {
@@ -119,7 +119,7 @@ ts_quick_plot <- function(data, y_var, color_var, title) {
   
 }
 
-# 3.1 Jackson Lane Elevation Heads Time series --------------------------------------------------------
+# 3.1 Jackson Lane elevation heads time series --------------------------------------------------------
 
 #Look at time series of head gradients relative to outlets. 
 JL_SW_CH_elheads <- ts_quick_plot(data = df %>% 
@@ -149,7 +149,10 @@ JL_UW_elheads <- ts_quick_plot(data = df %>%
 #Print the plot
 (JL_UW_elheads)
 
-#All sites colored by well type
+
+# 3.2 All JL sites colored by well type -----------------------------------
+
+
 #Quick plot function won't work here
 JL_all_eheads <- ggplot(data = df %>% filter(Catchment == "Jackson Lane"),
                         mapping = aes(x = Date, 
@@ -184,15 +187,16 @@ JL_all_eheads <- ggplot(data = df %>% filter(Catchment == "Jackson Lane"),
                                    face = "bold")) +
   ggtitle("All Elevation Heads at Jackson Lane by Well Type") +
   ylab("Wtrlvl Relative to DK-SW Bottom (m)")
-  
+
+#View plot
 (JL_all_eheads)
 
-# 3.2 Baltimore Corner Elevation Head Time series ----------------------------------------------------
+# 3.3 Baltimore corner elevation head time series ----------------------------------------------------
 
 BC_SW_CH_elheads <- ts_quick_plot(data = df %>% 
                                     filter(Site_ID %in% c("TP-CH", "HB-SW", "MB-SW",
                                                           "XB-SW", "OB-SW", "MB-CH",
-                                                          "OB-CH", "HB-CH")), 
+                                                          "OB-CH", "HB-CH", "XB-CH")), 
                                   y_var = Wtrlvl_rel_datum,
                                   color_var = Site_ID, 
                                   title = "SW & CH elevation heads (m) relative to datum at TP-CH")
@@ -210,8 +214,9 @@ BC_UW_elheads <- ts_quick_plot(data = df %>%
 #Print the plot
 (BC_UW_elheads)
 
-#Baltimore Corner Elevation Heads by well type
-#Quick plot function doesn't work...
+
+# 3.4 All BC heads by well type -------------------------------------------
+
 BC_all_eheads <- ggplot(data = df %>% filter(Catchment == "Baltimore Corner"),
                         mapping = aes(x = Date, 
                                       y = Wtrlvl_rel_datum,
@@ -255,7 +260,9 @@ rm(BC_SW_CH_elheads, BC_UW_elheads, JL_SW_CH_elheads, JL_UW_elheads)
 
 
 
-# 3.4 JL Head Difference Timeseries ------------------------------------------
+
+# 4.0 Head difference time series ----------------------------------------------
+# 4.1 JL Head difference time series ------------------------------------------
 
 #Baby Doll Individually
 BD_head_ts <- ts_quick_plot(data = JL_head_diffs %>% 
@@ -284,7 +291,7 @@ TS_heads_ts <- ts_quick_plot(data = JL_head_diffs %>%
                                                       "TSSW_DKUW1", "TSSW_DKSW")),
                              y_var = Head_diff_m, 
                              color_var = Site_IDs,
-                             title = "Head differences between TS-SW & Adjacent Wells ")
+                             title = "Head differences between TS-SW & Adjacent Wells")
 
 #View the plot
 (TS_heads_ts)
@@ -295,55 +302,42 @@ DK_heads_ts <- ts_quick_plot(data = JL_head_diffs %>%
                                                       "DKSW_TSCH")),
                              y_var = Head_diff_m, 
                              color_var = Site_IDs,
-                             title = "Head differences between DK, Upland Wells & Channels")
+                             title = "Head differences between DK-SW & adjacent sites")
 #View plot 
 (DK_heads_ts)
 
+#Surface water head differences. 
 JLSW_heads_ts <- ts_quick_plot(data = JL_head_diffs %>% 
-                               filter(Site_IDs %in% c("TSSW_DKSW", "NDSW_DKSW", "BDSW_DKSW",
-                                                      "dly_mean_wtrlvl_allsites")),
+                               filter(Site_IDs %in% c("TSSW_DKSW", "NDSW_DKSW", "BDSW_TSSW", "BDSW_DKSW")),
                              y_var = Head_diff_m, 
                              color_var = Site_IDs,
                              title = "Head differences between DK-SW and other Jackson Lane SW sites")
 #View plot
 (JLSW_heads_ts)
 
-rm(TS_heads_ts, ND_heads_ts, DK_heads_ts, JLSW_heads_ts)
+#Upland well head differences. 
+JLUW_head_ts <- ts_quick_plot(data = JL_head_diffs %>% 
+                                filter(Site_IDs %in% c("DKUW2_DKUW1", "DKUW2_TSUW1", "DKUW2_NDUW3", 
+                                                       "DKUW2_NDUW2", "DKUW2_NDUW1", "DKUW2_TSCH", "DKUW2_BDCH")),
+                              y_var = Head_diff_m, 
+                              color_var = Site_IDs, 
+                              title = "Head diff btwn DK-UW2 and other UW & CH sites")
+
+(JLUW_head_ts)
+
+rm(TS_heads_ts, ND_heads_ts, DK_heads_ts, JLSW_heads_ts, JLUW_head_ts)
 
 
-# 3.5 BC Head Diff Time Series Plots ---------------------------------------
+# 4.2 BC head diff time series plots ---------------------------------------
 
 
 
+# 5.0 See correlations between head gradients and water levels ------------
 
-# 4.0 See correlations between head gradients and water levels ------------
+# 5.1 Jackson Lane correlations ----------------------------------------------------
 
-# 4.1 Baltimore Corner Correlations ----------------------------------------------------
+# 5.2 Baltimore Corner correlations --------------------------------------------------------
 
-
-
-# 4.2 Jackson Lane Correlations --------------------------------------------------------
-
-JL_heads_wide <- JL_head_diffs %>% 
-  pivot_wider(id_cols = "Date", names_from = "Site_IDs", values_from = "Head_diff_m")
-
-JL_corrs <- JL_heads_wide %>% 
-  pivot_longer(cols = -c("Date", "dly_mean_wtrlvl_allsites"),
-               names_to = "Site_IDs",
-               values_to = "Head_diff_m")
-
-corrs <- ggplot(data = JL_corrs %>% 
-                 filter(Site_IDs %in% c("TSSW_DKSW", 
-                                        "NDSW_DKSW", 
-                                        "BDSW_DKSW")),
-               mapping = aes(x = dly_mean_wtrlvl_allsites, 
-                             y = Head_diff_m)) +
-  geom_point() +
-  theme_bw() +
-  facet_wrap(vars(Site_IDs))
-
-
-(corrs)
 
 
 

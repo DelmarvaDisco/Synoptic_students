@@ -108,6 +108,8 @@ write_csv(df, file = paste0(data_dir, "output//Rel_wtr_lvls"))
 # 5.1 Jackson Lane Calcs --------------------------------------------------------
 
 JL_heads <- JL_rel_wtrlvl %>% 
+#Remove modeled data since its not appropriate for head differences. 
+  filter(!Flag == 1) %>% 
 #Pivot wider to calculate head gradients between site. 
   pivot_wider(id_cols = Date, 
               names_from = Site_ID, 
@@ -132,12 +134,20 @@ JL_heads <- JL_rel_wtrlvl %>%
          DKSW_TSCH = `DK-SW` - `TS-CH`,
          NDSW_DKSW = `ND-SW` - `DK-SW`,
          NDSW_TSUW1 = `ND-SW` - `TS-UW1`,
-         NDSW_DKCH = `ND-SW` - `DK-CH`,
          NDSW_NDUW1 = `ND-SW` - `ND-UW1`,
          NDSW_NDUW2 = `ND-SW` - `ND-UW2`,
          NDSW_NDUW3 = `ND-SW` - `ND-UW3`,
          NDUW1_NDUW2 = `ND-UW1` - `ND-UW2`,
-         NDUW3_TSUW1 = `ND-UW3` - `TS-UW1`) %>% 
+         NDUW1_NDUW3 = `ND-UW1` - `ND-UW3`,
+         NDUW3_TSUW1 = `ND-UW3` - `TS-UW1`,
+      #Looking at only GW head gradients
+         DKUW2_DKUW1 = `DK-UW2` - `DK-UW1`,
+         DKUW2_TSUW1 = `DK-UW2` - `TS-UW1`,
+         DKUW2_NDUW3 = `DK-UW2` - `ND-UW3`,
+         DKUW2_NDUW2 = `DK-UW2` - `ND-UW2`,
+         DKUW2_NDUW1 = `DK-UW2` - `ND-UW1`,
+         DKUW2_TSCH = `DK-UW2` - `TS-CH`,
+         DKUW2_BDCH = `DK-UW2` - `BD-CH`) %>% 
   select(-c("DK-SW", "DK-CH", "DK-UW1", "DK-UW2", "TS-CH", "TS-SW", "TS-UW1", 
             "BD-SW", "BD-CH", "ND-SW", "ND-UW1", "ND-UW2", "ND-UW3"))
 
@@ -158,9 +168,11 @@ JL_heads_long <- JL_heads %>%
                values_to = "Head_diff_m")
 
 
-# 6.2 Baltimore Corner calcs ----------------------------------------------------
+# 5.2 Baltimore Corner calcs ----------------------------------------------------
 
 BC_heads <- BC_rel_wtrlvl %>% 
+  #Remove modeled data since its not appropriate for head differences. 
+  filter(!Flag == 1) %>% 
   #Need to pivot_wider to calculate gradients
   pivot_wider(id_cols = Date, 
               names_from = Site_ID,
@@ -205,6 +217,10 @@ BC_heads_long <- BC_heads %>%
                names_to = "Site_IDs",
                values_to = "Head_diff_m")
 
+
+# 6.0 Designate relationships for head types ------------------------------
+
+# !!! Get some input from hydro group before writing the intricate function. 
 
 # 7.0 Export data ---------------------------------------------------------
 
