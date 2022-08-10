@@ -101,15 +101,13 @@ BC_rel_wtrlvl <- df %>%
 
 df <- rbind(JL_rel_wtrlvl, BC_rel_wtrlvl)
 
-write_csv(df, file = paste0(data_dir, "output//Rel_wtr_lvls"))
-
 # 5.0 Calculate head gradients between sites ---------------------------------------------------------------------
 
 # 5.1 Jackson Lane Calcs --------------------------------------------------------
 
 JL_heads <- JL_rel_wtrlvl %>% 
 #Remove modeled data since its not appropriate for head differences. 
-  filter(!Flag == 1) %>% 
+  filter(!Flag == 1) %>%
 #Pivot wider to calculate head gradients between site. 
   pivot_wider(id_cols = Date, 
               names_from = Site_ID, 
@@ -147,7 +145,8 @@ JL_heads <- JL_rel_wtrlvl %>%
          DKUW2_NDUW2 = `DK-UW2` - `ND-UW2`,
          DKUW2_NDUW1 = `DK-UW2` - `ND-UW1`,
          DKUW2_TSCH = `DK-UW2` - `TS-CH`,
-         DKUW2_BDCH = `DK-UW2` - `BD-CH`) %>% 
+         DKUW2_BDCH = `DK-UW2` - `BD-CH`,
+         DKSW_BDSW = `DK-SW` - `BD-SW`) %>% 
   select(-c("DK-SW", "DK-CH", "DK-UW1", "DK-UW2", "TS-CH", "TS-SW", "TS-UW1", 
             "BD-SW", "BD-CH", "ND-SW", "ND-UW1", "ND-UW2", "ND-UW3"))
 
@@ -163,7 +162,7 @@ rm(temp)
 
 #Pivot to the long format
 JL_heads_long <- JL_heads %>% 
-  pivot_longer(cols = -c(Date),
+  pivot_longer(cols = -c(Date, dly_mean_wtrlvl_allsites),
                names_to = "Site_IDs",
                values_to = "Head_diff_m")
 
@@ -172,7 +171,7 @@ JL_heads_long <- JL_heads %>%
 
 BC_heads <- BC_rel_wtrlvl %>% 
   #Remove modeled data since its not appropriate for head differences. 
-  filter(!Flag == 1) %>% 
+  filter(!Flag == 1) %>%
   #Need to pivot_wider to calculate gradients
   pivot_wider(id_cols = Date, 
               names_from = Site_ID,
@@ -213,7 +212,7 @@ rm(temp)
 
 #Pivot data to the long format
 BC_heads_long <- BC_heads %>% 
-  pivot_longer(cols = -c(Date),
+  pivot_longer(cols = -c(Date, dly_mean_wtrlvl_allsites),
                names_to = "Site_IDs",
                values_to = "Head_diff_m")
 

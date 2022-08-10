@@ -14,8 +14,9 @@
 remove(list = ls())
 
 library(readxl)
-library(RColorBrewer)
+library(broom)
 library(ggrepel)
+library(RColorBrewer)
 library(cowplot)
 library(stringr)
 library(lubridate)
@@ -37,9 +38,9 @@ BC_head_diffs <- read_csv(paste0(data_dir, "BC_head_diffs.csv"))
 
 #Make a quick plot with aggregated water level at JL
 
-JL_aggregate_wtrlvl <- ggplot(data = JL_head_diffs %>% filter(Site_IDs == "dly_mean_wtrlvl_allsites"),
+JL_aggregate_wtrlvl <- ggplot(data = JL_head_diffs,
                               aes(x = Date,
-                                  y = Head_diff_m)) +
+                                  y = dly_mean_wtrlvl_allsites)) +
   geom_line(color = "black",
             size = 2) +
   theme_bw() +
@@ -57,9 +58,9 @@ JL_aggregate_wtrlvl <- ggplot(data = JL_head_diffs %>% filter(Site_IDs == "dly_m
 
 #Make a quick plot with aggregated water level at BC
 
-BC_aggregate_wtrlvl <- ggplot(data = BC_head_diffs %>% filter(Site_IDs == "dly_mean_wtrlvl_allsites"),
+BC_aggregate_wtrlvl <- ggplot(data = BC_head_diffs,
                               aes(x = Date,
-                                  y = Head_diff_m)) +
+                                  y = dly_mean_wtrlvl_allsites)) +
   geom_line(color = "black",
             size = 2) +
   theme_bw() +
@@ -74,6 +75,8 @@ BC_aggregate_wtrlvl <- ggplot(data = BC_head_diffs %>% filter(Site_IDs == "dly_m
   ggtitle("Aggregated Water Levels All BC Sites")
 
 (BC_aggregate_wtrlvl)
+
+#Clean up workspace
 
 rm(JL_aggregate_wtrlvl, BC_aggregate_wtrlvl)
 
@@ -149,9 +152,9 @@ JL_UW_elheads <- ts_quick_plot(data = df %>%
 #Print the plot
 (JL_UW_elheads)
 
+rm(JL_SW_CH_elheads, JL_UW_elheads)
 
 # 3.2 All JL sites colored by well type -----------------------------------
-
 
 #Quick plot function won't work here
 JL_all_eheads <- ggplot(data = df %>% filter(Catchment == "Jackson Lane"),
@@ -191,6 +194,8 @@ JL_all_eheads <- ggplot(data = df %>% filter(Catchment == "Jackson Lane"),
 #View plot
 (JL_all_eheads)
 
+rm(JL_all_eheads)
+
 # 3.3 Baltimore corner elevation head time series ----------------------------------------------------
 
 BC_SW_CH_elheads <- ts_quick_plot(data = df %>% 
@@ -214,6 +219,8 @@ BC_UW_elheads <- ts_quick_plot(data = df %>%
 #Print the plot
 (BC_UW_elheads)
 
+#Clean up environment
+rm(BC_SW_CH_elheads, BC_UW_elheads)
 
 # 3.4 All BC heads by well type -------------------------------------------
 
@@ -256,10 +263,7 @@ BC_all_eheads <- ggplot(data = df %>% filter(Catchment == "Baltimore Corner"),
 (BC_all_eheads)
 
 #Clean up environment
-rm(BC_SW_CH_elheads, BC_UW_elheads, JL_SW_CH_elheads, JL_UW_elheads)
-
-
-
+rm(BC_all_eheads)
 
 # 4.0 Head difference time series ----------------------------------------------
 # 4.1 JL Head difference time series ------------------------------------------
@@ -325,7 +329,7 @@ JLUW_head_ts <- ts_quick_plot(data = JL_head_diffs %>%
 
 (JLUW_head_ts)
 
-rm(TS_heads_ts, ND_heads_ts, DK_heads_ts, JLSW_heads_ts, JLUW_head_ts)
+rm(TS_heads_ts, ND_heads_ts, DK_heads_ts, JLSW_heads_ts, JLUW_head_ts, BD_head_ts)
 
 
 # 4.2 BC head diff time series plots ---------------------------------------
@@ -334,7 +338,131 @@ rm(TS_heads_ts, ND_heads_ts, DK_heads_ts, JLSW_heads_ts, JLUW_head_ts)
 
 # 5.0 See correlations between head gradients and water levels ------------
 
+#Read in the head relationships file
+Head_relationships <- read_xlsx(paste0(data_dir, "Head_relationships.xlsx"))
+
+JL_head_diffs <- left_join(JL_head_diffs, Head_relationships, by = "Site_IDs")
+
+corr_plot_fun <- function(data) {
+  
+  data <- {{data}} 
+  
+  models <- data %>% 
+    group_by(Site_IDs) %>% 
+    nest() %>% 
+    mutate(gradient_models = map(.x = data, 
+                                 ~lm(Head_diff_m ~ dly_mean_wtrlvl_allsites,
+                                     data = .x) %>% 
+                                   tidy())) %>% 
+    unnest(gradient_models) %>% 
+    select(-c(data)) %>% 
+    as_tibble() %>% 
+    filter(term == "dly_mean_wtrlvl_allsites")
+  
+  stats <- data %>% 
+    group_by(Site_IDs) %>% 
+    nest() %>% 
+    mutate(gradient_stats = map(.x = data, 
+                                ~lm(Head_diff_m ~ dly_mean_wtrlvl_allsites, 
+                                    data = .x) %>% 
+                                  glance())) %>%
+    unnest(gradient_stats) %>% 
+    select(-c(data)) %>% 
+    as_tibble()
+  
+  data <- data %>% 
+    mutate(month_yr = as.numeric(str_sub(Date, 6, 7)))
+  
+  corr_plot <- ggplot() +
+    geom_point(data = data,
+               mapping = aes(x = dly_mean_wtrlvl_allsites,
+                             y = Head_diff_m,
+                             color = month_yr)) +
+    geom_text(data = stats,
+               aes(label = paste0("r^2 = ", round(r.squared, digits = 2))),
+               x = -Inf, y = Inf, hjust = -0.2, vjust = 1.2,
+               inherit.aes = FALSE,
+              color = "red",
+              size = 8) +
+    geom_text(data = models,
+               aes(label = paste0("slope = ", round(estimate, digits = 2))),
+               x = -Inf, y = Inf, hjust = -0.1, vjust = 2.5,
+               inherit.aes = FALSE,
+              color = "red",
+              size = 8) +
+    geom_hline(yintercept = 0, 
+               size = 2, 
+               color = "#993300") +
+    theme_bw() +
+    xlab("Daily mean water lvl (m)") +
+    ylab("Head differenc (m)") +
+    theme(panel.grid = element_blank(),
+          axis.text = element_text(size = 18,
+                                   face = "bold"),
+          axis.title.x = element_text(size = 16),
+          axis.title.y = element_text(size = 16),
+          legend.text = element_text(size = 14,
+                                     face = "bold"),
+          strip.text = element_text(size = 18,
+                                    face = "bold"),
+          title = element_text(size = 24)) +
+    guides(color = guide_legend(override.aes = list(size = 10))) +
+    facet_wrap(vars(Site_IDs),
+               scales = "free") +
+    ggtitle("Aggregate water level and head differences correlations")
+  
+  return(corr_plot)
+  
+}
+
 # 5.1 Jackson Lane correlations ----------------------------------------------------
+
+#Correlations between SW sites
+JL_SW_corrs <- corr_plot_fun(data = JL_head_diffs %>% 
+                               filter(Site_IDs %in% c("BDSW_DKSW", "BDSW_TSSW", 
+                                                        "NDSW_DKSW", "TSSW_DKSW")))
+
+(JL_SW_corrs)
+
+#Correlations between UW sites
+JL_UW_corrs <- corr_plot_fun(data = JL_head_diffs %>% 
+                               filter(Site_IDs %in% c("DKUW2_BDCH", "DKUW2_DKUW1", "DKUW2_NDUW1",
+                                                      "DKUW2_NDUW2", "DKUW2_NDUW3", "DKUW2_TSCH", 
+                                                      "DKUW2_TSUW1")))
+
+(JL_UW_corrs)
+
+#Correlations around BD-SW
+BDSW_corrs <- corr_plot_fun(data =  JL_head_diffs %>%
+                              filter(Site_IDs %in% c("BDSW_BDCH", "BDSW_DKSW", 
+                                                     "BDSW_TSSW", "BDSW_TSUW1")))
+
+(BDSW_corrs)
+
+#Correlations around ND-SW
+NDSW_corrs <- corr_plot_fun(JL_head_diffs %>% 
+                               filter(Site_IDs %in% c("NDSW_NDUW1", "NDSW_NDUW2",
+                                                      "NDSW_NDUW3", "NDSW_TSUW1")))
+
+(NDSW_corrs)
+
+#Correlations around TS-SW
+TSSW_corrs <- corr_plot_fun(JL_head_diffs %>% 
+                              filter(Site_IDs %in% c("TSSW_BDCH", "TSSW_DKUW1", 
+                                                     "TSSW_TSCH", "TSSW_TSUW1")))
+
+(TSSW_corrs)
+
+#Correlations around DK-SW
+DKSW_corrs <- corr_plot_fun(JL_head_diffs %>% 
+                              filter(Site_IDs %in% c("DKSW_DKCH", "DKSW_DKUW1", "DKSW_DKUW2",
+                                                     "DKSW_TSCH", "DKSW_BDSW")))
+
+(DKSW_corrs)
+
+#Clean up environment 
+rm(JL_SW_corrs, JL_UW_corrs, BDSW_corrs, NDSW_corrs, TSSW_corrs, DKSW_corrs)
+
 
 # 5.2 Baltimore Corner correlations --------------------------------------------------------
 
