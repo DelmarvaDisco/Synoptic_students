@@ -80,18 +80,27 @@ BC_aggregate_wtrlvl <- ggplot(data = BC_head_diffs,
 
 rm(JL_aggregate_wtrlvl, BC_aggregate_wtrlvl)
 
-# 3.0 Plotting function for timeseries data -------------------------------------
+# 3.0 Plotting function for time series data -------------------------------------
 
 #Quick time series ggplot function might be helpful later
 ts_quick_plot <- function(data, y_var, color_var, title) {
   
   #This step adds na's to missing timesteps.
   #Prevents geom_line from arbitrarily drawing lines between data gaps. 
-  data <- data %>%
-    pivot_wider(id_cols = Date,
+  
+  ts <- seq.POSIXt(as.POSIXct("2021-03-01"), as.POSIXct("2022-05-01"), by = "day")
+  
+  ts <- format.POSIXct(ts, "%Y-%m-%d")
+  
+  ts <- data.frame(Date = ymd(ts))
+  
+  data <- full_join(ts, data)
+  
+  data <- {{data}} %>%
+    pivot_wider(id_cols = c(Date, dly_mean_wtrlvl_allsites),
                 names_from = {{color_var}},
                 values_from = {{y_var}}) %>%
-    pivot_longer(cols = -c(Date),
+    pivot_longer(cols = -c(Date, dly_mean_wtrlvl_allsites),
                  names_to = "Sites",
                  values_to = "meters")
 
@@ -118,6 +127,9 @@ ts_quick_plot <- function(data, y_var, color_var, title) {
     ggtitle({{title}}) 
   
   return(ts_plot)
+  
+  return(data)
+  
   (ts_plot)
   
 }
@@ -334,7 +346,30 @@ rm(TS_heads_ts, ND_heads_ts, DK_heads_ts, JLSW_heads_ts, JLUW_head_ts, BD_head_t
 
 # 4.2 BC head diff time series plots ---------------------------------------
 
+OB_SW_head_ts <- ts_quick_plot(data = BC_head_diffs %>% 
+                                 filter(Site_IDs %in% c("OBSW_OBUW1", "OBSW_OBCH", "OBSW_MBSW",
+                                                        "OBSW_MBUW1", "OBSW_HBSW")),
+                               y_var = Head_diff_m, 
+                               color_var = Site_IDs, 
+                               title = "Head diff btwn OB-SW and adjacent wells")
+#View the plot 
+(OB_SW_head_ts)
 
+MB_SW_head_ts <- ts_quick_plot(data = BC_head_diffs %>% 
+                                 filter(Site_IDs %in% c("MBSW_MBCH", "MBSW_MBUW1", "MBSW_OBCH", 
+                                                        "MBSW_XBSW", "MBSW_HBSW", "MBSW_XBUW1")),
+                               y_var = Head_diff_m,
+                               color_var = Site_IDs,
+                               title = "Head diff btwn MB-SW and adjacent wells")
+
+#view
+(MB_SW_head_ts)
+
+
+#Clean up workspace
+rm(OB_SW_head_ts, MB_SW_head_ts)
+
+  
 
 # 5.0 See correlations between head gradients and water levels ------------
 
@@ -343,6 +378,8 @@ Head_relationships <- read_xlsx(paste0(data_dir, "Head_relationships.xlsx"))
 
 JL_head_diffs <- left_join(JL_head_diffs, Head_relationships, by = "Site_IDs")
 
+
+#Ploting function for cross-site correlations
 corr_plot_fun <- function(data) {
   
   data <- {{data}} 

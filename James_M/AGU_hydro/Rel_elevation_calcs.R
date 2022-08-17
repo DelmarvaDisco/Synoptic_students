@@ -172,6 +172,10 @@ JL_heads_long <- JL_heads %>%
 BC_heads <- BC_rel_wtrlvl %>% 
   #Remove modeled data since its not appropriate for head differences. 
   filter(!Flag == 1) %>%
+  #Remove points where specific wells dried out
+  filter(!(Site_ID == "TP-CH" & dly_mean_wtrlvl < -0.28)) %>% 
+  filter(!(Site_ID == "OB-UW1" & dly_mean_wtrlvl < -1.57)) %>% 
+  filter(!(Site_ID == "MB-UW1" & dly_mean_wtrlvl < -1.43)) %>% 
   #Need to pivot_wider to calculate gradients
   pivot_wider(id_cols = Date, 
               names_from = Site_ID,
@@ -191,9 +195,14 @@ BC_heads <- BC_rel_wtrlvl %>%
          MBSW_XBUW1 = `MB-SW` - `XB-UW1`,
          MBSW_XBSW = `MB-SW` - `XB-SW`,
          MBSW_OBCH = `MB-SW` - `OB-CH`,
+         MBSW_HBSW = `MB-SW` - `HB-SW`,
+         OBSW_MBSW = `OB-SW` - `MB-SW`,
          OBCH_OBSW = `OB-CH` - `OB-SW`,
          OBSW_OBCH = `OB-SW` - `OB-CH`,
          OBSW_OBUW1 = `OB-SW` - `OB-UW1`,
+         OBSW_MBUW1 = `OB-SW` - `MB-UW1`,
+         OBSW_TPCH = `OB-SW` - `TP-CH`,
+         OBSW_HBSW = `OB-SW` - `HB-SW`,
          XBSW_MBSW = `XB-SW` - `MB-SW`,
          XBSW_XBUW1 = `XB-SW` - `XB-UW1`,
          XBSW_XBCH = `XB-SW` - `XB-CH`) %>% 
