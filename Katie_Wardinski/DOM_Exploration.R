@@ -11,6 +11,9 @@
 #clear environment
 remove(list=ls())
 
+#set working directory
+setwd("C:/Workspace/Synoptic_students/Katie_Wardinski")
+
 #load relevant packages
 library(tidyverse)
 library(ggplot2)
@@ -110,7 +113,8 @@ df %>%
   xlab(element_blank())+
   theme_classic()+
   theme(axis.title.y = element_text(size = 14),
-        axis.text = element_text(size = 10))
+        axis.text.y = element_text(size = 12),
+        axis.text.x = element_text(size = 10))
 
 #filter to just one property
 df %>% 
