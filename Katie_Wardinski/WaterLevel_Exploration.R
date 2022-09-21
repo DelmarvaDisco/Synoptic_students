@@ -248,12 +248,13 @@ OB_sa <- sa %>% filter(Site_ID == "OB-SW") %>% filter(z < 0.58)
 #stage - area is roughly linear
 OB_sa %>% 
   ggplot(aes(z,area_m))+
-  geom_point()+
+  geom_point(size=2)+
   xlab("Water Depth (m)")+
   ylab("Area (m2)")+
   geom_smooth(method = 'lm',se=FALSE)+
   stat_regline_equation(label.x = 0.2)+
-  stat_cor()#+
+  stat_cor()+
+  theme(axis.text = element_text(size = 14))
   #geom_abline(slope = coef(area_model)[["z"]], 
               #intercept = coef(area_model)[["(Intercept)"]])
 
