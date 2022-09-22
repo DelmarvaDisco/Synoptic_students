@@ -6,7 +6,8 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Notes:
-#  - Cut out the modeled data from gap-filling?
+#  - Cut out the modeled data from gap-filling? YES
+#  - Need to talk to Nate about geospatial work. Did I use the right projection?
 
 # 1.0 Libraries and packages -----------------------------------------------
 
@@ -15,6 +16,7 @@ remove(list = ls())
 library(readxl)
 library(stringr)
 library(lubridate)
+library(sf)
 library(tidyverse)
 
 data_dir <- "data\\AGU_hydro\\"
@@ -34,7 +36,7 @@ survey_data <- read_xlsx(paste0(data_dir, "input\\Relative_elevations.xlsx")) %>
   mutate(Elevation_m = Elevation_cm/100) %>% 
   select(-Elevation_cm)
 
-#Since the site data is on multiple sheets, its a pain to read. 
+#Since the site data is on multiple sheets, its a little extra work to read. 
 site_data_path <- paste0(data_dir, "input\\Site_directory_core.xlsx")
 #Separate sheets converted into a list.
 sheet_names <- excel_sheets(path = site_data_path)  
@@ -73,17 +75,22 @@ df <- left_join(df, site_data, by = c("Site_ID", "Catchment")) %>%
   mutate(Flag = as.factor(Flag))
 
 #Clean up the environment
-rm(water_levels, survey_data, site_data)
+rm(water_levels, survey_data)
 
 # 4.0 Calculate the elevation head to datum and aggregate wtr lvls--------------------------------------------------------------------
+
+#Need to calculate the elevation heads separately for each catchment since they have different datum
 
 # 4.1 Jackson Lane --------------------------------------------------------
 JL_rel_wtrlvl <- df %>% 
   filter(Catchment == "Jackson Lane") %>% 
+  #Apply elevation offset
   mutate(Wtrlvl_rel_datum = dly_mean_wtrlvl + Elevation_m) %>%
+  #Calculate daily mean water level for all sites. Could be helpful later. 
   group_by(Date) %>% 
   mutate(dly_mean_wtrlvl_allsites = mean(dly_mean_wtrlvl)) %>% 
   ungroup() %>% 
+  #Calculate daily mean water level for all sites by well type (SW, CH, GW) in case different behavior is interesting. 
   group_by(well_type, Date) %>% 
   mutate(dly_mean_welltype_wtrlvl = mean(dly_mean_wtrlvl)) %>% 
   ungroup()
@@ -91,24 +98,30 @@ JL_rel_wtrlvl <- df %>%
 # 4.2 Baltimore Corner ----------------------------------------------------
 BC_rel_wtrlvl <- df %>% 
   filter(Catchment == "Baltimore Corner") %>% 
+  #Apply elevation offset
   mutate(Wtrlvl_rel_datum = dly_mean_wtrlvl + Elevation_m) %>% 
+  #Calculate daily mean waterlevel for all sites.
   group_by(Date) %>% 
   mutate(dly_mean_wtrlvl_allsites = mean(dly_mean_wtrlvl)) %>% 
   ungroup() %>% 
+  #Calculate daily mean water level for all sites by well type. 
   group_by(well_type, Date) %>% 
   mutate(dly_mean_welltype_wtrlvl = mean(dly_mean_wtrlvl)) %>% 
   ungroup() 
 
-df <- rbind(JL_rel_wtrlvl, BC_rel_wtrlvl)
+#Get rid of generic variable name
+rm(df)
+#Recombine data frames after calculations.
+Rel_wtr_lvls <- rbind(JL_rel_wtrlvl, BC_rel_wtrlvl)
 
-# 5.0 Calculate head gradients between sites ---------------------------------------------------------------------
+# 5.0 Calculate head differences between sites ---------------------------------------------------------------------
 
-# 5.1 Jackson Lane Calcs --------------------------------------------------------
+# 5.1 Jackson Lane Head Difference Calcs --------------------------------------------------------
 
 JL_heads <- JL_rel_wtrlvl %>% 
 #Remove modeled data since its not appropriate for head differences. 
   filter(!Flag == 1) %>%
-#Pivot wider to calculate head gradients between site. 
+#Pivot wider to calculate head gradients between sites. 
   pivot_wider(id_cols = Date, 
               names_from = Site_ID, 
               values_from = Wtrlvl_rel_datum) %>% 
@@ -147,18 +160,18 @@ JL_heads <- JL_rel_wtrlvl %>%
          DKUW2_TSCH = `DK-UW2` - `TS-CH`,
          DKUW2_BDCH = `DK-UW2` - `BD-CH`,
          DKSW_BDSW = `DK-SW` - `BD-SW`) %>% 
+  #Remove individual site waterlevels so that its only head differences
   select(-c("DK-SW", "DK-CH", "DK-UW1", "DK-UW2", "TS-CH", "TS-SW", "TS-UW1", 
             "BD-SW", "BD-CH", "ND-SW", "ND-UW1", "ND-UW2", "ND-UW3"))
 
-#Pair daily mean water level to the head gradients
-temp <- df %>% 
-  filter(Catchment == "Jackson Lane") %>% 
+#Pair daily mean water level at Jackson Lane to the head gradients data frame.
+temp <- Rel_wtr_lvls %>% 
+  #Select only JL daily mean water level data
+  filter(Catchment == "Jackson Lane") %>%
   select(Date, dly_mean_wtrlvl_allsites) 
 
 JL_heads <- left_join(JL_heads, temp)
 
-#Remove temp
-rm(temp)
 
 #Pivot to the long format
 JL_heads_long <- JL_heads %>% 
@@ -166,16 +179,13 @@ JL_heads_long <- JL_heads %>%
                names_to = "Site_IDs",
                values_to = "Head_diff_m")
 
+rm(JL_heads, temp, JL_rel_wtrlvl)
 
-# 5.2 Baltimore Corner calcs ----------------------------------------------------
+# 5.2 Baltimore Corner head diff calcs ----------------------------------------------------
 
 BC_heads <- BC_rel_wtrlvl %>% 
   #Remove modeled data since its not appropriate for head differences. 
   filter(!Flag == 1) %>%
-  #Remove points where specific wells dried out
-  filter(!(Site_ID == "TP-CH" & dly_mean_wtrlvl < -0.28)) %>% 
-  filter(!(Site_ID == "OB-UW1" & dly_mean_wtrlvl < -1.57)) %>% 
-  filter(!(Site_ID == "MB-UW1" & dly_mean_wtrlvl < -1.43)) %>% 
   #Need to pivot_wider to calculate gradients
   pivot_wider(id_cols = Date, 
               names_from = Site_ID,
@@ -210,29 +220,173 @@ BC_heads <- BC_rel_wtrlvl %>%
             "OB-SW", "OB-UW1", "XB-SW", "XB-UW1", "XB-CH"))
 
 #Pair daily mean water level to the head gradients
-temp <- df %>%
+temp <- Rel_wtr_lvls %>%
   filter(Catchment == "Baltimore Corner") %>%
   select(Date, dly_mean_wtrlvl_allsites)
 
 BC_heads <- left_join(BC_heads, temp)
 
-#Remove temp
-rm(temp)
 
 #Pivot data to the long format
 BC_heads_long <- BC_heads %>% 
   pivot_longer(cols = -c(Date, dly_mean_wtrlvl_allsites),
                names_to = "Site_IDs",
-               values_to = "Head_diff_m")
+               values_to = "Head_diff_m") 
 
+#Clean up the environment!
+rm(BC_heads, temp, BC_rel_wtrlvl)
 
-# 6.0 Designate relationships for head types ------------------------------
+# 6.0 Calculate distance between sites for head gradients ---------------------
+
+#Set a projection for the distance calculation. 
+#!!! Might need to think more about this. Just used same projection that Nate uses. 
+projection <- "+proj=utm +zone=17 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
+
+#Use the projection to get geospatial objects from site data
+points <- site_data %>% 
+  mutate(Longitude = as.numeric(Longitude),
+         Latitude = as.numeric(Latitude)) %>% 
+  #Need to group rowwise to apply st_point to each row
+  st_as_sf(coords = c("Longitude", "Latitude"),
+           crs = '+proj=longlat +datum=WGS84 +no_defs') %>% 
+  st_transform(., projection) 
+
+#function matching notation for head gradients to Site IDs. It ain't pretty, but it gets the job done. 
+gradient_site_matcher <- function(head_differences_long) {
+  
+  temp <- head_differences_long %>% 
+    #Get the 1st Site ID
+    #Subset the 1st site to the left of the _ underscore
+    mutate(SiteID_1st = str_extract(string = Site_IDs, 
+                                    pattern = "(.+)[\\_]")) %>% 
+    #Remove the _ from the end of the string
+    mutate(SiteID_1st = str_extract(string = SiteID_1st,
+                                    pattern = "[:alnum:]+")) %>% 
+    #Add the "-" to match the lat/long data
+    mutate(SiteID_1st = paste0(str_sub(SiteID_1st, 1, 2), "-", str_sub(SiteID_1st, 3, -1L))) %>% 
+    #Get the 2nd Site ID
+    #Subset the 2nd site to the right of the _ underscore
+    mutate(SiteID_2nd = str_extract(string = Site_IDs, 
+                                    pattern = "[\\_](.+)")) %>% 
+    #Remove the _ from the end of the string
+    mutate(SiteID_2nd = str_extract(string = SiteID_2nd,
+                                    pattern = "[:alnum:]+")) %>% 
+    #Add the "-" to match the lat/long data
+    mutate(SiteID_2nd = paste0(str_sub(SiteID_2nd, 1, 2), "-", str_sub(SiteID_2nd, 3, -1L))) 
+    
+  (temp)
+  
+}
+
+# 6.1 JL Distance Calculations --------------------------------------------
+
+#Select the Jackson Lane sites.
+JL_points <- points %>% 
+  filter(Catchment == "Jackson Lane") %>% 
+  #Clean up and rename columns
+  select(-c(Catchment)) %>% 
+  rename("point" = geometry,
+         "Site_ID_temp" = Site_ID)
+
+#Pull 1st and 2nd Site_IDs from each head gradient value using matching function
+JL_dist_sites <- JL_heads_long %>% 
+  #Get unique site ID's so you don't calculate distance for entire time series
+  select(Site_IDs) %>% 
+  unique() %>% 
+  #Use site matching function to get 1st and 2nd sites
+  gradient_site_matcher()
+
+#Match the lat/long points to the 1st and 2nd site IDs
+JL_dist_sites <- JL_dist_sites %>%
+  #Match lat/long to 1st Site ID
+  rename("Site_ID_temp" = SiteID_1st) %>%
+  left_join(., JL_points, by = "Site_ID_temp") %>%
+  #Rename columns accordingly
+  rename("SiteID_1st" = Site_ID_temp,
+         "SiteID_1st_latlong" = point) %>%
+  #Match lat/long to 2nd Site ID
+  rename("Site_ID_temp" = SiteID_2nd) %>%
+  left_join(., JL_points, by = "Site_ID_temp") %>%
+  #Rename columns accordingly
+  rename("SiteID_2nd" = Site_ID_temp,
+         "SiteID_2nd_latlong" = point) 
+
+#Use st_dist to calculate distance between 1st and 2nd site
+JL_dist_sites <- JL_dist_sites %>%
+  rowwise() %>% 
+  mutate(distance_m = st_distance(SiteID_1st_latlong, SiteID_2nd_latlong, by_element = T)) %>% 
+  mutate(distance_m = as.numeric(distance_m)) %>% 
+  select(c(Site_IDs, distance_m))
+
+#Join the distance values to the head differences 
+JL_heads_long <- left_join(JL_heads_long, JL_dist_sites, by = "Site_IDs") 
+
+#Calculate the head gradient (dh/dL)
+JL_heads_long <- JL_heads_long %>% 
+  mutate(gradient = (Head_diff_m / distance_m))
+
+#Clean up environment
+rm(JL_dist_sites, JL_points)
+
+# 6.2 BC Distance Calculations ----------------------------------------------------
+
+#Select Baltimore Corner Sites
+BC_points <- points %>% 
+  filter(Catchment == "Baltimore Corner") %>% 
+  #Clean up and rename columns
+  select(-c(Catchment)) %>% 
+  rename("point" = geometry,
+         "Site_ID_temp" = Site_ID)
+
+#Pull 1st and 2nd Site_IDs from each head gradient value using matching function
+BC_dist_sites <- BC_heads_long %>% 
+  #Get unique site ID's so you don't calculate distance for entire time series
+  select(Site_IDs) %>% 
+  unique() %>% 
+  #Use site matching function to get 1st and 2nd sites
+  gradient_site_matcher()
+
+#Match the lat/long points to the 1st and 2nd site IDs
+BC_dist_sites <- BC_dist_sites %>%
+  #Match lat/long to 1st Site ID
+  rename("Site_ID_temp" = SiteID_1st) %>%
+  left_join(., BC_points, by = "Site_ID_temp") %>%
+  #Rename columns accordingly
+  rename("SiteID_1st" = Site_ID_temp,
+         "SiteID_1st_latlong" = point) %>%
+  #Match lat/long to 2nd Site ID
+  rename("Site_ID_temp" = SiteID_2nd) %>%
+  left_join(., BC_points, by = "Site_ID_temp") %>%
+  #Rename columns accordingly
+  rename("SiteID_2nd" = Site_ID_temp,
+         "SiteID_2nd_latlong" = point) 
+
+#Use st_distance to calculate distance between sites
+BC_dist_sites <- BC_dist_sites %>%
+  rowwise() %>% 
+  mutate(distance_m = st_distance(SiteID_1st_latlong, SiteID_2nd_latlong, by_element = T)) %>% 
+  mutate(distance_m = as.numeric(distance_m)) %>% 
+  select(c(Site_IDs, distance_m))
+
+#Join the distance values to the head differences 
+ BC_heads_long <- left_join(BC_heads_long, BC_dist_sites, by = "Site_IDs") 
+ 
+ #Calculate the head gradient (dh/dL)
+ BC_heads_long <- BC_heads_long %>% 
+   mutate(gradient = (Head_diff_m / distance_m))
+ 
+#Clean up the environment
+rm(gradient_site_matcher, points, BC_points, BC_dist_sites)
+
+# 7.0 Designate relationships for head types ------------------------------
 
 # !!! Get some input from hydro group before writing the intricate function. 
 
-# 7.0 Export data ---------------------------------------------------------
+# 8.0 Export data ---------------------------------------------------------
 
-write_csv(df, file = paste0(data_dir, "output//Rel_wtr_lvls.csv"))
+#Relative water levels csv
+write_csv(Rel_wtr_lvls, file = paste0(data_dir, "output//Rel_wtr_lvls.csv"))
+
 
 #Clean up NA's and duplicates before writing .csv
 JL_heads_long <- JL_heads_long  %>% 
