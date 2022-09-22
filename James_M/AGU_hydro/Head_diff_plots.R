@@ -87,7 +87,6 @@ ts_quick_plot <- function(data, y_var, color_var, title) {
   
   #This step adds na's to missing timesteps.
   #Prevents geom_line from arbitrarily drawing lines between data gaps. 
-  
   ts <- seq.POSIXt(as.POSIXct("2021-03-01"), as.POSIXct("2022-05-01"), by = "day")
   
   ts <- format.POSIXct(ts, "%Y-%m-%d")
@@ -100,6 +99,7 @@ ts_quick_plot <- function(data, y_var, color_var, title) {
     pivot_wider(id_cols = c(Date, dly_mean_wtrlvl_allsites),
                 names_from = {{color_var}},
                 values_from = {{y_var}}) %>%
+    select(-c("NA")) %>% 
     pivot_longer(cols = -c(Date, dly_mean_wtrlvl_allsites),
                  names_to = "Sites",
                  values_to = "meters")
@@ -293,8 +293,8 @@ BD_head_ts <- ts_quick_plot(data = JL_head_diffs %>%
 
 #North Dog Bone Individually
 ND_heads_ts <- ts_quick_plot(data = JL_head_diffs %>% 
-                               filter(Site_IDs %in% c("NDSW_DKSW", "NDSW_NDUW1", "NDSW_NDUW2", 
-                                                      "NDSW_NDUW3", "NDSW_TSUW1")),
+                               filter(Site_IDs %in% c("NDSW_NDUW1", "NDSW_NDUW2", 
+                                                      "NDSW_NDUW3", "NDSW_TSUW1", "NDUW1_NDUW2")),
                              y_var = Head_diff_m, 
                              color_var = Site_IDs,
                              title = "Head differences between ND-SW & Adjacent Wells")
@@ -370,7 +370,6 @@ MB_SW_head_ts <- ts_quick_plot(data = BC_head_diffs %>%
 rm(OB_SW_head_ts, MB_SW_head_ts)
 
   
-
 # 5.0 See correlations between head gradients and water levels ------------
 
 #Read in the head relationships file
@@ -388,7 +387,7 @@ corr_plot_fun <- function(data) {
     group_by(Site_IDs) %>% 
     nest() %>% 
     mutate(gradient_models = map(.x = data, 
-                                 ~lm(Head_diff_m ~ dly_mean_wtrlvl_allsites,
+                                 ~lm(gradient ~ dly_mean_wtrlvl_allsites,
                                      data = .x) %>% 
                                    tidy())) %>% 
     unnest(gradient_models) %>% 
@@ -400,7 +399,7 @@ corr_plot_fun <- function(data) {
     group_by(Site_IDs) %>% 
     nest() %>% 
     mutate(gradient_stats = map(.x = data, 
-                                ~lm(Head_diff_m ~ dly_mean_wtrlvl_allsites, 
+                                ~lm(gradient ~ dly_mean_wtrlvl_allsites, 
                                     data = .x) %>% 
                                   glance())) %>%
     unnest(gradient_stats) %>% 
@@ -413,7 +412,7 @@ corr_plot_fun <- function(data) {
   corr_plot <- ggplot() +
     geom_point(data = data,
                mapping = aes(x = dly_mean_wtrlvl_allsites,
-                             y = Head_diff_m,
+                             y = gradient,
                              color = month_yr)) +
     geom_text(data = stats,
                aes(label = paste0("r^2 = ", round(r.squared, digits = 2))),
@@ -422,7 +421,7 @@ corr_plot_fun <- function(data) {
               color = "red",
               size = 8) +
     geom_text(data = models,
-               aes(label = paste0("slope = ", round(estimate, digits = 2))),
+               aes(label = paste0("slope = ", round(estimate, digits = 5))),
                x = -Inf, y = Inf, hjust = -0.1, vjust = 2.5,
                inherit.aes = FALSE,
               color = "red",
@@ -432,7 +431,7 @@ corr_plot_fun <- function(data) {
                color = "#993300") +
     theme_bw() +
     xlab("Daily mean water lvl (m)") +
-    ylab("Head differenc (m)") +
+    ylab("dh/dL") +
     theme(panel.grid = element_blank(),
           axis.text = element_text(size = 18,
                                    face = "bold"),
@@ -446,7 +445,7 @@ corr_plot_fun <- function(data) {
     guides(color = guide_legend(override.aes = list(size = 10))) +
     facet_wrap(vars(Site_IDs),
                scales = "free") +
-    ggtitle("Aggregate water level and head differences correlations")
+    ggtitle("Aggregate water level and head gradient correlations")
   
   return(corr_plot)
   
