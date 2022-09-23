@@ -1,5 +1,5 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Name: Head Differences Timeseries and Correlation Plots
+# Name: Exploratory plots
 # Coder: James Maze
 # Date: August 2nd 2021
 # Purpose: Explore Head Changes in Catchment Data
