@@ -75,7 +75,7 @@ df <- left_join(df, site_data, by = c("Site_ID", "Catchment")) %>%
   mutate(Flag = as.factor(Flag))
 
 #Clean up the environment
-rm(water_levels, survey_data)
+rm(water_levels)
 
 # 4.0 Calculate the elevation head to datum and aggregate wtr lvls--------------------------------------------------------------------
 
@@ -151,6 +151,8 @@ JL_heads <- JL_rel_wtrlvl %>%
          NDUW1_NDUW2 = `ND-UW1` - `ND-UW2`,
          NDUW1_NDUW3 = `ND-UW1` - `ND-UW3`,
          NDUW3_TSUW1 = `ND-UW3` - `TS-UW1`,
+         DKSW_NDSW = `DK-SW` - `ND-SW`,
+         DKSW_TSSW = `DK-SW` - `TS-SW`,
       #Looking at only GW head gradients
          DKUW2_DKUW1 = `DK-UW2` - `DK-UW1`,
          DKUW2_TSUW1 = `DK-UW2` - `TS-UW1`,
@@ -226,7 +228,6 @@ temp <- Rel_wtr_lvls %>%
 
 BC_heads <- left_join(BC_heads, temp)
 
-
 #Pivot data to the long format
 BC_heads_long <- BC_heads %>% 
   pivot_longer(cols = -c(Date, dly_mean_wtrlvl_allsites),
@@ -241,6 +242,12 @@ rm(BC_heads, temp, BC_rel_wtrlvl)
 #Set a projection for the distance calculation. 
 #!!! Might need to think more about this. Just used same projection that Nate uses. 
 projection <- "+proj=utm +zone=17 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
+
+#Join site data to the survey data for elevation differentials
+survey_data <- survey_data %>% 
+  select(-c(Catchment, Notes))
+
+site_data <- left_join(site_data, survey_data, by = "Site_ID")
 
 #Use the projection to get geospatial objects from site data
 points <- site_data %>% 
@@ -303,27 +310,34 @@ JL_dist_sites <- JL_dist_sites %>%
   left_join(., JL_points, by = "Site_ID_temp") %>%
   #Rename columns accordingly
   rename("SiteID_1st" = Site_ID_temp,
-         "SiteID_1st_latlong" = point) %>%
+         "SiteID_1st_latlong" = point,
+         "SiteID_1st_elevation" = Elevation_m) %>%
   #Match lat/long to 2nd Site ID
   rename("Site_ID_temp" = SiteID_2nd) %>%
   left_join(., JL_points, by = "Site_ID_temp") %>%
   #Rename columns accordingly
   rename("SiteID_2nd" = Site_ID_temp,
-         "SiteID_2nd_latlong" = point) 
+         "SiteID_2nd_latlong" = point,
+         "SiteID_2nd_elevation" = Elevation_m) 
 
 #Use st_dist to calculate distance between 1st and 2nd site
 JL_dist_sites <- JL_dist_sites %>%
   rowwise() %>% 
+  #Calculate distance between the wells from Lat and Longs
   mutate(distance_m = st_distance(SiteID_1st_latlong, SiteID_2nd_latlong, by_element = T)) %>% 
-  mutate(distance_m = as.numeric(distance_m)) %>% 
-  select(c(Site_IDs, distance_m))
+  #Calculate elevation change between points
+  mutate(distance_m = as.numeric(distance_m),
+  #Calculate elevation change between points
+         elevation_diff_m = as.numeric(SiteID_1st_elevation - SiteID_2nd_elevation)) %>% 
+  select(c(Site_IDs, distance_m, elevation_diff_m))
 
 #Join the distance values to the head differences 
 JL_heads_long <- left_join(JL_heads_long, JL_dist_sites, by = "Site_IDs") 
 
 #Calculate the head gradient (dh/dL)
 JL_heads_long <- JL_heads_long %>% 
-  mutate(gradient = (Head_diff_m / distance_m))
+  mutate(head_gradient = (Head_diff_m / distance_m),
+         elevation_gradient = (elevation_diff_m / distance_m))
 
 #Clean up environment
 rm(JL_dist_sites, JL_points)
@@ -353,27 +367,35 @@ BC_dist_sites <- BC_dist_sites %>%
   left_join(., BC_points, by = "Site_ID_temp") %>%
   #Rename columns accordingly
   rename("SiteID_1st" = Site_ID_temp,
-         "SiteID_1st_latlong" = point) %>%
+         "SiteID_1st_latlong" = point,
+         "SiteID_1st_elevation" = Elevation_m) %>%
   #Match lat/long to 2nd Site ID
   rename("Site_ID_temp" = SiteID_2nd) %>%
   left_join(., BC_points, by = "Site_ID_temp") %>%
   #Rename columns accordingly
   rename("SiteID_2nd" = Site_ID_temp,
-         "SiteID_2nd_latlong" = point) 
+         "SiteID_2nd_latlong" = point,
+         "SiteID_2nd_elevation" = Elevation_m) 
 
 #Use st_distance to calculate distance between sites
 BC_dist_sites <- BC_dist_sites %>%
   rowwise() %>% 
+  #Calculate the distance from the lat and longs
   mutate(distance_m = st_distance(SiteID_1st_latlong, SiteID_2nd_latlong, by_element = T)) %>% 
-  mutate(distance_m = as.numeric(distance_m)) %>% 
-  select(c(Site_IDs, distance_m))
+  mutate(distance_m = as.numeric(distance_m),
+  #Calculate elevation difference between points
+         elevation_diff_m = (as.numeric(SiteID_1st_elevation - SiteID_2nd_elevation))) %>% 
+  #Select columns of interest
+  select(c(Site_IDs, distance_m, elevation_diff_m))
 
 #Join the distance values to the head differences 
  BC_heads_long <- left_join(BC_heads_long, BC_dist_sites, by = "Site_IDs") 
  
  #Calculate the head gradient (dh/dL)
  BC_heads_long <- BC_heads_long %>% 
-   mutate(gradient = (Head_diff_m / distance_m))
+   #Divide by distance to get the gradients. 
+   mutate(head_gradient = (Head_diff_m / distance_m),
+          elevation_gradient = (elevation_diff_m / distance_m)) 
  
 #Clean up the environment
 rm(gradient_site_matcher, points, BC_points, BC_dist_sites)
@@ -385,21 +407,20 @@ rm(gradient_site_matcher, points, BC_points, BC_dist_sites)
 # 8.0 Export data ---------------------------------------------------------
 
 #Relative water levels csv
-write_csv(Rel_wtr_lvls, file = paste0(data_dir, "output//Rel_wtr_lvls.csv"))
+write_csv(Rel_wtr_lvls, file = paste0(data_dir, "output//rel_wtr_lvls.csv"))
 
+#Combine files clean up NA's and duplicates before writing hydro_heads.csv
+JL_heads_long <- JL_heads_long %>% 
+  #Add column to designate catchment
+  add_column(Catchment = "Jackson Lane")
+BC_heads_long <- BC_heads_long %>% 
+  #Add column to designate catchment
+  add_column(Catchment = "Baltimore Corner")
 
-#Clean up NA's and duplicates before writing .csv
-JL_heads_long <- JL_heads_long  %>% 
+hydro_heads <- bind_rows(JL_heads_long, BC_heads_long) %>% 
   filter(!is.na(Head_diff_m)) %>% 
   unique()
 
-write_csv(JL_heads_long, file = paste0(data_dir, "output//JL_head_diffs.csv"))
-
-#Clean up NA's and duplicates before writing .csv
-BC_heads_long  <- BC_heads_long  %>% 
-  filter(!is.na(Head_diff_m)) %>% 
-  unique()
-
-write_csv(BC_heads_long, file = paste0(data_dir, "output//BC_head_diffs.csv"))
-
-
+#Write hydro heads csv
+write_csv(hydro_heads, file = paste0(data_dir, "output//hydro_heads.csv"))  
+  
