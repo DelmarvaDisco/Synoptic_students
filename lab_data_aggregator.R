@@ -10,6 +10,8 @@
 # - Eliminated all CBL data to avoid duplicates. If someone wants to do comps between CBL & VT,
 # then be my guest. 
 
+# How to handle the MDL
+
 
 # 1. Libraries and Packages -----------------------------------------------
 
@@ -36,6 +38,12 @@ download_fun1 <- function(file_paths){
   #Extract units from placeholder object
   unit <- trash %>% 
     select(`Units`) %>%
+    slice_head(n = 1) %>% 
+    pull(1)
+  
+  #Extract the MDL from the placeholder object
+  MDL <- trash %>% 
+    select(`MDL`) %>% 
     slice_head(n = 1) %>% 
     pull(1)
   
@@ -67,11 +75,12 @@ download_fun1 <- function(file_paths){
     mutate("Sample_ID" = paste0(Site_ID, "-", Bottle, "-", Rep, "-", Year, Month, Day)) %>%
     #Add units column
     mutate("Units" = print(unit)) %>% 
+    mutate("MDL" = print(MDL)) %>% 
     #Create Observation ID column to distinguish multiple analytes per sample
     mutate("Observation_ID" = paste0(Sample_ID, "-", Analyte)) %>%
     #I screwed up the naming convention
     rename("Flag_Notes" = Flag_notes) %>% 
-    select(c(Site_ID, Sample_Date, Sample_ID, Observation_ID, Units, Value, Flag, Flag_Notes))
+    select(c(Site_ID, Sample_Date, Sample_ID, Observation_ID, Units, Value, Flag, Flag_Notes, MDL, Analyte))
 
   (temp)
   
@@ -291,16 +300,18 @@ rm(ghg_flags)
 
 # 5. Combine the data -------------------------------------------------
 
-data <- rbind(anion_npoc_iso_nut_data, spec_data, ghg_data)
+data <- rbind(anion_npoc_iso_nut_data, spec_data, ghg_data) %>% 
+  #!!! Create an Analyte colun
+  mutate(Analyte = str_sub(Obsevation_ID, ))
+  #!!! Standing water flag/class
+  #Create a site type column 
+  #Create a month column
 
 rm(anion_npoc_iso_nut_data, spec_data, ghg_data)
 
 # 6. Export to new csv --------------------------------------------------------
 
 write_csv(data, file = paste0(data_dir, "lab_data_aggregated_JM.csv"))
-
-
-
 
 
 
