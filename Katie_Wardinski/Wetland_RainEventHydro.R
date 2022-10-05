@@ -33,6 +33,9 @@ Apr22 <- read_csv("output_20220410_JM.csv")
 #read in NOAA daily rainfall data
 Precip <- read_csv("NOAA_Daily_Precip_2019-2022.csv")
 
+#set theme classic
+theme_set(theme_classic())
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #2.0 Plot Precip -----------------------------------------------------------
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -89,16 +92,20 @@ PrecipMayOct20 <- Precip %>%
 PrecipPlot <- PrecipMayOct20 %>% 
   ggplot(aes(mdy(DATE), PRCP_mm)) +
   geom_bar(stat="identity") +   
-  xlab("Date") + ylab("Daily Precipitation (mm)") 
+  xlab("Date in 2020") + ylab("Daily Precipitation (mm)")+
+  ggtitle("NOAA Precip Data - Denton, MD")
 
 #focus on ND for now
 #plot WL data 
-WL_Plot <- Oct20 %>% 
-  filter(Site_Name == "ND-SW") %>% 
+ND_WL <- Oct20 %>% 
+  filter(Site_Name %in% c("ND-SW","ND-UW1","ND-UW2")) %>% 
   ggplot()+
-  geom_line(aes(Timestamp,waterLevel))
+  geom_line(aes(Timestamp,waterLevel,col=Site_Name))+
+  xlab("Date in 2020")+
+  ylab("Water Level (m)")+
+  ggtitle("ND")
 
-PrecipPlot/WL_Plot
+PrecipPlot/ND_WL
 
 #zoom in on one storm event in late may
 Oct20 %>% 
@@ -107,3 +114,29 @@ Oct20 %>%
   ggplot()+
   geom_line(aes(Timestamp,waterLevel))
 
+#look at some other sites
+QB_WL<- Oct20 %>% 
+  filter(Site_Name %in% c("QB-SW","QB-UW1","QB-UW2")) %>% 
+  ggplot()+
+  geom_line(aes(Timestamp,waterLevel,col=Site_Name))+
+  xlab("Date in 2020")+
+  ylab("Water Level (m)")+
+  ggtitle("QB")
+
+DB_WL <- Oct20 %>% 
+  filter(Site_Name %in% c("DB-SW","DB-UW1","DB-UW2")) %>% 
+  ggplot()+
+  geom_line(aes(Timestamp,waterLevel,col=Site_Name))+
+  xlab("Date in 2020")+
+  ylab("Water Level (m)")+
+  ggtitle("DB")
+
+TB_WL <- Oct20 %>% 
+  filter(Site_Name %in% c("TB-SW","TB-UW1","TB-UW2","TB-UW3")) %>% 
+  ggplot()+
+  geom_line(aes(Timestamp,waterLevel,col=Site_Name))+
+  xlab("Date in 2020")+
+  ylab("Water Level (m)")+
+  ggtitle("TB")
+
+PrecipPlot/ND_WL/QB_WL/TB_WL/DB_WL
