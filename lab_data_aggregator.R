@@ -18,11 +18,8 @@
 remove(list = ls())
 
 library(tidyselect)
-library(stringr)
-library(readr)
+library(tidyverse)
 library(readxl)
-library(purrr)
-library(dplyr)
 
 data_dir <- "data/lab_data_combo/"
 
@@ -31,17 +28,17 @@ data_dir <- "data/lab_data_combo/"
 # Download function for Isotopes, Nutrients, DOC (quantity), SO4-, Cl-
 download_fun1 <- function(file_paths){
   
-  #Read in the "trash" version for sole purpose of extracting units from header
+  #Read in the "trash" version as a placeholder with sole purpose of extracting units from header
   trash <- read_xlsx(file_paths,
                      col_types = "text") 
   
-  #Extract units from placeholder object
+  #Extract units from placeholder
   unit <- trash %>% 
     select(`Units`) %>%
     slice_head(n = 1) %>% 
     pull(1)
   
-  #Extract the MDL from the placeholder object
+  #Extract the MDL from the placeholder
   MDL <- trash %>% 
     select(`MDL`) %>% 
     slice_head(n = 1) %>% 
@@ -72,15 +69,17 @@ download_fun1 <- function(file_paths){
     #Make a new sample date column using correctly modified dates
     mutate(Sample_Date = lubridate::ymd(paste0(Year, "-", Month, "-", Day))) %>% 
     select(-c(Date, Dates)) %>% 
-    mutate("Sample_ID" = paste0(Site_ID, "-", Bottle, "-", Rep, "-", Year, Month, Day)) %>%
+    mutate("Sample_ID" = paste0(Site_ID, "-", Bottle, "-", Rep, "-", Year, Month, Day),
     #Add units column
-    mutate("Units" = print(unit)) %>% 
-    mutate("MDL" = print(MDL)) %>% 
+           "Units" = print(unit),
+    #Add MDL column
+           "MDL" = print(MDL)) %>% 
     #Create Observation ID column to distinguish multiple analytes per sample
     mutate("Observation_ID" = paste0(Sample_ID, "-", Analyte)) %>%
     #I screwed up the naming convention
     rename("Flag_Notes" = Flag_notes) %>% 
-    select(c(Site_ID, Sample_Date, Sample_ID, Observation_ID, Units, Value, Flag, Flag_Notes, MDL, Analyte))
+    select(c(Site_ID, Sample_Date, Sample_ID, Observation_ID, Units, Value, 
+             Flag, Flag_Notes, MDL, Analyte, Month))
 
   (temp)
   
@@ -133,6 +132,12 @@ download_fun_spec <- function(spec_file_paths){
     slice_head(n = 1) %>% 
     pull(1)
   
+  #Extract the MDL from the placeholder
+  MDL <- trash %>% 
+    select(`MDL`) %>% 
+    slice_head(n = 1) %>% 
+    pull(1)
+  
   #clean up environment
   rm(trash)
   
@@ -142,11 +147,11 @@ download_fun_spec <- function(spec_file_paths){
                     col_types = "text") %>% 
     as_tibble() %>% 
     #Sample dates were in scientific notation, because Google Sheets is dumb 
-    #Removes period from dates read as sci notation
+    #Removes period from dates that are read as scientific notation
     mutate(Date = str_replace(Sample_Date, 
                               pattern = "([.])",
                               replacement = "")) %>% 
-    #Removes the e^x portion of dates read as sci notation
+    #Removes the "e^x" portion of dates read as scientific notation
     mutate(Dates = str_trunc(Date, width = 8, side = "right", ellipsis = "")) %>%
     mutate(Year = str_sub(Dates, 1, 4),
            Month = str_sub(Dates, 5, 6),
@@ -161,8 +166,9 @@ download_fun_spec <- function(spec_file_paths){
     #Redo the Sample_ID column based on the correct dates
     mutate("Sample_ID" = paste0(Site_ID, "-", Bottle, "-", Rep, "-", Year, Month, Day)) %>%
     #Add a units column
-    mutate("Units" = print(unit)) %>% 
-    select(-c(Bottle, Rep, Year, Month, Day))
+    mutate("Units" = print(unit),
+           "MDL" = print(MDL)) %>% 
+    select(-c(Bottle, Rep, Year, Day))
 
   #Return clean data frame.     
   (temp)
@@ -176,18 +182,17 @@ spec_data <- Spectroscopy_files %>%
   
 #Wide to Long format in order to merge ICP-MS metals with other data
 spec_data <- spec_data %>% 
-  tidyr::pivot_longer(cols = -c(Sample_ID, Flag, Flag_Notes, Units, 
-                                Sample_Date, Site_ID), 
+  tidyr::pivot_longer(cols = -c(Sample_ID, Flag, Flag_Notes, Units, MDL,
+                                Sample_Date, Site_ID, Month), 
                names_to = "Analyte", 
                values_to = "Value")
 
 #Clean up the column names
 spec_data <- spec_data %>% 
-  #Create Observation_ID column becuase there are multiple analytes per Sample_ID
-  mutate("Observation_ID" = paste0(Sample_ID, "-", Analyte)) %>% 
-  select(-c(Analyte))
-  #filter(!is.na(Value))
+  #Create Observation_ID column because there are multiple analytes per Sample_ID
+  mutate("Observation_ID" = paste0(Sample_ID, "-", Analyte)) 
 
+#Clean up environmnet 
 rm(Spectroscopy_files)
 
 # 4. Read in the GHG data ----------------------------------------------------
@@ -281,33 +286,61 @@ ghg_data <- left_join(ghg_data, ghg_flags, by = c("Site_ID", "Sample_Date")) %>%
                       names_to = "Analyte",
                       values_to = "Value") %>% 
   #Generate Sample_ID column to match other data
-  mutate(Sample_ID = paste0(Site_ID, "-GHG-AllRep-", Sample_Date)) %>% 
+  mutate(Sample_ID = paste0(Site_ID, "-GHG-AllRep-", Sample_Date),
   #Convert Sample_Date to date 
-  mutate(Day = str_sub(Sample_Date, 7, 8),
+         Day = str_sub(Sample_Date, 7, 8),
          Month = str_sub(Sample_Date, 5, 6),
          Year = str_sub(Sample_Date, 1, 4)) %>% 
   mutate(Sample_Date = lubridate::ymd(paste0(Year, "-", Month, "-", Day))) %>% 
-  select(-c(Day, Month, Year)) %>% 
+  select(-c(Day, Year)) %>% 
   #Make Analyte and units columns
   rename("Units" = Analyte) %>% 
   mutate(Analyte = str_sub(Units, 1, 3)) %>% 
   #Generate Observation_ID to match other data 
-  mutate(Observation_ID = paste0(Sample_ID, "-", Analyte)) %>% 
-  #Remove Analyte column
-  select(-c(Analyte))
+  mutate(Observation_ID = paste0(Sample_ID, "-", Analyte),
+         #Add MDL column
+         MDL = "NA") 
 
 rm(ghg_flags)
 
-# 5. Combine the data -------------------------------------------------
+# 5. Combine the data and make final changes -------------------------------------------------
 
 data <- rbind(anion_npoc_iso_nut_data, spec_data, ghg_data) %>% 
-  #!!! Create an Analyte colun
-  mutate(Analyte = str_sub(Obsevation_ID, ))
-  #!!! Standing water flag/class
-  #Create a site type column 
-  #Create a month column
+  #Create a well type column
+  mutate(well_type = str_sub(Site_ID, 4, 5)) %>% 
+  #Some random other samples such as miscellaneous outflows don't have a Site_ID
+  #Marked them as "other"
+  mutate(well_type = if_else(well_type %in% c("SW", "UW", "CH"),
+                             well_type,
+                             "other"))
 
-rm(anion_npoc_iso_nut_data, spec_data, ghg_data)
+
+#Verbage denoting dry sites to check against the Flag_Notes column. 
+key_words <- paste0(c("no standing water", "No standing water", "No standing wtr", "Pumped sample from well",
+                      "pumped samples from the well", "pumped sample from well", "Pumped water", "Pumped well",
+                      "Sampled from well", "Sampled from the well", "Sample from well",
+                      "Sample pumped from wetland well", "Sample pumped from the well",
+                      "Sample pumped from well"),
+                    collapse = "|")
+
+#Create a "Site_dry" column based on the key words. 
+data <- data %>% 
+  mutate("Site_dry" = if_else(str_detect(Flag_Notes, pattern = key_words),
+                              "Yes",
+                              "No"))
+
+#Check the other flags to make sure all the dry sites are noted. 
+other_flags <- data %>% 
+  filter(Site_dry == "No") %>%
+  select(Flag_Notes) %>% 
+  unique()
+
+MDL_types <- data %>% 
+  select(MDL) %>% 
+  unique()
+
+#Clean up
+rm(anion_npoc_iso_nut_data, spec_data, ghg_data, other_flags)
 
 # 6. Export to new csv --------------------------------------------------------
 
