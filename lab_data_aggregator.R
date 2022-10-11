@@ -279,24 +279,25 @@ rm(ghg_files_data)
 
 # 4.3 Combine flags and data & reformat to match other data ---------------------------------------------------------------------
 
-ghg_data <- left_join(ghg_data, ghg_flags, by = c("Site_ID", "Sample_Date")) %>% 
+ghg_data <- left_join(ghg_data, ghg_flags, by = c("Site_ID", "Sample_Date")) %>%
   #Not sure why there's NA Site_IDs
-  filter(!is.na(Site_ID)) %>% 
-  tidyr::pivot_longer(cols = -c(Flag_Notes, Flag, Sample_Date, Site_ID), 
-                      names_to = "Analyte",
-                      values_to = "Value") %>% 
+  filter(!is.na(Site_ID)) %>%
+  tidyr::pivot_longer(
+    cols = -c(Flag_Notes, Flag, Sample_Date, Site_ID),
+    names_to = "Analyte",
+    values_to = "Value") %>%
   #Generate Sample_ID column to match other data
   mutate(Sample_ID = paste0(Site_ID, "-GHG-AllRep-", Sample_Date),
-  #Convert Sample_Date to date 
-         Day = str_sub(Sample_Date, 7, 8),
-         Month = str_sub(Sample_Date, 5, 6),
-         Year = str_sub(Sample_Date, 1, 4)) %>% 
-  mutate(Sample_Date = lubridate::ymd(paste0(Year, "-", Month, "-", Day))) %>% 
-  select(-c(Day, Year)) %>% 
+    #Convert Sample_Date to date
+        Day = str_sub(Sample_Date, 7, 8),
+        Month = str_sub(Sample_Date, 5, 6),
+        Year = str_sub(Sample_Date, 1, 4)) %>%
+  mutate(Sample_Date = lubridate::ymd(paste0(Year, "-", Month, "-", Day))) %>%
+  select(-c(Day, Year)) %>%
   #Make Analyte and units columns
-  rename("Units" = Analyte) %>% 
-  mutate(Analyte = str_sub(Units, 1, 3)) %>% 
-  #Generate Observation_ID to match other data 
+  rename("Units" = Analyte) %>%
+  mutate(Analyte = str_sub(Units, 1, 3)) %>%
+  #Generate Observation_ID to match other data
   mutate(Observation_ID = paste0(Sample_ID, "-", Analyte),
          #Add MDL column
          MDL = "NA") 
@@ -325,6 +326,13 @@ key_words <- paste0(c("no standing water", "No standing water", "No standing wtr
 
 #Create a "Site_dry" column based on the key words. 
 data <- data %>% 
+  #If Flag_Notes are listed as NA values instead of having the characters "NA", 
+  #then the keyword search produces NA values for the Site_dry column (These values should actually be "No").
+  #Before searching keywords, need to change NA values to "NA" characters. 
+  mutate(Flag_Notes = if_else(is.na(Flag_Notes),
+                              "NA",
+                              Flag_Notes)) %>% 
+  #Check keywords againgst Flag Notes column. 
   mutate("Site_dry" = if_else(str_detect(Flag_Notes, pattern = key_words),
                               "Yes",
                               "No"))
@@ -340,7 +348,7 @@ MDL_types <- data %>%
   unique()
 
 #Clean up
-rm(anion_npoc_iso_nut_data, spec_data, ghg_data, other_flags)
+rm(anion_npoc_iso_nut_data, spec_data, ghg_data, other_flags, MDL_types)
 
 # 6. Export to new csv --------------------------------------------------------
 
