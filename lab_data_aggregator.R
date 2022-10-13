@@ -102,6 +102,8 @@ NPOC_files <- NPOC_files[!str_detect(NPOC_files, "CBL")]
 nutrient_files <- list.files(paste0(data_dir, "Nutrients"), full.names = TRUE)
 #Remove the CBL data to eliminate duplicates
 nutrient_files <- nutrient_files[!str_detect(nutrient_files, "CBL")]
+#Remove the other duplicate nutrient file
+nutrient_files <- nutrient_files[!str_detect(nutrient_files, "TOC-V")]
 
 #Concatenate file paths for download fun
 file_paths <- c(anion_files, isotope_files, NPOC_files, nutrient_files)
@@ -324,6 +326,7 @@ key_words <- paste0(c("no standing water", "No standing water", "No standing wtr
                       "Sample pumped from well"),
                     collapse = "|")
 
+
 #Create a "Site_dry" column based on the key words. 
 data <- data %>% 
   #If Flag_Notes are listed as NA values instead of having the characters "NA", 
@@ -335,16 +338,29 @@ data <- data %>%
   #Check keywords againgst Flag Notes column. 
   mutate("Site_dry" = if_else(str_detect(Flag_Notes, pattern = key_words),
                               "Yes",
-                              "No"))
+                              "No")) %>% 
+  #Create a new MDL column with text describing units
+  mutate(MDL_number = if_else(str_detect(MDL, 
+                                         #The precision levels for d18O and d2H mess up MDL searching, 
+                                         # so I left them out. 
+                                         pattern = "Precision: d18O"),
+                              "NA",
+                              #Pattern extracts the numbers before and after a decimal point
+                              as.character(str_extract_all(MDL, pattern = "\\d+\\.*\\d+")))) %>%
+  #Convert MDL_number to numeric generating NA's for miss-fits.
+  mutate(MDL_number = as.double(MDL_number)) %>% 
+  filter(!is.na(Analyte)) %>% 
+  filter(!Analyte == "NA")
 
-#Check the other flags to make sure all the dry sites are noted. 
+#Check the other Flag Nots to make sure all the dry sites are noted. 
 other_flags <- data %>% 
   filter(Site_dry == "No") %>%
   select(Flag_Notes) %>% 
   unique()
 
+#Check if string manipulation worked to get MDL_number. 
 MDL_types <- data %>% 
-  select(MDL) %>% 
+  select(MDL_number, MDL) %>% 
   unique()
 
 #Clean up
@@ -352,7 +368,21 @@ rm(anion_npoc_iso_nut_data, spec_data, ghg_data, other_flags, MDL_types)
 
 # 6. Export to new csv --------------------------------------------------------
 
-write_csv(data, file = paste0(data_dir, "lab_data_aggregated_JM.csv"))
+#Create a wide version of data
+data_wide <- data %>% 
+  select(-c(MDL, Flag, Flag_Notes, MDL_number, Units)) %>% 
+  mutate(Value = as.numeric(Value)) %>% 
+  #A few wonky duplicates for GHG samples to just eliminated them.
+  pivot_wider(id_cols = c("Sample_Date", "Site_ID", "Month", "well_type", "Site_dry"),
+              names_from = "Analyte",
+              values_from = "Value",
+              #Had some duplicate CO2 and CH4 samples (n = 6), not sure why. 
+              #Just took the mean. 
+              values_fn = mean)
+
+write_csv(data_wide, file = paste0(data_dir, "lab_data_aggregated_JM_wide.csv"))
+
+write_csv(data, file = paste0(data_dir, "lab_data_aggregated_JM_long.csv"))
 
 
 
