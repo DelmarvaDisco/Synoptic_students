@@ -292,26 +292,29 @@ Event <- JacksonPrecip %>%
 #add 30 mins to event duration because if event's only occur in 1 30 min block, time would be zero otherwise        
 Jackson_Event <- Event %>% filter(Jackson_eventflag==1 ) %>% 
   group_by(Jackson_eventID) %>% 
-  summarize(Precip_mm = sum(precip_mm),
+  summarise(Precip_mm = sum(precip_mm),
             Event_Start = first(timestamp),
             Event_End = last(timestamp),
             Duration_min = as.numeric(difftime(Event_End,Event_Start, units = 'mins'))+30,
-            Intensity_mm_min = precip_mm / Duration_min,
+            Intensity_mm_min = Precip_mm / Duration_min,
             Intensity_in_hr = Intensity_mm_min*60/25.4)
 
 Jackson_Event_Summary <- Jackson_Event %>% 
   summarize(Mean_Precip_mm = mean(Precip_mm),
+            Max_Precip_mm = max(Precip_mm),
             sd_Precip_mm = sd(Precip_mm),
             Mean_Duration_min = mean(Duration_min),
+            Max_Duration_min = max(Duration_min),
             sd_Duration_min = sd(Duration_min),
             Mean_Intensity_mm_min = mean(Intensity_mm_min),
-            sd_Mean_Intensity_mm_min = sd(Intensity_mm_min))
+            Max_Intensity_mm_min = max(Intensity_mm_min),
+            sd_Intensity_mm_min = sd(Intensity_mm_min))
 
 ## 5.2 Hourly event data -----------------------------------------
 #calculate hourly precip at each site
 Hourly <- JacksonPrecip %>% mutate(hour = cut(timestamp,breaks="hour")) %>% 
   group_by(hour) %>% 
-  summarise(Jackson_Hrly_mm = sum(JacksonLane_Precip_mm))
+  summarise(Jackson_Hrly_mm = sum(precip_mm))
 #plot hourly 
 Jack_HR <- Hourly %>% 
   ggplot(aes(ymd_hms(hour),Jackson_Hrly_mm))+
@@ -324,7 +327,7 @@ Jack_HR
 #calcualte daily precip at each stie
 Daily <- JacksonPrecip %>% mutate(day = cut(timestamp,breaks="day")) %>% 
   group_by(day) %>% 
-  summarise(Jackson_Daily_mm = sum(JacksonLane_Precip_mm))
+  summarise(Jackson_Daily_mm = sum(precip_mm))
 
 #Plot daily precip
 Jack_Day <- Daily %>% 
