@@ -366,6 +366,9 @@ MDL_types <- data %>%
 #Clean up
 rm(anion_npoc_iso_nut_data, spec_data, ghg_data, other_flags, MDL_types)
 
+
+#!!! Update to use half the MDL for wide version.
+
 # 6. Export to new csv --------------------------------------------------------
 
 #Create a wide version of data
@@ -383,9 +386,5 @@ data_wide <- data %>%
 write_csv(data_wide, file = paste0(data_dir, "lab_data_aggregated_JM_wide.csv"))
 
 write_csv(data, file = paste0(data_dir, "lab_data_aggregated_JM_long.csv"))
-
-
-
-
 
 

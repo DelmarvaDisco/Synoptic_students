@@ -27,18 +27,16 @@ plot_dir <- "data\\AGU_hydro\\plots\\"
 
 # 2.0 Read in the data ---------------------------------------------------------------------
 
-df <- read_csv(paste0(data_dir, "Rel_wtr_lvls.csv"))
+Rel_wtr_lvls <- read_csv(paste0(data_dir, "Rel_wtr_lvls.csv"))
 
-JL_head_diffs <- read_csv(paste0(data_dir, "JL_head_diffs.csv"))
-
-BC_head_diffs <- read_csv(paste0(data_dir, "BC_head_diffs.csv"))
-
+hydro_heads <- read_csv(paste0(data_dir, "hydro_heads.csv"))
 
 # 2.1 Aggregated water level plots  -------------------------------------------------
 
 #Make a quick plot with aggregated water level at JL
 
-JL_aggregate_wtrlvl <- ggplot(data = JL_head_diffs,
+JL_aggregate_wtrlvl <- ggplot(data = hydro_heads %>% 
+                                filter(Catchment == "Jackson Lane"),
                               aes(x = Date,
                                   y = dly_mean_wtrlvl_allsites)) +
   geom_line(color = "black",
@@ -58,7 +56,8 @@ JL_aggregate_wtrlvl <- ggplot(data = JL_head_diffs,
 
 #Make a quick plot with aggregated water level at BC
 
-BC_aggregate_wtrlvl <- ggplot(data = BC_head_diffs,
+BC_aggregate_wtrlvl <- ggplot(data = hydro_heads %>% 
+                                filter(Catchment == "Baltimore Corner"),
                               aes(x = Date,
                                   y = dly_mean_wtrlvl_allsites)) +
   geom_line(color = "black",
@@ -99,7 +98,6 @@ ts_quick_plot <- function(data, y_var, color_var, title) {
     pivot_wider(id_cols = c(Date, dly_mean_wtrlvl_allsites),
                 names_from = {{color_var}},
                 values_from = {{y_var}}) %>%
-    select(-c("NA")) %>% 
     pivot_longer(cols = -c(Date, dly_mean_wtrlvl_allsites),
                  names_to = "Sites",
                  values_to = "meters")
@@ -109,7 +107,7 @@ ts_quick_plot <- function(data, y_var, color_var, title) {
                     aes(x = Date,
                         y = meters,
                         color = Sites)) +
-    geom_line(size = 2,
+    geom_line(size = 1.25,
               na.rm = TRUE) +
     geom_hline(yintercept = 0,
                color = "#660000",
@@ -137,8 +135,7 @@ ts_quick_plot <- function(data, y_var, color_var, title) {
 # 3.1 Jackson Lane elevation heads time series --------------------------------------------------------
 
 #Look at time series of head gradients relative to outlets. 
-JL_SW_CH_elheads <- ts_quick_plot(data = df %>% 
-                                    #Filter data with full well installations
+JL_SW_CH_elheads <- ts_quick_plot(data = Rel_wtr_lvls %>% 
                                     filter(#Filter sites of interest
                                       Site_ID %in% c("DK-SW", "TS-SW", "TS-CH", 
                                                      "BD-CH", "BD-SW", "DK-CH",
@@ -151,12 +148,10 @@ JL_SW_CH_elheads <- ts_quick_plot(data = df %>%
 (JL_SW_CH_elheads)
 
 #Upland wells
-JL_UW_elheads <- ts_quick_plot(data = df %>% 
+JL_UW_elheads <- ts_quick_plot(data = Rel_wtr_lvls %>% 
                                  filter(#Filter UW sites
                                    Catchment == "Jackson Lane",
-                                   site_type %in% c("UW1", "UW2", "UW3"),
-                                   !(Site_ID == "TS-UW1" &
-                                       Wtrlvl_rel_datum <= 0.045)),
+                                   site_type %in% c("UW1", "UW2", "UW3")),
                                y_var = Wtrlvl_rel_datum,
                                color_var = Site_ID, 
                                title = "GW elevation heads (m) relative to datum at DK-SW")
@@ -169,23 +164,23 @@ rm(JL_SW_CH_elheads, JL_UW_elheads)
 # 3.2 All JL sites colored by well type -----------------------------------
 
 #Quick plot function won't work here
-JL_all_eheads <- ggplot(data = df %>% filter(Catchment == "Jackson Lane"),
+JL_all_eheads <- ggplot(data = Rel_wtr_lvls %>% filter(Catchment == "Jackson Lane"),
                         mapping = aes(x = Date, 
                                       y = Wtrlvl_rel_datum,
                                       shape = Site_ID,
                                       color = well_type)) +
   geom_line(size = 1) +
-  geom_label_repel(data = df %>% filter(Date == max(Date)),
+  geom_label_repel(data = Rel_wtr_lvls %>% filter(Date == max(Date)),
                    aes(label = Site_ID),
                    min.segment.length = 0.05,
                    direction = "y") +
-  geom_label_repel(data = df %>% 
+  geom_label_repel(data = Rel_wtr_lvls %>% 
                      filter(Catchment == "Jackson Lane") %>% 
                      filter(Date == median(Date)),
                    aes(label = Site_ID),
                    min.segment.length = 0.05,
                    direction = "y") +
-  geom_label_repel(data = df %>% 
+  geom_label_repel(data = Rel_wtr_lvls %>% 
                      filter(Catchment == "Jackson Lane") %>% 
                      filter(Date == "2021-04-15 12:00:00"),
                    aes(label = Site_ID),
@@ -210,7 +205,7 @@ rm(JL_all_eheads)
 
 # 3.3 Baltimore corner elevation head time series ----------------------------------------------------
 
-BC_SW_CH_elheads <- ts_quick_plot(data = df %>% 
+BC_SW_CH_elheads <- ts_quick_plot(data = Rel_wtr_lvls %>% 
                                     filter(Site_ID %in% c("TP-CH", "HB-SW", "MB-SW",
                                                           "XB-SW", "OB-SW", "MB-CH",
                                                           "OB-CH", "HB-CH", "XB-CH")), 
@@ -221,7 +216,7 @@ BC_SW_CH_elheads <- ts_quick_plot(data = df %>%
 #Print the plot
 (BC_SW_CH_elheads)
 
-BC_UW_elheads <- ts_quick_plot(data = df %>% 
+BC_UW_elheads <- ts_quick_plot(data = Rel_wtr_lvls %>% 
                                  filter(Catchment == "Baltimore Corner",
                                         Site_ID == "TP-CH" |
                                           site_type == "UW1"), 
@@ -236,25 +231,25 @@ rm(BC_SW_CH_elheads, BC_UW_elheads)
 
 # 3.4 All BC heads by well type -------------------------------------------
 
-BC_all_eheads <- ggplot(data = df %>% filter(Catchment == "Baltimore Corner"),
+BC_all_eheads <- ggplot(data = Rel_wtr_lvls %>% filter(Catchment == "Baltimore Corner"),
                         mapping = aes(x = Date, 
                                       y = Wtrlvl_rel_datum,
                                       shape = Site_ID,
                                       color = well_type)) +
   geom_line(size = 1) +
-  geom_label_repel(data = df %>% 
+  geom_label_repel(data = Rel_wtr_lvls %>% 
                      filter(Catchment == "Baltimore Corner") %>% 
                      filter(Date == max(Date)),
                    aes(label = Site_ID),
                    min.segment.length = 0.05,
                    direction = "y") +
-  geom_label_repel(data = df %>% 
+  geom_label_repel(data = Rel_wtr_lvls %>% 
                      filter(Catchment == "Baltimore Corner") %>% 
                      filter(Date == median(Date)),
                    aes(label = Site_ID),
                    min.segment.length = 0.05,
                    direction = "y") +
-  geom_label_repel(data = df %>% 
+  geom_label_repel(data = Rel_wtr_lvls %>% 
                      filter(Catchment == "Baltimore Corner") %>% 
                      filter(Date == "2021-03-15 12:00:00"),
                    aes(label = Site_ID),
@@ -281,7 +276,7 @@ rm(BC_all_eheads)
 # 4.1 JL Head difference time series ------------------------------------------
 
 #Baby Doll Individually
-BD_head_ts <- ts_quick_plot(data = JL_head_diffs %>% 
+BD_head_ts <- ts_quick_plot(data = hydro_heads %>% 
                               filter(Site_IDs %in% c("BDSW_DKSW", "BDSW_BDCH", "BDSW_TSSW",
                                                      "BDSW_TSUW1")),
                             y_var = Head_diff_m,
@@ -292,7 +287,7 @@ BD_head_ts <- ts_quick_plot(data = JL_head_diffs %>%
 (BD_head_ts)
 
 #North Dog Bone Individually
-ND_heads_ts <- ts_quick_plot(data = JL_head_diffs %>% 
+ND_heads_ts <- ts_quick_plot(data = hydro_heads %>% 
                                filter(Site_IDs %in% c("NDSW_NDUW1", "NDSW_NDUW2", 
                                                       "NDSW_NDUW3", "NDSW_TSUW1", "NDUW1_NDUW2")),
                              y_var = Head_diff_m, 
@@ -301,8 +296,8 @@ ND_heads_ts <- ts_quick_plot(data = JL_head_diffs %>%
 #View the plot
 (ND_heads_ts)
 
-#Treestand Individually
-TS_heads_ts <- ts_quick_plot(data = JL_head_diffs %>% 
+#Tree stand Individually
+TS_heads_ts <- ts_quick_plot(data = hydro_heads %>% 
                                filter(Site_IDs %in% c("TSSW_TSUW1", "TSSW_BDCH", "TSSW_TSCH", 
                                                       "TSSW_DKUW1", "TSSW_DKSW")),
                              y_var = Head_diff_m, 
@@ -313,7 +308,7 @@ TS_heads_ts <- ts_quick_plot(data = JL_head_diffs %>%
 (TS_heads_ts)
 
 #Dark Bay Individually
-DK_heads_ts <- ts_quick_plot(data = JL_head_diffs %>% 
+DK_heads_ts <- ts_quick_plot(data = hydro_heads %>% 
                                filter(Site_IDs %in% c("DKSW_DKCH", "DKSW_DKUW1", "DKSW_DKUW2", 
                                                       "DKSW_TSCH")),
                              y_var = Head_diff_m, 
@@ -323,7 +318,7 @@ DK_heads_ts <- ts_quick_plot(data = JL_head_diffs %>%
 (DK_heads_ts)
 
 #Surface water head differences. 
-JLSW_heads_ts <- ts_quick_plot(data = JL_head_diffs %>% 
+JLSW_heads_ts <- ts_quick_plot(data = hydro_heads %>% 
                                filter(Site_IDs %in% c("TSSW_DKSW", "NDSW_DKSW", "BDSW_TSSW", "BDSW_DKSW")),
                              y_var = Head_diff_m, 
                              color_var = Site_IDs,
@@ -332,7 +327,7 @@ JLSW_heads_ts <- ts_quick_plot(data = JL_head_diffs %>%
 (JLSW_heads_ts)
 
 #Upland well head differences. 
-JLUW_head_ts <- ts_quick_plot(data = JL_head_diffs %>% 
+JLUW_head_ts <- ts_quick_plot(data = hydro_heads %>% 
                                 filter(Site_IDs %in% c("DKUW2_DKUW1", "DKUW2_TSUW1", "DKUW2_NDUW3", 
                                                        "DKUW2_NDUW2", "DKUW2_NDUW1", "DKUW2_TSCH", "DKUW2_BDCH")),
                               y_var = Head_diff_m, 
@@ -346,7 +341,7 @@ rm(TS_heads_ts, ND_heads_ts, DK_heads_ts, JLSW_heads_ts, JLUW_head_ts, BD_head_t
 
 # 4.2 BC head diff time series plots ---------------------------------------
 
-OB_SW_head_ts <- ts_quick_plot(data = BC_head_diffs %>% 
+OB_SW_head_ts <- ts_quick_plot(data = hydro_heads %>% 
                                  filter(Site_IDs %in% c("OBSW_OBUW1", "OBSW_OBCH", "OBSW_MBSW",
                                                         "OBSW_MBUW1", "OBSW_HBSW")),
                                y_var = Head_diff_m, 
@@ -355,7 +350,7 @@ OB_SW_head_ts <- ts_quick_plot(data = BC_head_diffs %>%
 #View the plot 
 (OB_SW_head_ts)
 
-MB_SW_head_ts <- ts_quick_plot(data = BC_head_diffs %>% 
+MB_SW_head_ts <- ts_quick_plot(data = hydro_heads %>% 
                                  filter(Site_IDs %in% c("MBSW_MBCH", "MBSW_MBUW1", "MBSW_OBCH", 
                                                         "MBSW_XBSW", "MBSW_HBSW", "MBSW_XBUW1")),
                                y_var = Head_diff_m,
@@ -375,9 +370,6 @@ rm(OB_SW_head_ts, MB_SW_head_ts)
 #Read in the head relationships file
 Head_relationships <- read_xlsx(paste0(data_dir, "Head_relationships.xlsx"))
 
-JL_head_diffs <- left_join(JL_head_diffs, Head_relationships, by = "Site_IDs")
-
-
 #Ploting function for cross-site correlations
 corr_plot_fun <- function(data) {
   
@@ -387,7 +379,7 @@ corr_plot_fun <- function(data) {
     group_by(Site_IDs) %>% 
     nest() %>% 
     mutate(gradient_models = map(.x = data, 
-                                 ~lm(gradient ~ dly_mean_wtrlvl_allsites,
+                                 ~lm(head_gradient ~ dly_mean_wtrlvl_allsites,
                                      data = .x) %>% 
                                    tidy())) %>% 
     unnest(gradient_models) %>% 
@@ -399,7 +391,7 @@ corr_plot_fun <- function(data) {
     group_by(Site_IDs) %>% 
     nest() %>% 
     mutate(gradient_stats = map(.x = data, 
-                                ~lm(gradient ~ dly_mean_wtrlvl_allsites, 
+                                ~lm(head_gradient ~ dly_mean_wtrlvl_allsites, 
                                     data = .x) %>% 
                                   glance())) %>%
     unnest(gradient_stats) %>% 
@@ -412,7 +404,7 @@ corr_plot_fun <- function(data) {
   corr_plot <- ggplot() +
     geom_point(data = data,
                mapping = aes(x = dly_mean_wtrlvl_allsites,
-                             y = gradient,
+                             y = head_gradient,
                              color = month_yr)) +
     geom_text(data = stats,
                aes(label = paste0("r^2 = ", round(r.squared, digits = 2))),
@@ -454,14 +446,14 @@ corr_plot_fun <- function(data) {
 # 5.1 Jackson Lane correlations ----------------------------------------------------
 
 #Correlations between SW sites
-JL_SW_corrs <- corr_plot_fun(data = JL_head_diffs %>% 
+JL_SW_corrs <- corr_plot_fun(data = hydro_heads %>% 
                                filter(Site_IDs %in% c("BDSW_DKSW", "BDSW_TSSW", 
                                                         "NDSW_DKSW", "TSSW_DKSW")))
 
 (JL_SW_corrs)
 
 #Correlations between UW sites
-JL_UW_corrs <- corr_plot_fun(data = JL_head_diffs %>% 
+JL_UW_corrs <- corr_plot_fun(data = hydro_heads %>% 
                                filter(Site_IDs %in% c("DKUW2_BDCH", "DKUW2_DKUW1", "DKUW2_NDUW1",
                                                       "DKUW2_NDUW2", "DKUW2_NDUW3", "DKUW2_TSCH", 
                                                       "DKUW2_TSUW1")))
@@ -469,28 +461,28 @@ JL_UW_corrs <- corr_plot_fun(data = JL_head_diffs %>%
 (JL_UW_corrs)
 
 #Correlations around BD-SW
-BDSW_corrs <- corr_plot_fun(data =  JL_head_diffs %>%
+BDSW_corrs <- corr_plot_fun(data =  hydro_heads %>%
                               filter(Site_IDs %in% c("BDSW_BDCH", "BDSW_DKSW", 
                                                      "BDSW_TSSW", "BDSW_TSUW1")))
 
 (BDSW_corrs)
 
 #Correlations around ND-SW
-NDSW_corrs <- corr_plot_fun(JL_head_diffs %>% 
+NDSW_corrs <- corr_plot_fun(hydro_heads %>% 
                                filter(Site_IDs %in% c("NDSW_NDUW1", "NDSW_NDUW2",
                                                       "NDSW_NDUW3", "NDSW_TSUW1")))
 
 (NDSW_corrs)
 
 #Correlations around TS-SW
-TSSW_corrs <- corr_plot_fun(JL_head_diffs %>% 
+TSSW_corrs <- corr_plot_fun(hydro_heads %>% 
                               filter(Site_IDs %in% c("TSSW_BDCH", "TSSW_DKUW1", 
                                                      "TSSW_TSCH", "TSSW_TSUW1")))
 
 (TSSW_corrs)
 
 #Correlations around DK-SW
-DKSW_corrs <- corr_plot_fun(JL_head_diffs %>% 
+DKSW_corrs <- corr_plot_fun(hydro_heads %>% 
                               filter(Site_IDs %in% c("DKSW_DKCH", "DKSW_DKUW1", "DKSW_DKUW2",
                                                      "DKSW_TSCH", "DKSW_BDSW")))
 
@@ -499,8 +491,6 @@ DKSW_corrs <- corr_plot_fun(JL_head_diffs %>%
 #Clean up environment 
 rm(JL_SW_corrs, JL_UW_corrs, BDSW_corrs, NDSW_corrs, TSSW_corrs, DKSW_corrs)
 
-
-# 5.2 Baltimore Corner correlations --------------------------------------------------------
 
 
 
