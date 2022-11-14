@@ -223,7 +223,9 @@ BC_heads <- BC_rel_wtrlvl %>%
          OBSW_HBSW = `OB-SW` - `HB-SW`,
          XBSW_MBSW = `XB-SW` - `MB-SW`,
          XBSW_XBUW1 = `XB-SW` - `XB-UW1`,
-         XBSW_XBCH = `XB-SW` - `XB-CH`) %>% 
+         XBSW_XBCH = `XB-SW` - `XB-CH`,
+         XBSW_TPCH = `XB-SW` - `TP-CH`,
+         XBSW_HBSW = `XB-SW` - `HB-SW`) %>% 
   #Remove columns for individual sites. 
   select(-c("TP-CH", "HB-CH", "HB-SW", "HB-UW1", "MB-CH", "MB-SW", "MB-UW1", "OB-CH",
             "OB-SW", "OB-UW1", "XB-SW", "XB-UW1", "XB-CH"))

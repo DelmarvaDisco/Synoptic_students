@@ -86,7 +86,7 @@ ts_quick_plot <- function(data, y_var, color_var, title) {
   
   #This step adds na's to missing timesteps.
   #Prevents geom_line from arbitrarily drawing lines between data gaps. 
-  ts <- seq.POSIXt(as.POSIXct("2021-03-01"), as.POSIXct("2022-05-01"), by = "day")
+  ts <- seq.POSIXt(as.POSIXct("2021-03-01"), as.POSIXct("2022-11-01"), by = "day")
   
   ts <- format.POSIXct(ts, "%Y-%m-%d")
   
