@@ -16,10 +16,11 @@ remove(list = ls())
 library(readxl)
 library(broom)
 library(cowplot)
-library(tidyverse)
 library(RColorBrewer)
 library(ggrepel)
 library(lubridate)
+library(tidyverse)
+
 
 data_dir <- "data\\AGU_hydro\\output\\"
 plot_dir <- "data\\AGU_hydro\\plots\\"
@@ -134,15 +135,14 @@ ggsave(filename = "Relative_wtrlvl_SWCH_BaltimoreCorner.png",
        path = paste0(plot_dir))
 
 rm(relwtrlvl_SWCH_BaltimoreCorner, relwtrlvl_SWCH_BaltimoreCorner_Site_ID, 
-   relwtrlvl_SWCH_BaltimoreCorner_elevation, ts, temp, cathment_pos, elevation_temp)
+   relwtrlvl_SWCH_BaltimoreCorner_elevation, ts, temp, catchment_pos, elevation_temp,
+   Site_ID_list)
 
-# 3.2 Baltimore Corner UW and CH rel wtr lvl ------------------------------
-
-
+# 3.2 ??? Baltimore Corner UW and CH rel wtr lvl ??? ------------------------------
 
 # 3.4 Jackson Lane UW elevation heads ------------------------------------------------------------
 
-#Illustrate elevation head timeseries using Jackson Lane data
+#Illustrate elevation head time series using Jackson Lane data
 temp <- rel_wtr_lvl %>% 
   filter(Catchment == "Jackson Lane") %>% 
   filter(well_type %in% c("UW", "CH"))
@@ -183,159 +183,3 @@ relwtrlvl_UW_JacksonLane <- ggplot(data = temp,
 rm(relwtrlvl_UW_JacksonLane, ts, temp)
 
 
-# 4.0 Catchment scale head gradients vs aggregate water level  ---------------------------------------------------------------------
-
-#Filter by site
-temp <- hydro_heads %>% 
-  filter(Site_IDs %in% c("BDSW_DKSW", "NDSW_DKSW",
-                         "OBSW_HBSW", "XBSW_HBSW")) %>% 
-  #Rename Site_IDs with better syntax
-  mutate(Site_IDs = recode(Site_IDs,
-                           BDSW_DKSW = "Baby Doll SW -> Dark Bay SW",
-                           NDSW_DKSW = "N. Dog Bone SW -> Dark Bay SW", 
-                           OBSW_HBSW = "Origin Bay SW -> Hummock Bay SW",
-                           XBSW_HBSW = "Gnarly Bay SW -> Hummock Bay SW"))
-
-# 4.1 Generate summary stats and model info -------------------------------
-
-models <- temp %>% 
-  #Group by Site_ID
-  group_by(Site_IDs) %>%
-  #Nest to get model output and data frame for each head-gradient pair
-  nest() %>% 
-  #Generate linear models
-  mutate(gradient_models = map(.x = data, 
-                               ~lm(head_gradient ~ dly_mean_wtrlvl_allsites, 
-                                   data = .x) %>% 
-                                 #Use tidy() to convert model output to
-                                 # a data frame. 
-                                 tidy())) %>% 
-  unnest(gradient_models) %>% 
-  #Remove column with model input data
-  select(-c(data)) %>% 
-  #Convert to a tibble
-  as_tibble() %>% 
-  #Improve the term column with more descriptive verbage
-  mutate(term = recode(term,
-                        `(Intercept)` = "y-intercept",
-                        `dly_mean_wtrlvl_allsites` = "slope"))
-
-#Get the summary statistics
-stats <- temp %>% 
-  #Group by Site_ID
-  group_by(Site_IDs) %>%
-  #Nest to get model output and data frame for each head-gradient pair
-  nest() %>% 
-  #Generate linear models
-  mutate(gradient_models = map(.x = data, 
-                               ~lm(head_gradient ~ dly_mean_wtrlvl_allsites, 
-                                   data = .x) %>% 
-                                 #Get the model summary statics using glance
-                                 glance())) %>% 
-  #Unnest the summary statistics into a data frame
-  unnest(gradient_models) %>% 
-  #Eliminate column 
-  select(-c(data)) %>% 
-  as_tibble()
-
-
-# 4.2 Make the correlation plot -------------------------------------------
-
-correlation_plot <- ggplot(data = temp, 
-                           mapping = aes(x = dly_mean_wtrlvl_allsites,
-                                         y = head_gradient,
-                                         color = Catchment)) +
-  geom_point() +
-  geom_smooth(method = "lm",
-              color = "black") +
-  geom_text(data = stats,
-            aes(label = paste0("r^2 = ", round(r.squared, digits = 2))),
-            x = -Inf, y = Inf, hjust = -0.2, vjust = 1.2,
-            inherit.aes = FALSE,
-            color = "black",
-            size = 4) +
-  geom_text(data = stats,
-            aes(label = paste0("slope = ", round(estimate, digits = 5))),
-            x = -Inf, y = Inf, hjust = -0.1, vjust = 2.5,
-            inherit.aes = FALSE,
-            color = "black",
-            size = 4) +
-  geom_text(data = models %>% 
-              filter(term == "slope"),
-            aes(label = paste0("slope = ", round(estimate, digits = 5))),
-            x = -Inf, y = Inf, hjust = -0.1, vjust = 2.5,
-            inherit.aes = FALSE,
-            color = "black",
-            size = 4) +
-  theme_bw() +
-  ylab("dh/dL") +
-  xlab("Daily mean water level aggregated across catchment") +
-  facet_wrap(vars(Site_IDs))
-
-(correlation_plot)
-
-ggsave(filename = "Catchment_scale_gradienttostage_correlations.png", 
-       plot = correlation_plot, 
-       path = paste0(plot_dir))
-
-#Clean up environment
-rm(correlation_plot, models, stats)
-
-
-
-
-
-# Explore elevation gradients vs. head gradients correlation ------------------------------------------------------------
-
-Month <- c(1:12)
-ET_guess <- c("low", "low", "low", "medium", "high", "high", "high", "high", "high", "medium", "low", "low")
-
-temp <- data.frame(Month, ET_guess) %>%
-  mutate(Month = as.character(Month)) %>%
-  as_tibble()
-
-df <- hydro_heads %>%
-  mutate(Month = as.character(as.numeric(str_sub(Date, 6, 7))))
-
-df <- left_join(df, temp, by = "Month")
-                
-ET_elevation_head_gradient_correlation <- ggplot(data = hydro_heads,
-                                                 mapping = aes(x = abs(elevation_gradient),
-                                                               y = abs(head_gradient),
-                                                               color = ET_guess)) +
-  geom_point()
-
-(ET_elevation_head_gradient_correlation)
-
-rm(temp)
-
-
-# XXX Head gradients correlated with aggregate wtr lvl ---------------------------------------
-
-
-
-# XXX Correlation Matrix between head gradients ---------------------------
-
-
-
-# ????? Scratch space -----------------------------------------------------------
-
-# hmm <- hydro_heads %>% 
-#   filter(Catchment == "Baltimore Corner") %>% 
-#   mutate(head_gradient_magnitude = abs(head_gradient)) %>% 
-#   select(c(head_gradient_magnitude, Date, dly_mean_wtrlvl_allsites))
-# 
-# 
-# hmm_plot <- ggplot(data = hmm, 
-#                    mapping = aes(x = dly_mean_wtrlvl_allsites,
-#                                  y = head_gradient_magnitude)) +
-#   geom_point() +
-#   geom_smooth()
-# 
-# (hmm_plot)
-# 
-# hmm_model <- lm(data = hmm)
-
-
-
-display.brewer.all()

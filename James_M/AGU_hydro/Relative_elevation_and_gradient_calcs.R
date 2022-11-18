@@ -18,6 +18,7 @@ library(stringr)
 library(lubridate)
 library(sf)
 library(tidyverse)
+library(dplyr)
 
 data_dir <- "data\\AGU_hydro\\"
 
@@ -28,13 +29,13 @@ water_levels <- read_csv(paste0(data_dir, "input\\dly_mean_output_JM_2019_2022.c
   #The modeled data (used for gap filling) is not appropriate for this analysis
   filter(!Flag == 1) %>%
   #No longer need flag column
-  select(-c(Flag, Notes))
+  dplyr::select(-c(Flag, Notes))
 
 #Survey data from Mar 2022
 survey_data_elevations <- read_xlsx(paste0(data_dir, "input\\Relative_elevations.xlsx")) %>% 
   #Convert elevation data from cm to meters
   mutate(Elevation_m = Elevation_cm/100) %>% 
-  select(-Elevation_cm)
+  dplyr::select(-Elevation_cm)
 
 #Since the site data is on multiple sheets, its a little extra work to read. 
 site_data_path <- paste0(data_dir, "input\\Site_directory_core.xlsx")
@@ -50,7 +51,7 @@ site_lat_long <- lapply(sheet_names,
   #Combine the sheets into a single tibble
   reduce(rbind) %>% 
   # These columns not important
-  select(-c(`Wetland Name`, `Site Name`, `Description`)) %>% 
+  dplyr::select(-c(`Wetland Name`, `Site Name`, `Description`)) %>% 
   # Filter sites of interest
   filter(Catchment %in% c("Baltimore Corner", "Jackson Lane"))
 
@@ -66,7 +67,7 @@ df <- left_join(water_levels, survey_data_elevations, by = "Site_ID") %>%
 #Join GPS points to df
 df <- left_join(df, site_lat_long, by = c("Site_ID", "Catchment")) %>% 
   #Remove Notes column explaining relative elevations.
-  select(-Notes) %>% 
+  dplyr::select(-Notes) %>% 
   #Create columns to describe the different wells
   mutate(site_type = str_sub(Site_ID, 4, 6)) %>% 
   mutate(well_type = str_sub(Site_ID, 4, 5)) %>% 
@@ -156,6 +157,7 @@ JL_heads <- JL_rel_wtrlvl %>%
          NDUW1_NDUW2 = `ND-UW1` - `ND-UW2`,
          NDUW1_NDUW3 = `ND-UW1` - `ND-UW3`,
          NDUW3_TSUW1 = `ND-UW3` - `TS-UW1`,
+         NDUW1_DKUW2 = `ND-UW1` - `DK-UW2`,
          DKSW_NDSW = `DK-SW` - `ND-SW`,
          DKSW_TSSW = `DK-SW` - `TS-SW`,
       #Looking at only GW head gradients
@@ -166,16 +168,19 @@ JL_heads <- JL_rel_wtrlvl %>%
          DKUW2_NDUW1 = `DK-UW2` - `ND-UW1`,
          DKUW2_TSCH = `DK-UW2` - `TS-CH`,
          DKUW2_BDCH = `DK-UW2` - `BD-CH`,
-         DKSW_BDSW = `DK-SW` - `BD-SW`) %>% 
+         DKSW_BDSW = `DK-SW` - `BD-SW`,
+         BDCH_DKCH = `BD-CH` - `DK-CH`,
+         TSUW1_DKUW2 = `TS-UW1` - `DK-UW2`,
+         TSCH_DKCH = `TS-CH` - `DK-CH`) %>% 
   #Remove individual site waterlevels so that its only head differences
-  select(-c("DK-SW", "DK-CH", "DK-UW1", "DK-UW2", "TS-CH", "TS-SW", "TS-UW1", 
+  dplyr::select(-c("DK-SW", "DK-CH", "DK-UW1", "DK-UW2", "TS-CH", "TS-SW", "TS-UW1", 
             "BD-SW", "BD-CH", "ND-SW", "ND-UW1", "ND-UW2", "ND-UW3"))
 
 #Pair daily mean water level at Jackson Lane to the head gradients data frame.
 temp <- Rel_wtr_lvls %>% 
   #Select only the JL daily mean water level data so BC data isn't paired
   filter(Catchment == "Jackson Lane") %>%
-  select(Date, dly_mean_wtrlvl_allsites) 
+  dplyr::select(Date, dly_mean_wtrlvl_allsites) 
 
 JL_heads <- left_join(JL_heads, temp)
 
@@ -225,16 +230,22 @@ BC_heads <- BC_rel_wtrlvl %>%
          XBSW_XBUW1 = `XB-SW` - `XB-UW1`,
          XBSW_XBCH = `XB-SW` - `XB-CH`,
          XBSW_TPCH = `XB-SW` - `TP-CH`,
-         XBSW_HBSW = `XB-SW` - `HB-SW`) %>% 
+         XBSW_HBSW = `XB-SW` - `HB-SW`,
+         OBUW1_MBUW1 = `OB-UW1` - `MB-UW1`,
+         OBCH_TPCH = `OB-CH` - `TP-CH`,
+         XBCH_TPCH = `XB-CH` - `TP-CH`,
+         OBUW1_HBUW1 = `OB-UW1` - `HB-UW1`,
+         XBCH_HBCH = `XB-CH` - `HB-CH`,
+         OBCH_HBCH = `OB-CH` - `HB-CH`) %>% 
   #Remove columns for individual sites. 
-  select(-c("TP-CH", "HB-CH", "HB-SW", "HB-UW1", "MB-CH", "MB-SW", "MB-UW1", "OB-CH",
+  dplyr::select(-c("TP-CH", "HB-CH", "HB-SW", "HB-UW1", "MB-CH", "MB-SW", "MB-UW1", "OB-CH",
             "OB-SW", "OB-UW1", "XB-SW", "XB-UW1", "XB-CH"))
 
 #Pair daily mean water level to the head gradients
 temp <- Rel_wtr_lvls %>%
   #Only pair Baltimore Corner dly mean wtr level
   filter(Catchment == "Baltimore Corner") %>%
-  select(Date, dly_mean_wtrlvl_allsites)
+  dplyr::select(Date, dly_mean_wtrlvl_allsites)
 
 BC_heads <- left_join(BC_heads, temp)
 
@@ -256,7 +267,7 @@ projection <- "+proj=utm +zone=17 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
 
 #Join site lat/long data to the survey data for elevation differentials for each site
 survey_data_elevations <- survey_data_elevations %>% 
-  select(-c(Catchment, Notes))
+  dplyr::select(-c(Catchment, Notes))
 
 site_lat_long <- left_join(site_lat_long, survey_data_elevations, by = "Site_ID")
 
@@ -303,14 +314,14 @@ gradient_site_matcher <- function(head_differences_long) {
 JL_points <- points %>% 
   filter(Catchment == "Jackson Lane") %>% 
   #Clean up and rename columns
-  select(-c(Catchment)) %>% 
+  dplyr::select(-c(Catchment)) %>% 
   rename("point" = geometry,
          "Site_ID_temp" = Site_ID)
 
 #Pull 1st and 2nd Site_IDs from each head gradient value using matching function
 JL_dist_sites <- JL_heads_long %>% 
   #Get unique site ID's so you don't calculate distance for entire time series
-  select(Site_IDs) %>% 
+  dplyr::select(Site_IDs) %>% 
   unique() %>% 
   #Use site matching function to get 1st and 2nd sites
   gradient_site_matcher()
@@ -341,7 +352,7 @@ JL_dist_sites <- JL_dist_sites %>%
   mutate(distance_m = as.numeric(distance_m),
   #Calculate elevation change between points
          elevation_diff_m = as.numeric(SiteID_1st_elevation - SiteID_2nd_elevation)) %>% 
-  select(c(Site_IDs, distance_m, elevation_diff_m))
+  dplyr::select(c(Site_IDs, distance_m, elevation_diff_m))
 
 #Join the distance values to the head differences 
 JL_heads_long <- left_join(JL_heads_long, JL_dist_sites, by = "Site_IDs") 
@@ -360,14 +371,14 @@ rm(JL_dist_sites, JL_points)
 BC_points <- points %>% 
   filter(Catchment == "Baltimore Corner") %>% 
   #Clean up and rename columns
-  select(-c(Catchment)) %>% 
+  dplyr::select(-c(Catchment)) %>% 
   rename("point" = geometry,
          "Site_ID_temp" = Site_ID)
 
 #Pull 1st and 2nd Site_IDs from each head gradient value using matching function
 BC_dist_sites <- BC_heads_long %>% 
   #Get unique site ID's so you don't calculate distance for entire time series
-  select(Site_IDs) %>% 
+  dplyr::select(Site_IDs) %>% 
   unique() %>% 
   #Use site matching function to get 1st and 2nd sites
   gradient_site_matcher()
@@ -398,7 +409,7 @@ BC_dist_sites <- BC_dist_sites %>%
   #Calculate elevation difference between points
          elevation_diff_m = (as.numeric(SiteID_1st_elevation - SiteID_2nd_elevation))) %>% 
   #Select columns of interest
-  select(c(Site_IDs, distance_m, elevation_diff_m))
+  dplyr::select(c(Site_IDs, distance_m, elevation_diff_m))
 
 #Join the distance values to the head differences 
  BC_heads_long <- left_join(BC_heads_long, BC_dist_sites, by = "Site_IDs") 

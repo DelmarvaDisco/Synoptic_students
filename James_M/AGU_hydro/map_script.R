@@ -37,8 +37,8 @@ giws_80 <- st_read(paste0(data_dir, "giws_80.shp"))
 giws_95 <- st_read(paste0(data_dir, "giws_95.shp"))
 
 #Well locations
-well_locations <- st_read(paste0(data_dir, "site_points.shp")) %>% 
-  filter(Ctchmnt == "Baltimore Corner")
+well_locations <- st_read(paste0(data_dir, "site_points.shp"))# %>%
+  # filter(Ctchmnt == "Baltimore Corner")
 
 # 3.0 Get everything on the same crs -----------------------------------------------
 
@@ -59,10 +59,31 @@ st_crs(well_locations) <- p
 
 # 4.0 Mapview --------------------------------------------------
 
-  mapview(giws_80, alpha = 0.5) + 
-  mapview(well_locations) %>% addLabels(label = well_locations$Site_ID,
-                                              noHide = TRUE)
+well_locations <- well_locations %>% 
+  mutate(well_type = if_else(str_detect(Site_ID, "UW"),
+                             "UW",
+                             if_else(str_detect(Site_ID, "CH"),
+                                     "CH",
+                                     if_else(str_detect(Site_ID, "SW"),
+                                             "SW",
+                                             "NA"))))
+                                     
+                                     
+library(RColorBrewer)      
 
+m_wet <- mapview(well_locations, 
+        zcol = "well_type", 
+        col.regions = brewer.pal(n =3, "Set1"),
+        size = 50,
+        alpha = 1,
+        lwd = 3,
+        label = "Site_ID",
+        popup = TRUE) +
+  mapview(giws_25) +
+  mapview(giws_95) +
+  mapview(processed_DEM_ag)
+
+(m_wet)
 
 # Leaflet -----------------------------------------------------------------
 
