@@ -30,6 +30,33 @@ rel_wtr_lvl <- read_csv(paste0(data_dir, "rel_wtr_lvls.csv"))
 
 hydro_heads <- read_csv(paste0(data_dir, "hydro_heads.csv"))
 
+
+#Find threshold values where outlet sites are looded 
+# based on agg wtr lvl for all sites
+HB_CH_flood <- rel_wtr_lvl %>% 
+  filter(Site_ID == "HB-CH") %>% 
+  filter(dly_mean_wtrlvl > -0.02 & dly_mean_wtrlvl < 0.02) %>% 
+  dplyr::select(c(Date, dly_mean_wtrlvl_allsites)) %>% 
+  #Remove a bad date when we got rain inf
+  filter(!Date == "2022-07-19") %>% 
+  mutate(dly_mean_wtrlvl_allsites = as.numeric(dly_mean_wtrlvl_allsites)) 
+  
+HB_CH_flood_value <- mean(HB_CH_flood$dly_mean_wtrlvl_allsites)
+
+#Find threshold values where outlet sites are flooded 
+# based on agg wtr lvl for all sites
+DK_CH_flood <- rel_wtr_lvl %>% 
+  filter(Site_ID == "DK-CH") %>% 
+  filter(dly_mean_wtrlvl > -0.02 & dly_mean_wtrlvl < 0.02) %>% 
+  dplyr::select(c(Date, dly_mean_wtrlvl_allsites)) %>% 
+  mutate(dly_mean_wtrlvl_allsites = as.numeric(dly_mean_wtrlvl_allsites)) 
+
+
+DK_CH_flood_value <- mean(DK_CH_flood$dly_mean_wtrlvl_allsites)
+
+
+rm(DK_CH_flood, HB_CH_flood)
+
 # 3.1 Filter sites of interest --------------------------------------------
 
 catchment_scale_head_list <- c("BDSW_DKSW", "NDSW_DKSW",
@@ -47,14 +74,14 @@ temp <- hydro_heads %>%
   filter(!head_gradient >= 0.01) %>%
   #Designate site relationships (e.g. UW -> UW)
   mutate(Relationship = if_else(str_detect(Site_IDs, "UW"),
-                                "Upland to Upland",
+                                "Upland to Upland (n=4)",
                                 if_else(str_detect(Site_IDs, "CH"),
-                                        "Channel to Channel",
-                                        "Wetland to Wetland"))) %>%
+                                        "Channel to Channel (n=4)",
+                                        "Wetland to Wetland (n=4)"))) %>%
   #Redo factor levels
-  mutate(Relationship = factor(Relationship, levels = c("Channel to Channel",
-                                                        "Wetland to Wetland",
-                                                        "Upland to Upland"))) %>% 
+  mutate(Relationship = factor(Relationship, levels = c("Channel to Channel (n=4)",
+                                                        "Wetland to Wetland (n=4)",
+                                                        "Upland to Upland (n=4)"))) %>% 
   #Rename Site_IDs with better syntax
   mutate(Site_IDs = recode(Site_IDs,
                            BDSW_DKSW = "BD Wetland -> DK Wetland",
@@ -70,7 +97,8 @@ temp <- hydro_heads %>%
                            OBUW1_HBUW1 = "OB Upland1 -> HB Upland1",
                            TSCH_DKCH = "TS Channel -> DK Channel")) %>% 
   #Changing head gradient units to (cm/m) makes units more digestible.
-  mutate(head_gradient_cm_m = (head_gradient * 100)) 
+  mutate(head_gradient_cm_m = (head_gradient * 100))  
+  
 
 
 # 3.2 Generate SW summary stats and model info -------------------------------
@@ -122,11 +150,16 @@ correlation_plot <- ggplot(data = temp,
                            mapping = aes(x = dly_mean_wtrlvl_allsites,
                                          y = head_gradient_cm_m,
                                          color = Relationship,
-                                         fill = Site_IDs)) +
+                                         fill = Site_IDs,
+                                         label = Date)) +
   geom_point() +
-  geom_smooth(method = "lm",
-              color = "black",
-              se = F) +
+  geom_text(hjust = 0, 
+            vjust = 0,
+            color = "black",
+            size = 2) +
+  # geom_smooth(method = "lm",
+  #             color = "black",
+  #             se = F) +
   # geom_text(data = stats,
   #           aes(label = paste0("r^2 = ", round(r.squared, digits = 2))),
   #           x = -Inf, y = Inf, hjust = -0.2, vjust = 1.2,
@@ -142,13 +175,13 @@ correlation_plot <- ggplot(data = temp,
   #           size = 4) +
   theme_bw() +
   ylab("dh/dL in (cm/m)") +
-  xlab("Daily mean water level aggregated across catchment (m)") +
-  theme(legend.position = "bottom",
-        ) +
+  xlab("Daily mean water level all sites aggregated across catchment (m)") +
+  theme(legend.position = "bottom") +
+  # geom_vline(xintercept = -0.124, color = "") +
+  # geom_vline(xintercept = -0.167, color = "orange") +
   scale_color_brewer(palette = "Set1") +
-  facet_wrap(vars(Relationship), 
-             scales = "free") +
-  ylim(c(-0.15, 0.8)) 
+  facet_wrap(vars(Site_IDs), 
+             scales = "free") 
 
 #Print and save the plot
 (correlation_plot)
