@@ -111,6 +111,19 @@ SW_Clean %>%
   ggplot(aes(Date,dly_mean_wtrlvl))+
   geom_line()
 
+#ND trial
+SW_Clean %>% 
+  filter(Site_Name == "ND-SW") %>% 
+  ggplot(aes(Date,dly_mean_wtrlvl))+
+  geom_line()
+
+#zoom in on one storm event in late may at ND
+SW_Clean %>% 
+  filter(Site_Name == "ND-SW") %>%
+  filter(Date > ymd("2020-02-01") & Date < ymd("2020-03-30")) %>% 
+  ggplot()+
+  geom_line(aes(Date,dly_mean_wtrlvl))
+
 #all SW data
 SW_Clean %>% 
   ggplot(aes(Date,dly_mean_wtrlvl,col=Site_Name))+
