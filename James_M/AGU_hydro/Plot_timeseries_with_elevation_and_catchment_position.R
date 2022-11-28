@@ -39,10 +39,11 @@ hydro_heads <- read_csv(paste0(data_dir, "hydro_heads.csv"))
 Site_ID_list <- c("HB-CH", "HB-SW", "MB-CH", "MB-SW", "OB-CH", 
                 "OB-SW", "TP-CH", "XB-CH", "XB-SW")
 
-catchment_pos <- c("2", "3", "4", "5", "8", "9", "1", "7", "6")
+catchment_pos <- c("8", "7", "6", "5", "2", "1", "9", "3", "4")
 
 catchment_pos <- data.frame(Site_ID_list, catchment_pos) %>% 
   rename(Site_ID = Site_ID_list)
+
 
 #Filter out sites of interest
 temp <- rel_wtr_lvl %>%
@@ -84,9 +85,18 @@ relwtrlvl_SWCH_BaltimoreCorner_elevation <- ggplot(data = temp,
                                                    mapping = aes(x = Date,
                                                                  y = Wtrlvl_rel_datum,
                                                                  color = Elevation_m)) +
-  labs(col = "Land Elevation (m)") +
+  labs(col = "Land elevation (m) relative to datum") +
   ylab("Relative water level (meters)") +
   geom_point(size = 1) +
+  geom_label_repel(data = temp %>% 
+                     filter(Date == "2022-04-16"),
+                   aes(label = Site_ID),
+                   direction = "both",
+                   color = "black",
+                   size = 4,
+                   fontface = "bold",
+                   segment.size = 0.75,
+                   max.overlaps = 12) +
   theme_bw() +
   scale_color_gradient(low = "blue", high = "orange") 
 
@@ -102,11 +112,20 @@ relwtrlvl_SWCH_BaltimoreCorner_Site_ID <- ggplot(data = temp,
   geom_line(size = 1) +
   theme_bw() + 
   scale_color_brewer(palette = "Spectral", direction = -1) +
+  geom_label_repel(data = temp %>% 
+                     filter(Date == "2022-04-16"),
+                   aes(label = Site_ID),
+                   direction = "both",
+                   color = "black",
+                   size = 4,
+                   fontface = "bold",
+                   segment.size = 0.75,
+                   max.overlaps = 12) +
   theme(axis.title.x = element_blank(),
         legend.title = element_text(size = 10, face = "bold"),
         legend.text = element_text(size = 10, 
                                    face = "bold")) +
-  labs(col = "Catchment Position (1 Bottom -> 9 Top)") +
+  labs(col = "Catchment Position (1 Top -> 9 Bottom)") +
   ggtitle("Baltimore Corner Wetland (SW) and Channel (CH)")
 
 (relwtrlvl_SWCH_BaltimoreCorner_Site_ID)
@@ -135,7 +154,7 @@ rm(relwtrlvl_SWCH_BaltimoreCorner, relwtrlvl_SWCH_BaltimoreCorner_Site_ID,
 Site_ID_list <- c("ND-SW", "BD-SW", "BD-CH", "TS-SW", "TS-CH", "DK-SW", 
                   "DK-CH")
 
-catchment_pos <- c("7", "6", "5", "4", "3", "2", "1")
+catchment_pos <- c("1", "2", "3", "4", "5", "6", "7")
 
 catchment_pos <- data.frame(Site_ID_list, catchment_pos) %>% 
   rename(Site_ID = Site_ID_list)
@@ -179,9 +198,18 @@ relwtrlvl_SWCH_JacksonLane_elevation <- ggplot(data = temp,
                                                    mapping = aes(x = Date,
                                                                  y = Wtrlvl_rel_datum,
                                                                  color = Elevation_m)) +
-  labs(col = "Land Elevation (m)") +
+  labs(col = "Land Elevation (m) relative to datum") +
   ylab("Relative water level (meters)") +
   geom_point(size = 1) +
+  geom_label_repel(data = temp %>% 
+                     filter(Date == "2022-04-16"),
+                   aes(label = Site_ID),
+                   direction = "both",
+                   color = "black",
+                   size = 4,
+                   fontface = "bold",
+                   segment.size = 0.75,
+                   max.overlaps = 12) +
   theme_bw() +
   scale_color_gradient(low = "blue", high = "orange") 
 
@@ -195,13 +223,22 @@ relwtrlvl_SWCH_JacksonLane_Site_ID <- ggplot(data = temp,
                                                                color = catchment_pos_Site_ID)) +
   ylab("Relative water level (meters)") +
   geom_line(size = 1) +
+  geom_label_repel(data = temp %>% 
+                     filter(Date == "2022-04-16"),
+                   aes(label = Site_ID),
+                   direction = "both",
+                   color = "black",
+                   size = 4,
+                   fontface = "bold",
+                   segment.size = 0.75,
+                   max.overlaps = 12) +
   theme_bw() + 
   scale_color_brewer(palette = "Spectral", direction = -1) +
   theme(axis.title.x = element_blank(),
         legend.title = element_text(size = 10, face = "bold"),
         legend.text = element_text(size = 10, 
                                    face = "bold")) +
-  labs(col = "Catchment Position (1 Bottom -> 7 Top)") +
+  labs(col = "Catchment Position (1 Top -> 7 Bottom)") +
   ggtitle("Jackson Lane Wetland (SW) and Channel (CH)")
 
 (relwtrlvl_SWCH_JacksonLane_Site_ID)
