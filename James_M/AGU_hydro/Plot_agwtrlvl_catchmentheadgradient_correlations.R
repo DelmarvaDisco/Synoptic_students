@@ -51,9 +51,7 @@ DK_CH_flood <- rel_wtr_lvl %>%
   dplyr::select(c(Date, dly_mean_wtrlvl_allsites)) %>% 
   mutate(dly_mean_wtrlvl_allsites = as.numeric(dly_mean_wtrlvl_allsites)) 
 
-
 DK_CH_flood_value <- mean(DK_CH_flood$dly_mean_wtrlvl_allsites)
-
 
 rm(DK_CH_flood, HB_CH_flood)
 
@@ -150,38 +148,39 @@ correlation_plot <- ggplot(data = temp,
                            mapping = aes(x = dly_mean_wtrlvl_allsites,
                                          y = head_gradient_cm_m,
                                          color = Relationship,
-                                         fill = Site_IDs,
                                          label = Date)) +
   geom_point() +
-  geom_text(hjust = 0, 
-            vjust = 0,
+  # geom_text(hjust = 0, 
+  #           vjust = 0,
+  #           color = "black",
+  #           size = 2) +
+  geom_smooth(method = "lm",
+              color = "black",
+              se = F) +
+  geom_text(data = stats,
+            aes(label = paste0("r^2 = ", round(r.squared, digits = 2))),
+            x = -Inf, y = Inf, hjust = -0.2, vjust = 1.2,
+            inherit.aes = FALSE,
             color = "black",
-            size = 2) +
-  # geom_smooth(method = "lm",
-  #             color = "black",
-  #             se = F) +
-  # geom_text(data = stats,
-  #           aes(label = paste0("r^2 = ", round(r.squared, digits = 2))),
-  #           x = -Inf, y = Inf, hjust = -0.2, vjust = 1.2,
-  #           inherit.aes = FALSE,
-  #           color = "black",
-  #           size = 4) +
-  # geom_text(data = models %>%
-  #             filter(term == "slope"),
-  #           aes(label = paste0("slope = ", round(estimate, digits = 5))),
-  #           x = -Inf, y = Inf, hjust = -0.1, vjust = 2.5,
-  #           inherit.aes = FALSE,
-  #           color = "black",
-  #           size = 4) +
+            size = 8) +
+  geom_text(data = models %>%
+              filter(term == "slope"),
+            aes(label = paste0("slope = ", round(estimate, digits = 2))),
+            x = -Inf, y = Inf, hjust = -0.1, vjust = 2.5,
+            inherit.aes = FALSE,
+            color = "black",
+            size = 8) +
   theme_bw() +
   ylab("dh/dL in (cm/m)") +
   xlab("Daily mean water level all sites aggregated across catchment (m)") +
-  theme(legend.position = "bottom") +
+  theme(legend.position = "bottom",
+        axis.title = element_text(size = 16),
+        axis.text = element_text(size = 12)) +
   # geom_vline(xintercept = -0.124, color = "") +
   # geom_vline(xintercept = -0.167, color = "orange") +
   scale_color_brewer(palette = "Set1") +
   facet_wrap(vars(Site_IDs), 
-             scales = "free") 
+             scales = "fixed") 
 
 #Print and save the plot
 (correlation_plot)
@@ -271,4 +270,9 @@ slope_bars_plot <- plot_grid(slope_bars_well_relationships,
                              ncol = 1)
 
 (slope_bars_plot)
+
+
+# 3.5 Stats on channels flooding ------------------------------------------
+
+
 

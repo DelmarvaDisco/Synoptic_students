@@ -62,7 +62,7 @@ temp <- full_join(ts, temp)
 
 #First need to pull off elevation data, add it back later.
 elevation_temp <- temp %>% 
-  select(c(Site_ID, Elevation_m)) %>% 
+  dplyr::select(c(Site_ID, Elevation_m)) %>% 
   unique()
 
 #Pivoting between wide and long populates the data gaps with "NA"
@@ -70,7 +70,7 @@ temp <- temp %>%
   pivot_wider(id_cols = c(Date, dly_mean_wtrlvl_allsites),
               names_from = Site_ID,
               values_from = Wtrlvl_rel_datum) %>% 
-  select(-c("NA")) %>% 
+  dplyr::select(-c("NA")) %>% 
   pivot_longer(cols = -c(Date, dly_mean_wtrlvl_allsites),
                names_to = "Site_ID",
                values_to = "Wtrlvl_rel_datum") 
@@ -98,6 +98,13 @@ relwtrlvl_SWCH_BaltimoreCorner_elevation <- ggplot(data = temp,
                    segment.size = 0.75,
                    max.overlaps = 12) +
   theme_bw() +
+  theme(legend.position = "bottom",
+        axis.text.x = element_text(size = 14,
+                                   face = "bold"),
+        axis.title = element_text(size = 16),
+        axis.text.y = element_text(size = 14, 
+                                   face = "bold")) +
+  xlab(NULL) +
   scale_color_gradient(low = "blue", high = "orange") 
 
 #Print the plot 
@@ -121,10 +128,15 @@ relwtrlvl_SWCH_BaltimoreCorner_Site_ID <- ggplot(data = temp,
                    fontface = "bold",
                    segment.size = 0.75,
                    max.overlaps = 12) +
-  theme(axis.title.x = element_blank(),
+  theme(plot.title = element_text(size = 24),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 16),
+        axis.text = element_text(size = 14, 
+                                 face = "bold"),
         legend.title = element_text(size = 10, face = "bold"),
         legend.text = element_text(size = 10, 
-                                   face = "bold")) +
+                                   face = "bold"),
+        legend.position = "bottom") +
   labs(col = "Catchment Position (1 Top -> 9 Bottom)") +
   ggtitle("Baltimore Corner Wetland (SW) and Channel (CH)")
 
@@ -175,7 +187,7 @@ temp <- full_join(ts, temp)
 
 #First need to pull off elevation data, add it back later.
 elevation_temp <- temp %>% 
-  select(c(Site_ID, Elevation_m)) %>% 
+  dplyr::select(c(Site_ID, Elevation_m)) %>% 
   unique()
 
 #Pivoting between wide and long populates the data gaps with "NA"
@@ -183,7 +195,7 @@ temp <- temp %>%
   pivot_wider(id_cols = c(Date, dly_mean_wtrlvl_allsites),
               names_from = Site_ID,
               values_from = Wtrlvl_rel_datum) %>% 
-  select(-c("NA")) %>% 
+  dplyr::select(-c("NA")) %>% 
   pivot_longer(cols = -c(Date, dly_mean_wtrlvl_allsites),
                names_to = "Site_ID",
                values_to = "Wtrlvl_rel_datum") 
@@ -198,7 +210,7 @@ relwtrlvl_SWCH_JacksonLane_elevation <- ggplot(data = temp,
                                                    mapping = aes(x = Date,
                                                                  y = Wtrlvl_rel_datum,
                                                                  color = Elevation_m)) +
-  labs(col = "Land Elevation (m) relative to datum") +
+  labs(col = "Land elevation (m) relative to datum") +
   ylab("Relative water level (meters)") +
   geom_point(size = 1) +
   geom_label_repel(data = temp %>% 
@@ -211,6 +223,13 @@ relwtrlvl_SWCH_JacksonLane_elevation <- ggplot(data = temp,
                    segment.size = 0.75,
                    max.overlaps = 12) +
   theme_bw() +
+  theme(legend.position = "bottom",
+        axis.text.x = element_text(size = 14,
+                                   face = "bold"),
+        axis.title = element_text(size = 16),
+        axis.text.y = element_text(size = 14, 
+                                   face = "bold")) +
+  xlab(NULL) +
   scale_color_gradient(low = "blue", high = "orange") 
 
 #Print the plot 
@@ -234,10 +253,15 @@ relwtrlvl_SWCH_JacksonLane_Site_ID <- ggplot(data = temp,
                    max.overlaps = 12) +
   theme_bw() + 
   scale_color_brewer(palette = "Spectral", direction = -1) +
-  theme(axis.title.x = element_blank(),
+  theme(plot.title = element_text(size = 24),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 16),
+        axis.text = element_text(size = 14, 
+                                 face = "bold"),
         legend.title = element_text(size = 10, face = "bold"),
         legend.text = element_text(size = 10, 
-                                   face = "bold")) +
+                                   face = "bold"),
+        legend.position = "bottom") +
   labs(col = "Catchment Position (1 Top -> 7 Bottom)") +
   ggtitle("Jackson Lane Wetland (SW) and Channel (CH)")
 
@@ -255,7 +279,7 @@ ggsave(filename = "Relative_wtrlvl_SWCH_BaltimoreCorner.png",
        plot =  relwtrlvl_SWCH_BaltimoreCorner,
        path = paste0(plot_dir))
 
-rm(relwtrlvl_SWCH_BaltimoreCorner, relwtrlvl_SWCH_BaltimoreCorner_Site_ID, 
-   relwtrlvl_SWCH_BaltimoreCorner_elevation, ts, temp, catchment_pos, elevation_temp,
+rm(relwtrlvl_SWCH_JacksonLane, relwtrlvl_SWCH_JacksonLane_Site_ID, 
+   relwtrlvl_SWCH_JacksonLane_elevation, ts, temp, catchment_pos, elevation_temp,
    Site_ID_list)
 

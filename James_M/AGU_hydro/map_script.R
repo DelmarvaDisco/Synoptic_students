@@ -66,7 +66,8 @@ well_locations <- well_locations %>%
                                      "CH",
                                      if_else(str_detect(Site_ID, "SW"),
                                              "SW",
-                                             "NA"))))
+                                             "NA")))) %>% 
+  filter(Site_ID %in% c("MB-SW", "TP-CH", "OB-SW", "XB-SW", "HB-SW"))
                                      
                                      
 library(RColorBrewer)      
@@ -74,14 +75,14 @@ library(RColorBrewer)
 m_wet <- mapview(well_locations, 
         zcol = "well_type", 
         col.regions = brewer.pal(n =3, "Set1"),
-        size = 50,
+        size = 50000,
         alpha = 1,
-        lwd = 3,
+        lwd = 4,
         label = "Site_ID",
         popup = TRUE) +
   mapview(giws_25) +
-  mapview(giws_95) +
-  mapview(processed_DEM_ag)
+  mapview(giws_70) +
+  mapview(giws_95) 
 
 (m_wet)
 
