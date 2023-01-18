@@ -270,7 +270,7 @@ Jack_Day / Jones_Day
 
 ##5.1 Determine Events ----------------------------------------
 
-#**Need to review this - think there's an error **
+##Need to review this - think there's an error
 Event <- JacksonPrecip %>% 
   #mark times when rainfall was occurring
   mutate(Jackson_rainflag = ifelse(precip_mm > 0,1,0)) %>% 
