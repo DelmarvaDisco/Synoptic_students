@@ -101,8 +101,9 @@ PrecipPlot <- PrecipMayOct20 %>%
 
 #focus on ND for now
 #plot WL data 
-ND_WL <- Oct20 %>% 
+ND_WL <- waterlevel %>% 
   filter(Site_Name %in% c("ND-SW","ND-UW1","ND-UW2")) %>% 
+  filter(Timestamp > ymd_hms("2020-05-08 00:00:00") & Timestamp < ymd_hms("2020-10-20 00:00:00")) %>% 
   ggplot()+
   geom_line(aes(Timestamp,waterLevel,col=Site_Name))+
   xlab("Date in 2020")+
@@ -117,24 +118,27 @@ Oct20 %>%
   geom_line(aes(Timestamp,waterLevel))
 
 #look at some other sites
-QB_WL<- Oct20 %>% 
+QB_WL<- waterlevel %>% 
   filter(Site_Name %in% c("QB-SW","QB-UW1","QB-UW2")) %>% 
+  filter(Timestamp > ymd_hms("2020-05-08 00:00:00") & Timestamp < ymd_hms("2020-10-20 00:00:00")) %>% 
   ggplot()+
   geom_line(aes(Timestamp,waterLevel,col=Site_Name))+
   xlab("Date in 2020")+
   ylab("Water Level (m)")+
   ggtitle("QB")
 
-DB_WL <- Oct20 %>% 
+DB_WL <- waterlevel %>% 
   filter(Site_Name %in% c("DB-SW","DB-UW1","DB-UW2")) %>% 
+  filter(Timestamp > ymd_hms("2020-05-08 00:00:00") & Timestamp < ymd_hms("2020-10-20 00:00:00")) %>% 
   ggplot()+
   geom_line(aes(Timestamp,waterLevel,col=Site_Name))+
   xlab("Date in 2020")+
   ylab("Water Level (m)")+
   ggtitle("DB")
 
-TB_WL <- Oct20 %>% 
+TB_WL <- waterlevel %>% 
   filter(Site_Name %in% c("TB-SW","TB-UW1","TB-UW2","TB-UW3")) %>% 
+  filter(Timestamp > ymd_hms("2020-05-08 00:00:00") & Timestamp < ymd_hms("2020-10-20 00:00:00")) %>% 
   ggplot()+
   geom_line(aes(Timestamp,waterLevel,col=Site_Name))+
   xlab("Date in 2020")+
@@ -254,13 +258,107 @@ Daily <- DMVPrecip %>% mutate(day = cut(timestamp,breaks="day")) %>%
 #Plot daily precip
 Jack_Day <- Daily %>% 
   ggplot(aes(ymd(day),Jackson_Daily_mm))+
-  geom_bar(stat="identity")
+  geom_bar(stat="identity")+
+  ggtitle("Jackson Ln Daily Precip")+
+  ylab("Precp (mm)")
 Jones_Day <- Daily %>% 
   ggplot(aes(ymd(day),Jones_Daily_mm))+
-  geom_bar(stat="identity")
+  geom_bar(stat="identity")+
+  ggtitle("Jones Rd Daily Precip")+
+  ylab("Precp (mm)")
 
 Jack_Day / Jones_Day
 
+#replot daily rainfall against water level using actual delmarva data
+#plot WL data 
+ND_WL <- waterlevel %>% 
+  filter(Site_Name %in% c("ND-SW","ND-UW1","ND-UW2")) %>% 
+  filter(Timestamp > ymd_hms("2020-10-01 00:00:00") & Timestamp < ymd_hms("2021-09-30 00:00:00")) %>% 
+  ggplot()+
+  geom_line(aes(Timestamp,waterLevel,col=Site_Name))+
+  xlab("Date in 2020")+
+  ylab("Water Level (m)")+
+  ggtitle("ND")
+
+#look at some other sites
+QB_WL<- waterlevel %>% 
+  filter(Site_Name %in% c("QB-SW","QB-UW1","QB-UW2")) %>% 
+  filter(Timestamp > ymd_hms("2020-10-01 00:00:00") & Timestamp < ymd_hms("2021-09-30 00:00:00")) %>%
+  ggplot()+
+  geom_line(aes(Timestamp,waterLevel,col=Site_Name))+
+  xlab("Date in 2020")+
+  ylab("Water Level (m)")+
+  ggtitle("QB")
+
+DB_WL <- waterlevel %>% 
+  filter(Site_Name %in% c("DB-SW","DB-UW1","DB-UW2")) %>% 
+  filter(Timestamp > ymd_hms("2020-10-01 00:00:00") & Timestamp < ymd_hms("2021-09-30 00:00:00")) %>%
+  ggplot()+
+  geom_line(aes(Timestamp,waterLevel,col=Site_Name))+
+  xlab("Date in 2020")+
+  ylab("Water Level (m)")+
+  ggtitle("DB")
+
+TB_WL <- waterlevel %>% 
+  filter(Site_Name %in% c("TB-SW","TB-UW1","TB-UW2","TB-UW3")) %>% 
+  filter(Timestamp > ymd_hms("2020-10-01 00:00:00") & Timestamp < ymd_hms("2021-09-30 00:00:00")) %>%
+  ggplot()+
+  geom_line(aes(Timestamp,waterLevel,col=Site_Name))+
+  xlab("Date in 2020")+
+  ylab("Water Level (m)")+
+  ggtitle("TB")
+
+Jones_Day/ND_WL/QB_WL/TB_WL/DB_WL
+
+## zoom in on December rain event
+Daily$day <- as.Date(Daily$day)
+#Plot daily precip
+Dec_Jones_Day <- Daily %>% 
+  filter(day > ymd("2020-12-13") & day < ymd("2020-12-19")) %>% 
+  ggplot(aes(ymd(day),Jones_Daily_mm))+
+  geom_bar(stat="identity")+
+  ggtitle("Jones Rd Daily Precip")+
+  ylab("Precp (mm)")
+
+#plot WL data 
+Dec_ND_WL <- waterlevel %>% 
+  filter(Site_Name %in% c("ND-SW","ND-UW1","ND-UW2")) %>% 
+  filter(Timestamp > ymd_hms("2020-12-13 00:00:00") & Timestamp < ymd_hms("2020-12-18 00:00:00")) %>% 
+  ggplot()+
+  geom_line(aes(Timestamp,waterLevel,col=Site_Name))+
+  xlab("Date in 2020")+
+  ylab("Water Level (m)")+
+  ggtitle("ND")
+
+#look at some other sites
+Dec_QB_WL<- waterlevel %>% 
+  filter(Site_Name %in% c("QB-SW","QB-UW1","QB-UW2")) %>% 
+  filter(Timestamp > ymd_hms("2020-12-13 00:00:00") & Timestamp < ymd_hms("2020-12-18 00:00:00")) %>%
+  ggplot()+
+  geom_line(aes(Timestamp,waterLevel,col=Site_Name))+
+  xlab("Date in 2020")+
+  ylab("Water Level (m)")+
+  ggtitle("QB")
+
+Dec_DB_WL <- waterlevel %>% 
+  filter(Site_Name %in% c("DB-SW","DB-UW1","DB-UW2")) %>% 
+  filter(Timestamp > ymd_hms("2020-12-13 00:00:00") & Timestamp < ymd_hms("2020-12-18 00:00:00")) %>%
+  ggplot()+
+  geom_line(aes(Timestamp,waterLevel,col=Site_Name))+
+  xlab("Date in 2020")+
+  ylab("Water Level (m)")+
+  ggtitle("DB")
+
+Dec_TB_WL <- waterlevel %>% 
+  filter(Site_Name %in% c("TB-SW","TB-UW1","TB-UW2","TB-UW3")) %>% 
+  filter(Timestamp > ymd_hms("2020-12-13 00:00:00") & Timestamp < ymd_hms("2020-12-18 00:00:00")) %>%
+  ggplot()+
+  geom_line(aes(Timestamp,waterLevel,col=Site_Name))+
+  xlab("Date in 2020")+
+  ylab("Water Level (m)")+
+  ggtitle("TB")
+
+Dec_Jones_Day/Dec_ND_WL/Dec_QB_WL/Dec_TB_WL/Dec_DB_WL
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #5.0 Longer record of just Jackson Lane (2018-2021) ----------------------------
