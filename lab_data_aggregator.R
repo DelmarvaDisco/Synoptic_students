@@ -105,7 +105,7 @@ nutrient_files <- nutrient_files[!str_detect(nutrient_files, "CBL")]
 #Remove the other duplicate nutrient file
 nutrient_files <- nutrient_files[!str_detect(nutrient_files, "TOC-V")]
 
-#Concatenate file paths for download fun
+#Concatenate file paths for download function
 file_paths <- c(anion_files, isotope_files, NPOC_files, nutrient_files)
 rm(anion_files, isotope_files, NPOC_files, nutrient_files)
 
@@ -125,7 +125,7 @@ Spectroscopy_files <- Spectroscopy_files[str_detect(Spectroscopy_files,".xlsx")]
 #Download function for ICPMS data (slight modification from other file's download fun)
 download_fun_spec <- function(spec_file_paths){
   
-  #This object is just a place-holder to get units
+  #This "trash" object is just a place-holder to get units
   trash <- read_xlsx(spec_file_paths,
                      col_types = "text") 
   #Remove the units
@@ -279,7 +279,7 @@ ghg_data <- ghg_files_data %>%
 
 rm(ghg_files_data)
 
-# 4.3 Combine flags and data & reformat to match other data ---------------------------------------------------------------------
+# 4.3 Combine GHG flags and data & reformat to match other data ---------------------------------------------------------------------
 
 ghg_data <- left_join(ghg_data, ghg_flags, by = c("Site_ID", "Sample_Date")) %>%
   #Not sure why there's NA Site_IDs
@@ -349,10 +349,9 @@ data <- data %>%
                               as.character(str_extract_all(MDL, pattern = "\\d+\\.*\\d+")))) %>%
   #Convert MDL_number to numeric generating NA's for miss-fits.
   mutate(MDL_number = as.double(MDL_number)) %>% 
-  filter(!is.na(Analyte)) %>% 
-  filter(!Analyte == "NA")
+  filter(!is.na(Analyte)) 
 
-#Check the other Flag Nots to make sure all the dry sites are noted. 
+#Check the other Flag Notes to make sure all the dry sites are noted. 
 other_flags <- data %>% 
   filter(Site_dry == "No") %>%
   select(Flag_Notes) %>% 
@@ -364,8 +363,7 @@ MDL_types <- data %>%
   unique()
 
 #Clean up
-rm(anion_npoc_iso_nut_data, spec_data, ghg_data, other_flags, MDL_types)
-
+rm(anion_npoc_iso_nut_data, spec_data, ghg_data, other_flags, MDL_types, key_words)
 
 #!!! Update to use half the MDL for wide version.
 
@@ -373,7 +371,7 @@ rm(anion_npoc_iso_nut_data, spec_data, ghg_data, other_flags, MDL_types)
 
 #Create a wide version of data
 data_wide <- data %>% 
-  select(-c(MDL, Flag, Flag_Notes, MDL_number, Units)) %>% 
+  select(-c(MDL, Flag, Flag_Notes, MDL_number, Units, Sample_ID, Observation_ID)) %>% 
   mutate(Value = as.numeric(Value)) %>% 
   #A few wonky duplicates for GHG samples to just eliminated them.
   pivot_wider(id_cols = c("Sample_Date", "Site_ID", "Month", "well_type", "Site_dry"),
