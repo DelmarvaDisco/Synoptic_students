@@ -67,7 +67,7 @@ well_locations <- well_locations %>%
                                      if_else(str_detect(Site_ID, "SW"),
                                              "SW",
                                              "NA")))) %>% 
-  filter(Site_ID %in% c("MB-SW", "TP-CH", "OB-SW", "XB-SW", "HB-SW"))
+  filter(Ctchmnt %in% c("Baltimore Corner"))
                                      
                                      
 library(RColorBrewer)      

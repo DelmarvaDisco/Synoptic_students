@@ -9,9 +9,8 @@
 # - Drops some meta-data specific to analyses. Granularity sacrificed for malleability. 
 # - Eliminated all CBL data to avoid duplicates. If someone wants to do comps between CBL & VT,
 # then be my guest. 
-
-# How to handle the MDL
-
+# - In the wide file version specific MDL info wasn't feasible in format, 
+# used 0.5 * MDL for all BD values. 
 
 # 1. Libraries and Packages -----------------------------------------------
 
@@ -323,7 +322,7 @@ key_words <- paste0(c("no standing water", "No standing water", "No standing wtr
                       "pumped samples from the well", "pumped sample from well", "Pumped water", "Pumped well",
                       "Sampled from well", "Sampled from the well", "Sample from well",
                       "Sample pumped from wetland well", "Sample pumped from the well",
-                      "Sample pumped from well"),
+                      "Sample pumped from well", "Well dry, sample pumped", "sample pumped from well"),
                     collapse = "|")
 
 
@@ -335,7 +334,7 @@ data <- data %>%
   mutate(Flag_Notes = if_else(is.na(Flag_Notes),
                               "NA",
                               Flag_Notes)) %>% 
-  #Check keywords againgst Flag Notes column. 
+  #Check keywords against Flag Notes column. 
   mutate("Site_dry" = if_else(str_detect(Flag_Notes, pattern = key_words),
                               "Yes",
                               "No")) %>% 
@@ -347,9 +346,18 @@ data <- data %>%
                               "NA",
                               #Pattern extracts the numbers before and after a decimal point
                               as.character(str_extract_all(MDL, pattern = "\\d+\\.*\\d+")))) %>%
-  #Convert MDL_number to numeric generating NA's for miss-fits.
+  #Convert MDL_number to numeric generating NA's data wit missing MDL values
   mutate(MDL_number = as.double(MDL_number)) %>% 
-  filter(!is.na(Analyte)) 
+  #Remove tangentially related samples from side-projects
+  filter(!Site_ID %in% c("Corline - Algal Leachate 6/21/21", "Corline - Leaf Leachate 6/21/21",
+                         "DK-Sond-R1", "DK-Sond-R2", "MW-1", "MW-2", "MW-3", "MW-4",
+                         "MW-5", "MW-6", "MW-7", "MW-8", "ND-sond-R1", "ND-sond-R2",
+                         "FR-SW-MW-R2", "FR-SW-MW-R1", "SAV Flux Rest 11am",
+                         "Flux Nat (no time)", "FN 12:15pm", 	
+                         "FR OW 11:15am")) %>% 
+  #Remove data with NA Analyte or Values
+  filter(!is.na(Analyte)) %>% 
+  filter(!str_detect(Value, "NA"))
 
 #Check the other Flag Notes to make sure all the dry sites are noted. 
 other_flags <- data %>% 
@@ -362,24 +370,37 @@ MDL_types <- data %>%
   select(MDL_number, MDL) %>% 
   unique()
 
-#Clean up
+#Clean up environment
 rm(anion_npoc_iso_nut_data, spec_data, ghg_data, other_flags, MDL_types, key_words)
 
-#!!! Update to use half the MDL for wide version.
 
-# 6. Export to new csv --------------------------------------------------------
+# 6. Create a wide version of the data ------------------------------------
+
+#!!! Used 0.5 the MDL for BD values on the wide version of file. 
+#!!! If there was no MDL on the file and Values were BD, set the MDL to zero and changed values to zero.
 
 #Create a wide version of data
 data_wide <- data %>% 
+  #Some MDL numbers are missing (~60 observations). In that case, I changed the missing MDLs to 0.
+  mutate(MDL_number = if_else(is.na(MDL_number),
+                              0,
+                              MDL_number)) %>% 
+  #BD values changed to 0.5 MDL
+  mutate(Value = if_else(str_detect(as.character(Value), pattern = "BD"), 
+                          MDL_number * 0.5,
+                          as.numeric(Value))) %>% 
   select(-c(MDL, Flag, Flag_Notes, MDL_number, Units, Sample_ID, Observation_ID)) %>% 
   mutate(Value = as.numeric(Value)) %>% 
-  #A few wonky duplicates for GHG samples to just eliminated them.
   pivot_wider(id_cols = c("Sample_Date", "Site_ID", "Month", "well_type", "Site_dry"),
               names_from = "Analyte",
               values_from = "Value",
               #Had some duplicate CO2 and CH4 samples (n = 6), not sure why. 
-              #Just took the mean. 
+              #Just took the mean of the duplicated GHGs.
               values_fn = mean)
+
+
+# 7. Export to new csv --------------------------------------------------------
+
 
 write_csv(data_wide, file = paste0(data_dir, "lab_data_aggregated_JM_wide.csv"))
 
