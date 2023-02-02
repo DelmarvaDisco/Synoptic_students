@@ -402,7 +402,7 @@ data_wide <- data %>%
 # 7. Export to new csv --------------------------------------------------------
 
 
-write_csv(data_wide, file = paste0(data_dir, "lab_data_aggregated_JM_wide.csv"))
+write_csv(data_wide, file = paste0(data_dir, "lab_data_aggregated_JM_summary_wide.csv"))
 
 write_csv(data, file = paste0(data_dir, "lab_data_aggregated_JM_long.csv"))
 
