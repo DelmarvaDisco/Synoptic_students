@@ -21,6 +21,7 @@ library(dplyr)
 library(ggpubr)
 library(lubridate)
 library(raster)
+library(patchwork)
 
 #set theme classic
 theme_set(theme_classic())
@@ -111,6 +112,13 @@ SW_Clean %>%
   ggplot(aes(Date,dly_mean_wtrlvl))+
   geom_line()
 
+#zoom in on wet up in fall
+SW_Clean %>% 
+  filter(Site_Name == "QB-SW") %>%
+  filter(Date > ymd("2021-07-01") & Date < ymd("2021-12-01")) %>% 
+  ggplot()+
+  geom_line(aes(Date,dly_mean_wtrlvl))
+
 #ND trial
 SW_Clean %>% 
   filter(Site_Name == "ND-SW") %>% 
@@ -172,7 +180,7 @@ SW_join %>%
 #5.0 DOC/Nutrients versus WL ------------------------------------
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#5.1 mean water level on date of sampling versus NPOC ----------
+##5.1 mean water level on date of sampling versus NPOC ----------
 join_WL_syn %>% 
   ggplot(aes(dly_mean_wtrlvl,NPOC_mgC_L,col=SW_GW))+
   geom_point()
@@ -210,7 +218,7 @@ join_WL_syn %>%
   theme(axis.title = element_text(size = 12),
         axis.text = element_text(size = 10))
 
-#5.2 Mean Chemistry vs Mean WL -----------------------------
+##5.2 Mean Chemistry vs Mean WL -----------------------------
 #DOC
 Mean_Join %>% 
   ggplot(aes(mean_WL,mean_DOC,col=SW_GW))+
@@ -321,6 +329,7 @@ ggplot(OB_WL )+
         axis.title.x  = element_text(size=18),
         title = element_text(size = 18))+
   ggtitle("OB-SW daily wetland area")
+
 #plot volume over time
 ggplot(OB_WL )+
   geom_line(aes(ymd(Date),volume_m3)) 
@@ -358,3 +367,175 @@ ggplot(OB_WL )+
   scale_color_manual(name="Legend",
                      values=c("Volume" = "#F8766D", 
                               "Area" = "#00B8E7"))
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#7.0 MS Thesis WL Data -----------------------------------------------------------
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#Look at rate of water rise through different horizons to inform soil core set up
+
+#Read data
+#daily mean water level by station in QB, ND, TB, and DB
+MS_WL <- read_csv("MS_2020WY_waterLevel_by_station.csv") %>% 
+  drop_na() %>% 
+  filter(Timestamp > "2019-12-01" & Timestamp < "2020-02-20" ) %>% #filter to 2020 winter wet up
+  dplyr::select(-...1) %>%  #drop first column - don't need observation number
+  filter(y_n <= 0) #drop points once water level gets above ground surface
+
+#survey data for transect points and soil horzion depths
+survey <- read_csv("MS_transect_survey.csv")
+
+# 7.1 Visualize 2019-20 winter wet up event -----------------------------------------
+#Zoom in on wet up from December to March, drop upland
+ND_winter <- MS_WL %>% 
+  filter(wetland == "ND" ) %>%
+  pivot_wider(names_from = station, values_from = y_n) %>% 
+  ggplot(aes(x=Timestamp)) + 
+  geom_line(aes(y=`KW-1W`), col='#045a8d',size=1.5) +
+  geom_line(aes(y=`KW-2E`), col='#2b8cbe',size=1.5) +
+  geom_line(aes(y=`KW-3T`), col='#74a9cf',size=1.5) +
+  geom_hline(yintercept=0,linetype="dashed")+
+  ggtitle("ND") +
+  theme_bw() +
+  ylim(-2.25,1)+
+  theme(
+    plot.title = element_text(size= 15),
+    axis.title.y = element_text(size = 14),
+    axis.title.x = element_blank(),
+    axis.text.y  = element_text(size = 12),
+    axis.text.x  = element_text(size = 12),
+    plot.margin = margin(t = 0,  # Top margin
+                         r = 0.5,  # Right margin
+                         b = 0.5,  # Bottom margin
+                         l = 0,  # Left margin
+                         unit = "cm")) + 
+  #Add labels
+  xlab("Date") + 
+  ylab("Water Level (m)") 
+
+#QB
+QB_winter <- MS_WL %>% 
+  filter(wetland == "QB" ) %>%
+  pivot_wider(names_from = station, values_from = y_n) %>% 
+  ggplot(aes(x=Timestamp)) + 
+  geom_line(aes(y=`KW-1W`), col='#045a8d',size=1.5) +
+  geom_line(aes(y=`KW-2E`), col='#2b8cbe',size=1.5) +
+  geom_line(aes(y=`KW-3T`), col='#74a9cf',size=1.5) +
+  geom_hline(yintercept=0,linetype="dashed")+
+  ggtitle("QB") +
+  theme_bw() +
+  ylim(-1.5,0.5)+
+  theme(
+    plot.title = element_text(size= 15),
+    axis.title.y = element_text(size = 14),
+    axis.title.x = element_blank(),
+    axis.text.y  = element_text(size = 12),
+    axis.text.x  = element_text(size = 12),
+    plot.margin = margin(t = 0,  # Top margin
+                         r = 0.5,  # Right margin
+                         b = 0.5,  # Bottom margin
+                         l = 0,  # Left margin
+                         unit = "cm")) + 
+  xlab("Date") + 
+  ylab("Water Level (m)") 
+
+#DB
+DB_winter <- MS_WL %>% 
+  filter(wetland == "DB" ) %>%
+  pivot_wider(names_from = station, values_from = y_n) %>% 
+  ggplot(aes(x=Timestamp)) + 
+  geom_line(aes(y=`KW-1W`), col='#045a8d',size=1.5) +
+  geom_line(aes(y=`KW-2E`), col='#2b8cbe',size=1.5) +
+  geom_line(aes(y=`KW-3T`), col='#74a9cf',size=1.5) +
+  geom_hline(yintercept=0,linetype="dashed")+
+  ggtitle("DB") +
+  theme_bw() +
+  ylim(-1.5,0.75)+
+  theme(
+    plot.title = element_text(size= 15),
+    axis.title.y = element_text(size = 14),
+    axis.title.x = element_blank(),
+    axis.text.y  = element_text(size = 12),
+    axis.text.x  = element_text(size = 12),
+    plot.margin = margin(t = 0,  # Top margin
+                         r = 0.5,  # Right margin
+                         b = 0.5,  # Bottom margin
+                         l = 0,  # Left margin
+                         unit = "cm")) + 
+  xlab("Date") + 
+  ylab("Water Level (m)") 
+
+#TB
+TB_winter <- MS_WL %>% 
+  filter(wetland == "TB" ) %>%
+  pivot_wider(names_from = station, values_from = y_n) %>% 
+  ggplot(aes(x=Timestamp)) + 
+  geom_line(aes(y=`KW-1W`), col='#045a8d',size=1.5) +
+  geom_line(aes(y=`KW-2E`), col='#2b8cbe',size=1.5) +
+  geom_line(aes(y=`KW-3T`), col='#74a9cf',size=1.5) +
+  geom_hline(yintercept=0,linetype="dashed")+
+  ggtitle("TB") +
+  theme_bw() +
+  ylim(-1.5,0.5)+
+  theme(
+    plot.title = element_text(size= 15),
+    axis.title.y = element_text(size = 14),
+    axis.title.x = element_blank(),
+    axis.text.y  = element_text(size = 12),
+    axis.text.x  = element_text(size = 12),
+    plot.margin = margin(t = 0,  # Top margin
+                         r = 0.5,  # Right margin
+                         b = 0.5,  # Bottom margin
+                         l = 0,  # Left margin
+                         unit = "cm")) + 
+  xlab("Date") + 
+  ylab("Water Level (m)") 
+
+(ND_winter + QB_winter) / (TB_winter + DB_winter)
+
+## 7.2 Calculate duration water spends in each horizon, rate of water rise ------------------------
+
+#Join together water level data and soil horizon elevations (dates already filtered to winter wet up)
+join <- left_join(MS_WL,survey,by=c("wetland","station")) 
+
+#Sort based on site & station
+join <- join %>% arrange(wetland, station, Timestamp) %>% drop_na(y_n)
+
+#Create column with binary indicator of saturation in each horizon
+soil_sat <- join %>% mutate(inunO = if_else(y_n>O_lower,1,0),
+                            inunA = if_else(y_n>A_lower,1,0),
+                            inunB = if_else(y_n>B_lower,1,0),
+                            water_in_O = if_else(y_n < 0 & y_n > O_lower,1,0),
+                            water_in_A = if_else(y_n < O_lower & y_n > A_lower,1,0),
+                            water_in_B = if_else(y_n < A_lower & y_n > B_lower,1,0))
+
+#Summarise Data
+soil_wetup_metrics<-soil_sat %>% 
+  #Group by wetland and sampling station
+  group_by(wetland, station) %>% 
+  #Summarise!
+  summarise(n_observations  = length(Timestamp),
+            dur_O_inun_day  = sum(inunO),
+            dur_water_in_O_day = sum(water_in_O),
+            O_percent_sat   =(sum(dur_water_in_O_day)/n_observations),
+            dur_A_inun_day  = sum(inunA),
+            dur_water_in_A_day = sum(water_in_A),
+            A_percent_sat   =(sum(dur_water_in_A_day)/n_observations),
+            dur_B_inun_day  = sum(inunB),
+            dur_water_in_B_day = sum(water_in_B),
+            B_percent_sat   =(sum(dur_water_in_B_day)/n_observations))
+
+
+#rate of water rise
+rate <- join %>% 
+  filter(station != "KW-4U") %>% 
+  group_by(wetland, station) %>% 
+  filter(Timestamp == first(Timestamp) | Timestamp == last(Timestamp)) 
+
+rate$first_last <- rep(c("first", "last"), times = nrow(rate)/2)
+rate_wide <- rate %>% pivot_wider(names_from = first_last, values_from = c(y_n,Timestamp))
+rate_rise <- rate_wide %>% 
+              mutate(n_days = difftime(Timestamp_last,Timestamp_first,units = "days"),
+                     delta_WL = y_n_last - y_n_first,
+                     rate = delta_WL/as.numeric(n_days))
+mean_rate <- mean(rate_rise$rate)
