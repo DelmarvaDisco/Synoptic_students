@@ -390,6 +390,7 @@ survey <- read_csv("MS_transect_survey.csv")
 ND_winter <- MS_WL %>% 
   filter(wetland == "ND" ) %>%
   pivot_wider(names_from = station, values_from = y_n) %>% 
+  #filter(Timestamp > "2019-12-09" & Timestamp < "2019-12-17" ) %>%
   ggplot(aes(x=Timestamp)) + 
   geom_line(aes(y=`KW-1W`), col='#045a8d',size=1.5) +
   geom_line(aes(y=`KW-2E`), col='#2b8cbe',size=1.5) +
@@ -493,7 +494,7 @@ TB_winter <- MS_WL %>%
 
 (ND_winter + QB_winter) / (TB_winter + DB_winter)
 
-## 7.2 Calculate duration water spends in each horizon, rate of water rise ------------------------
+## 7.2 Calculate duration water spends in each horizon, rate of water rise (Dec 1, 2019 - Feb 20, 2020) ------------------------
 
 #Join together water level data and soil horizon elevations (dates already filtered to winter wet up)
 join <- left_join(MS_WL,survey,by=c("wetland","station")) 
@@ -539,3 +540,55 @@ rate_rise <- rate_wide %>%
                      delta_WL = y_n_last - y_n_first,
                      rate = delta_WL/as.numeric(n_days))
 mean_rate <- mean(rate_rise$rate)
+
+## 7.3 Calculate duration water spends in each horizon, rate of water rise (Dec 9-16, 2019) ------------------------
+
+#filter time series down even more
+WL_short <- MS_WL %>%  
+  filter(Timestamp > "2019-12-08" & Timestamp < "2019-12-16" ) #Dec 9 - 16, 2019
+
+#Join together water level data and soil horizon elevations (dates already filtered to winter wet up)
+short_join <- left_join(WL_short,survey,by=c("wetland","station")) 
+
+#Sort based on site & station
+short_join <- short_join %>% arrange(wetland, station, Timestamp) %>% drop_na(y_n)
+
+#Create column with binary indicator of saturation in each horizon
+short_soil_sat <- short_join %>% mutate(inunO = if_else(y_n>O_lower,1,0),
+                            inunA = if_else(y_n>A_lower,1,0),
+                            inunB = if_else(y_n>B_lower,1,0),
+                            water_in_O = if_else(y_n < 0 & y_n > O_lower,1,0),
+                            water_in_A = if_else(y_n < O_lower & y_n > A_lower,1,0),
+                            water_in_B = if_else(y_n < A_lower & y_n > B_lower,1,0))
+
+#Summarise Data
+short_soil_wetup_metrics<-short_soil_sat  %>% 
+  #Group by wetland and sampling station
+  group_by(wetland, station) %>% 
+  #Summarise!
+  summarise(n_observations  = length(Timestamp),
+            dur_O_inun_day  = sum(inunO),
+            dur_water_in_O_day = sum(water_in_O),
+            O_percent_sat   =(sum(dur_water_in_O_day)/n_observations),
+            dur_A_inun_day  = sum(inunA),
+            dur_water_in_A_day = sum(water_in_A),
+            A_percent_sat   =(sum(dur_water_in_A_day)/n_observations),
+            dur_B_inun_day  = sum(inunB),
+            dur_water_in_B_day = sum(water_in_B),
+            B_percent_sat   =(sum(dur_water_in_B_day)/n_observations))
+
+
+#rate of water rise
+short_rate <- short_join %>% 
+  filter(station != "KW-4U") %>% 
+  group_by(wetland, station) %>% 
+  filter(Timestamp == first(Timestamp) | Timestamp == last(Timestamp)) 
+
+short_rate$first_last <- rep(c("first", "last"), times = nrow(rate)/2)
+short_rate_wide <- short_rate %>% pivot_wider(names_from = first_last, values_from = c(y_n,Timestamp))
+short_rate_rise <- short_rate_wide %>% 
+                    mutate(n_days = difftime(Timestamp_last,Timestamp_first,units = "days"),
+                           delta_WL = y_n_last - y_n_first,
+                           rate = delta_WL/as.numeric(n_days))
+short_mean_rate <- mean(short_rate_rise$rate)
+
