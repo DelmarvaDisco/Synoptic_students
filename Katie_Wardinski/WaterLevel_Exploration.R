@@ -22,6 +22,7 @@ library(ggpubr)
 library(lubridate)
 library(raster)
 library(patchwork)
+library(plotly)
 
 #set theme classic
 theme_set(theme_classic())
@@ -106,6 +107,32 @@ Site_Syn <- left_join(synoptic,site,by="Site")
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #3.0 Plot WL data -----------------------------------------------------------
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##3.1 SW Only ----------------------------------
+#all SW data
+SW_Clean %>% 
+  ggplot(aes(Date,dly_mean_wtrlvl,col=Site_Name))+
+  geom_line()
+
+#Interactive plot
+SW_Clean %>% 
+  #filter(Site_Name %in% c("BD-SW","DB-SW","JB-SW","ND-SW","OB-SW","QB-SW","TB-SW")) %>% 
+  plot_ly(x = ~Date) %>% 
+  add_trace(y = ~dly_mean_wtrlvl, type = 'scatter', mode = 'lines',color = ~Site_Name) 
+
+#zoom in on summer storm events
+SW_Clean %>% 
+  filter(Date > "2020-06-30" & Date < "2020-08-15") %>% 
+  ggplot(aes(Date,dly_mean_wtrlvl,col=Site_Name))+
+  geom_line()
+
+## 3.2 GW Only --------------------------------
+#all GW data
+GW %>% 
+  ggplot(aes(Date,dly_mean_wtrlvl,col=Site_Name))+
+  geom_line()
+
+
+## 3.3 Individual Sites -----------------------------------
 #QB trial
 SW_Clean %>% 
   filter(Site_Name == "QB-SW") %>% 
@@ -132,21 +159,6 @@ SW_Clean %>%
   ggplot()+
   geom_line(aes(Date,dly_mean_wtrlvl))
 
-#all SW data
-SW_Clean %>% 
-  ggplot(aes(Date,dly_mean_wtrlvl,col=Site_Name))+
-  geom_line()
-
-#zoom in on summer storm events
-SW_Clean %>% 
-  filter(Date > "2020-06-30" & Date < "2020-08-15") %>% 
-  ggplot(aes(Date,dly_mean_wtrlvl,col=Site_Name))+
-  geom_line()
-
-#all GW data
-GW %>% 
-  ggplot(aes(Date,dly_mean_wtrlvl,col=Site_Name))+
-  geom_line()
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #4.0 Explore WL vs Wetland Morphology ------------------------------------
@@ -237,12 +249,15 @@ Mean_Join %>%
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ## 6.1 Look at all sites (preliminary) -------------
-sa <- read_csv("jr_stage_area_relationships.csv")
+sa <- read_csv("stage_area_relationships.csv")
 
 #Explore stage-area
 sa %>% 
+  filter(Site_ID != "DF-SW") %>% 
+  filter(Site_ID != "FN-SW") %>% 
   ggplot(aes(z,area_m,col=Site_ID))+
-  geom_point()+
+  ylim(0,4000)+
+  geom_line()+
   xlab("Water Depth (m)")+
   ylab("Area (m2)")
 
