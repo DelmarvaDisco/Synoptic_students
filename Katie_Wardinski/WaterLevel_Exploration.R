@@ -249,27 +249,43 @@ Mean_Join %>%
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ## 6.1 Look at all sites (preliminary) -------------
-sa <- read_csv("stage_area_relationships.csv")
+sa_80 <- read_csv("stage_area_relationships_80.csv") #80% threshold for identifying depressions
+sa_97 <- read_csv("stage_area_relationships_97.csv") #97% threshold for identifying depressions
 
 #Explore stage-area
-sa %>% 
+sa_80 %>% 
   filter(Site_ID != "DF-SW") %>% 
   filter(Site_ID != "FN-SW") %>% 
   ggplot(aes(z,area_m,col=Site_ID))+
+  geom_point()+
+  ggtitle("80% threshold")+
   ylim(0,4000)+
-  geom_line()+
+  xlab("Water Depth (m)")+
+  ylab("Area (m2)")
+
+#I'm going to use 97 because it avoids merging issues with certain sites
+sa_97 %>% 
+  filter(Site_ID != "DF-SW") %>% 
+  filter(Site_ID != "FN-SW") %>% 
+  ggplot(aes(z,area_m,col=Site_ID))+
+  geom_point()+
+  ggtitle("97% threshold")+
   xlab("Water Depth (m)")+
   ylab("Area (m2)")
 
 #Explore stage-volume
-sa %>% 
+sa_97 %>% 
+  filter(Site_ID != "DF-SW") %>% 
+  filter(Site_ID != "FN-SW") %>% 
   ggplot(aes(z,volume_m3,col=Site_ID))+
   geom_point()+
   xlab("Water Depth (m)")+
   ylab("Volume (m3)")
 
 #Explore area-volume
-sa %>% 
+sa_97 %>%   
+  filter(Site_ID != "DF-SW") %>% 
+  filter(Site_ID != "FN-SW") %>% 
   ggplot(aes(area_m,volume_m3,col=Site_ID))+
   geom_point()+
   xlab("Area (m2)")+
@@ -279,7 +295,7 @@ sa %>%
 #Use OB-SW as example
 
 #fit equation to stage-area and stage-volume relationships
-OB_sa <- sa %>% filter(Site_ID == "OB-SW") %>% filter(z < 0.58)
+OB_sa <- sa_97 %>% filter(Site_ID == "OB-SW") %>% filter(z < 0.58)
 
 #stage - area is roughly linear
 OB_sa %>% 
