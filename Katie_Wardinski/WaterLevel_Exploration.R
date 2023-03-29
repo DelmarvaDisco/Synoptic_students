@@ -292,10 +292,12 @@ sa_97 %>%
   ylab("Volume (m3)")
 
 ##6.2 Calculate relative area and volume changes for a given change in water level --------------
-#Use OB-SW as example
 
+
+#Use OB-SW as example
 #fit equation to stage-area and stage-volume relationships
 OB_sa <- sa_97 %>% filter(Site_ID == "OB-SW") %>% filter(z < 0.58)
+
 
 #stage - area is roughly linear
 OB_sa %>% 
@@ -398,6 +400,41 @@ ggplot(OB_WL )+
   scale_color_manual(name="Legend",
                      values=c("Volume" = "#F8766D", 
                               "Area" = "#00B8E7"))
+
+
+#BD-SW
+BD_sa <- sa_97 %>% filter(Site_ID == "BD-SW") %>% filter(z < 0.55)
+
+#stage - area roughly linear
+BD_sa %>% 
+  ggplot(aes(z,area_m))+
+  geom_point(size=2)+
+  xlab("Water Depth (m)")+
+  ylab("Area (m2)")+
+  geom_smooth(method = 'lm',se=FALSE)+
+  stat_regline_equation(label.x = 0.2)+
+  stat_cor()+
+  theme(axis.text = element_text(size = 14))
+#geom_abline(slope = coef(area_model)[["z"]], 
+#intercept = coef(area_model)[["(Intercept)"]])
+
+area_model <- lm(area_m ~ z, data = BD_sa)
+summary(area_model) #area_m = 221.046*Z - 14.446
+
+#stage - volume is roughly a power curve 
+BD_sa %>% 
+  ggplot(aes(z,volume_m3))+
+  geom_point()+
+  xlab("Water Depth (m)")+
+  ylab("Volume (m3)")
+
+vol_model <- lm(volume_m3 ~ poly(z,2,raw=T),data=BD_sa)
+x_axis <- seq(0,0.6,length=58)
+plot(BD_sa$z,BD_sa$volume_m3,
+     xlab = "Depth (m)",
+     ylab = "Volume (m^3)")
+lines(x_axis,predict(vol_model,data.frame(x=x_axis)),col='blue')
+summary(vol_model) #vol_m3 = 255.384(z^2) + 28.988(z) - 4.173
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #7.0 MS Thesis WL Data -----------------------------------------------------------
