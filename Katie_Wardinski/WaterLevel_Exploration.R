@@ -23,6 +23,7 @@ library(lubridate)
 library(raster)
 library(patchwork)
 library(plotly)
+library(ggrepel)
 
 #set theme classic
 theme_set(theme_classic())
@@ -110,8 +111,14 @@ Site_Syn <- left_join(synoptic,site,by="Site")
 ##3.1 SW Only ----------------------------------
 #all SW data
 SW_Clean %>% 
+  filter(Site_Name != "DF-SW") %>% 
+  filter(Site_Name != "FN-SW") %>% 
   ggplot(aes(Date,dly_mean_wtrlvl,col=Site_Name))+
-  geom_line()
+  geom_line()+
+  ylab("Daily Mean Water Level (m)")+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size=12))
 
 #Interactive plot
 SW_Clean %>% 
@@ -268,10 +275,16 @@ sa_97 %>%
   filter(Site_ID != "DF-SW") %>% 
   filter(Site_ID != "FN-SW") %>% 
   ggplot(aes(z,area_m,col=Site_ID))+
-  geom_point()+
-  ggtitle("97% threshold")+
+  geom_line()+
+  geom_text_repel(
+    aes(label = Site_ID),
+    fontface ="plain", color = "black", size = 3)+
+  ggtitle("97% threshold for basin delineation")+
   xlab("Water Depth (m)")+
-  ylab("Area (m2)")
+  ylab("Area (sq. m.)")+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size=12))
 
 #Explore stage-volume
 sa_97 %>% 
@@ -293,11 +306,9 @@ sa_97 %>%
 
 ##6.2 Calculate relative area and volume changes for a given change in water level --------------
 
-
-#Use OB-SW as example
+### OB-SW  ----------------------------
 #fit equation to stage-area and stage-volume relationships
 OB_sa <- sa_97 %>% filter(Site_ID == "OB-SW") %>% filter(z < 0.58)
-
 
 #stage - area is roughly linear
 OB_sa %>% 
@@ -313,7 +324,7 @@ OB_sa %>%
               #intercept = coef(area_model)[["(Intercept)"]])
 
 area_model <- lm(area_m ~ z, data = OB_sa)
-summary(area_model) #area_m = 597.016*Z - 16.081
+summary(area_model) #area_m = 365.754*Z - 18.501
 
 #stage - volume is roughly a power curve 
 OB_sa %>% 
@@ -332,7 +343,7 @@ summary(vol_model) #vol_m3 = 1024.341(z^2) - 75.704(z) + 3
 
 #calculating change in area and volume on a daily timestep
 OB_WL <- WL %>% filter(Site_Name == "OB-SW") %>% 
-  mutate(area_m2 = if_else(dly_mean_wtrlvl > 0.025,((597.016*dly_mean_wtrlvl)-16.081),0),
+  mutate(area_m2 = if_else(dly_mean_wtrlvl > 0.025,((365.754*dly_mean_wtrlvl)-18.501),0),
          volume_m3 = if_else(dly_mean_wtrlvl > 0.025,((1024.341*(dly_mean_wtrlvl^2)) - (75.704*(dly_mean_wtrlvl)) + 3),0),
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -402,7 +413,7 @@ ggplot(OB_WL )+
                               "Area" = "#00B8E7"))
 
 
-#BD-SW
+### BD-SW ---------------------------------
 BD_sa <- sa_97 %>% filter(Site_ID == "BD-SW") %>% filter(z < 0.55)
 
 #stage - area roughly linear
@@ -435,6 +446,97 @@ plot(BD_sa$z,BD_sa$volume_m3,
      ylab = "Volume (m^3)")
 lines(x_axis,predict(vol_model,data.frame(x=x_axis)),col='blue')
 summary(vol_model) #vol_m3 = 255.384(z^2) + 28.988(z) - 4.173
+
+#calculating change in area and volume on a daily timestep
+BD_WL <- WL %>% filter(Site_Name == "BD-SW") %>% 
+  mutate(area_m2 = if_else(dly_mean_wtrlvl > 0.025,((221.046*dly_mean_wtrlvl)-14.446),0),
+         volume_m3 = if_else(dly_mean_wtrlvl > 0.025,((255.384*(dly_mean_wtrlvl^2)) + (28.998*(dly_mean_wtrlvl)) - 4.173),0),
+         delta_area = area_m2 - lag(area_m2),
+         delta_vol = volume_m3 - lag(volume_m3))
+#****had to mess around with the water level threshold so I wouldn't get negative area values
+
+#plot area over time
+ggplot(BD_WL )+
+  geom_line(aes(ymd(Date),delta_area))+ #mirrors WL since it's a linear relationship
+  ylab("Change in Area (m2)")+
+  xlab("Date")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))+
+  ggtitle("BD-SW daily change in wetland area")
+
+
+### DB-SW ---------------------------------
+DB_sa <- sa_97 %>% filter(Site_ID == "DB-SW") %>% filter(z < 1.1)
+
+#stage - area roughly linear
+DB_sa %>% 
+  ggplot(aes(z,area_m))+
+  geom_point(size=2)+
+  xlab("Water Depth (m)")+
+  ylab("Area (m2)")+
+  geom_smooth(method = 'lm',se=FALSE)+
+  stat_regline_equation(label.x = 0.2)+
+  stat_cor()+
+  theme(axis.text = element_text(size = 14))
+#geom_abline(slope = coef(area_model)[["z"]], 
+#intercept = coef(area_model)[["(Intercept)"]])
+
+area_model <- lm(area_m ~ z, data = DB_sa)
+summary(area_model) #area_m = 510.628*Z - 20.911
+
+#stage - volume is roughly a power curve 
+DB_sa %>% 
+  ggplot(aes(z,volume_m3))+
+  geom_point()+
+  xlab("Water Depth (m)")+
+  ylab("Volume (m3)")
+
+vol_model <- lm(volume_m3 ~ poly(z,2,raw=T),data=DB_sa)
+x_axis <- seq(0,1.1,length=58)
+plot(DB_sa$z,DB_sa$volume_m3,
+     xlab = "Depth (m)",
+     ylab = "Volume (m^3)")
+lines(x_axis,predict(vol_model,data.frame(x=x_axis)),col='blue')
+summary(vol_model) #vol_m3 = 538.824(z^2) + 211.054(z) - 35.989
+
+#calculating change in area and volume on a daily timestep
+DB_WL <- WL %>% filter(Site_Name == "DB-SW") %>% 
+  mutate(area_m2 = if_else(dly_mean_wtrlvl > 0.025,((510.628*dly_mean_wtrlvl)-20.911),0),
+         volume_m3 = if_else(dly_mean_wtrlvl > 0.025,((538.824*(dly_mean_wtrlvl^2)) + (211.054*(dly_mean_wtrlvl)) - 35.989),0),
+         delta_area = area_m2 - lag(area_m2),
+         delta_vol = volume_m3 - lag(volume_m3))
+#****had to mess around with the water level threshold so I wouldn't get negative area values
+
+#plot area over time
+ggplot(DB_WL )+
+  geom_line(aes(ymd(Date),delta_area))+ #mirrors WL since it's a linear relationship
+  ylab("Change in Area (m2)")+
+  xlab("Date")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))+
+  ggtitle("DB-SW daily change in wetland area")
+
+
+### DK-SW ------------------------------
+### HB-SW ------------------------------
+### JA-SW ------------------------------
+### JB-SW ------------------------------
+### JC-SW ------------------------------
+### MB-SW ------------------------------
+### NB-SW ------------------------------
+### ND-SW ------------------------------
+### QB-SW ------------------------------
+### TA-SW ------------------------------
+### TB-SW ------------------------------
+### TI-SW ------------------------------
+### TS-SW ------------------------------
+### XB-SW ------------------------------
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #7.0 MS Thesis WL Data -----------------------------------------------------------
