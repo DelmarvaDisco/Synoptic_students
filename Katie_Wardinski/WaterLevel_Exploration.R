@@ -276,9 +276,6 @@ sa_97 %>%
   filter(Site_ID != "FN-SW") %>% 
   ggplot(aes(z,area_m,col=Site_ID))+
   geom_line()+
-  geom_text_repel(
-    aes(label = Site_ID),
-    fontface ="plain", color = "black", size = 3)+
   ggtitle("97% threshold for basin delineation")+
   xlab("Water Depth (m)")+
   ylab("Area (sq. m.)")+
@@ -291,6 +288,7 @@ sa_97 %>%
   filter(Site_ID != "DF-SW") %>% 
   filter(Site_ID != "FN-SW") %>% 
   ggplot(aes(z,volume_m3,col=Site_ID))+
+  ggtitle("97% threshold for basin delineation")+
   geom_point()+
   xlab("Water Depth (m)")+
   ylab("Volume (m3)")
@@ -307,51 +305,90 @@ sa_97 %>%
 ##6.2 Calculate relative area and volume changes for a given change in water level --------------
 
 ### OB-SW  ----------------------------
-#fit equation to stage-area and stage-volume relationships
-OB_sa <- sa_97 %>% filter(Site_ID == "OB-SW") %>% filter(z < 0.58)
+#plot stage area relationship
 
-#stage - area is roughly linear
+OB_sa <- sa_97 %>% filter(Site_ID == "OB-SW") 
+
 OB_sa %>% 
   ggplot(aes(z,area_m))+
   geom_point(size=2)+
   xlab("Water Depth (m)")+
-  ylab("Area (m2)")+
-  geom_smooth(method = 'lm',se=FALSE)+
-  stat_regline_equation(label.x = 0.2)+
-  stat_cor()+
+  ylab("Area (m2)")
   theme(axis.text = element_text(size = 14))
-  #geom_abline(slope = coef(area_model)[["z"]], 
-              #intercept = coef(area_model)[["(Intercept)"]])
 
-area_model <- lm(area_m ~ z, data = OB_sa)
-summary(area_model) #area_m = 365.754*Z - 18.501
-
-#stage - volume is roughly a power curve 
 OB_sa %>% 
   ggplot(aes(z,volume_m3))+
   geom_point()+
   xlab("Water Depth (m)")+
   ylab("Volume (m3)")
 
-vol_model <- lm(volume_m3 ~ poly(z,2,raw=T),data=OB_sa)
-x_axis <- seq(0,0.6,length=58)
-plot(OB_sa$z,OB_sa$volume_m3,
-     xlab = "Depth (m)",
-     ylab = "Volume (m^3)")
-lines(x_axis,predict(vol_model,data.frame(x=x_axis)),col='blue')
-summary(vol_model) #vol_m3 = 1024.341(z^2) - 75.704(z) + 3
+#find max area and volume
+max(OB_sa$area_m) #187 sq m @ z = 0.5
+max(OB_sa$volume_m3)
+
+#filter to where there's breaks in the data trends
+OB_sa_lower <- sa_97 %>% filter(Site_ID == "OB-SW") %>% filter(z < 0.5)
+OB_sa_upper <- sa_97 %>% filter(Site_ID == "OB-SW") %>% filter(z >= 0.5)
+
+#fit equation to stage-area and stage-volume relationships
+#stage - area
+OB_sa_lower %>%
+  ggplot(aes(z,area_m))+
+  geom_point(size=2)+
+  xlab("Water Depth (m)")+
+  ylab("Area (m2)")+
+  geom_smooth(method = 'glm',
+              formula = y ~ poly(x,4,raw=T),
+              se = FALSE)+
+  theme(axis.text = element_text(size = 14))
+
+OB_area_model <- lm(area_m ~ poly(z,4,raw=T), data = OB_sa_lower)
+summary(OB_area_model) #area_m = 3442.178z^4 - 6008.535z^3 + 2426.926z^2 + 216.826z + 2.547
+
+#stage - volume is cubic polynomial when z < 0.5 and linear z > -.5
+OB_sa_lower %>% 
+  ggplot(aes(z,volume_m3))+
+  geom_point()+
+  xlab("Water Depth (m)")+
+  ylab("Volume (m3)")+
+  geom_smooth(method = 'glm',formula = y ~ poly(x,3,raw=T),se=FALSE)
+
+OB_sa_upper %>% 
+  ggplot(aes(z,volume_m3))+
+  geom_point()+
+  xlab("Water Depth (m)")+
+  ylab("Volume (m3)")+
+  geom_smooth(method = 'lm',formula = y ~ x,se=FALSE)
+
+OB_vol_model_lower <- lm(volume_m3 ~ poly(z,3,raw=T),data=OB_sa_lower)
+summary(OB_vol_model_lower) #vol_m3 = -2110.5033z^3 + 1817.4408(z^2) - 132.9173(z) + 2.6822
+OB_vol_model_upper <- lm(volume_m3 ~ z,data=OB_sa_upper)
+summary(OB_vol_model_upper) #vol_m3 = 187z + 36.33
 
 #calculating change in area and volume on a daily timestep
-OB_WL <- WL %>% filter(Site_Name == "OB-SW") %>% 
-  mutate(area_m2 = if_else(dly_mean_wtrlvl > 0.025,((365.754*dly_mean_wtrlvl)-18.501),0),
-         volume_m3 = if_else(dly_mean_wtrlvl > 0.025,((1024.341*(dly_mean_wtrlvl^2)) - (75.704*(dly_mean_wtrlvl)) + 3),0),
+OB_WL <- WL %>% 
+  filter(Site_Name == "OB-SW") %>% 
+  filter(dly_mean_wtrlvl >= 0) %>% 
+  mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.5 & dly_mean_wtrlvl > 0, 
+                       ((3442.178*(dly_mean_wtrlvl^4)) - 
+                       (6008.535*(dly_mean_wtrlvl^3)) + 
+                       (2426.926*(dly_mean_wtrlvl^2)) +  
+                       (216.826*dly_mean_wtrlvl)-
+                        2.547),187),
+         volume_m3 = if_else(dly_mean_wtrlvl < 0.5 & dly_mean_wtrlvl > 0,
+                      ((-2110.5037*(dly_mean_wtrlvl^3)) + 
+                       (1817.4408*(dly_mean_wtrlvl^2)) -
+                       (132.9173*(dly_mean_wtrlvl)) + 
+                        2.6822),
+                      ((187*dly_mean_wtrlvl) + 36.33)),
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
-#****had to mess around with the water level threshold so I wouldn't get negative area values
 
 #plot water level over time
-ggplot(OB_WL )+
-  geom_line(aes(ymd(Date),dly_mean_wtrlvl))+ #mirrors WL since it's a linear relationship
+OB_p1 <- WL %>% 
+  filter(Site_Name == "OB-SW") %>%
+  ggplot()+
+  geom_line(aes(ymd(Date),dly_mean_wtrlvl))+ 
   ylab("Water level (m)")+
   xlab("Date")+
   ggtitle("OB-SW daily wetland water level")+
@@ -361,10 +398,9 @@ ggplot(OB_WL )+
         axis.title.x  = element_text(size=18),
         title = element_text(size = 18))
 
-
 #plot area over time
-ggplot(OB_WL )+
-  geom_line(aes(ymd(Date),area_m2))+ #mirrors WL since it's a linear relationship
+OB_p2 <- ggplot(OB_WL)+
+  geom_line(aes(ymd(Date),area_m2))+ 
   ylab("Area (m2)")+
   xlab("Date")+
   theme(axis.text.y   = element_text(size=16),
@@ -374,9 +410,24 @@ ggplot(OB_WL )+
         title = element_text(size = 18))+
   ggtitle("OB-SW daily wetland area")
 
+#plot change in area over time
+OB_p3 <- ggplot(OB_WL)+
+  geom_line(aes(ymd(Date),delta_area))+
+  ylab("Delta Area (m2)")+
+  xlab("Date")+  
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))+
+  ggtitle("OB-SW daily change in wetland area")
+
+OB_p1 / OB_p2 / OB_p3
+
 #plot volume over time
 ggplot(OB_WL )+
   geom_line(aes(ymd(Date),volume_m3)) 
+
 #both
 ggplot(OB_WL )+
   geom_line(aes(ymd(Date),volume_m3,col="Volume")) +
@@ -387,22 +438,11 @@ ggplot(OB_WL )+
                      values=c("Volume" = "#F8766D", 
                               "Area" = "#00B8E7"))
 
-#change in both area and volume over time
-#plot area over time
+#plot change in volume over time
 ggplot(OB_WL )+
-  geom_line(aes(ymd(Date),delta_area))+
-  ylab("Delta Area (m2)")+
-  xlab("Date")+  
-  theme(axis.text.y   = element_text(size=16),
-        axis.text.x   = element_text(size=16),
-        axis.title.y  = element_text(size=18),
-        axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))+
-  ggtitle("OB-SW daily change in wetland area")
-#plot volume over time
-ggplot(OB_WL )+
-  geom_line(aes(ymd(Date),delta_volume)) 
-#both
+  geom_line(aes(ymd(Date),delta_vol)) 
+
+#both changes over time
 ggplot(OB_WL )+
   geom_line(aes(ymd(Date),delta_vol,col="Volume")) +
   geom_line(aes(ymd(Date),delta_area,col="Area")) +
@@ -414,113 +454,85 @@ ggplot(OB_WL )+
 
 
 ### BD-SW ---------------------------------
-BD_sa <- sa_97 %>% filter(Site_ID == "BD-SW") %>% filter(z < 0.55)
+BD_sa <- sa_97 %>% filter(Site_ID == "BD-SW")
 
-#stage - area roughly linear
 BD_sa %>% 
   ggplot(aes(z,area_m))+
   geom_point(size=2)+
   xlab("Water Depth (m)")+
   ylab("Area (m2)")+
-  geom_smooth(method = 'lm',se=FALSE)+
-  stat_regline_equation(label.x = 0.2)+
-  stat_cor()+
   theme(axis.text = element_text(size = 14))
-#geom_abline(slope = coef(area_model)[["z"]], 
-#intercept = coef(area_model)[["(Intercept)"]])
 
-area_model <- lm(area_m ~ z, data = BD_sa)
-summary(area_model) #area_m = 221.046*Z - 14.446
-
-#stage - volume is roughly a power curve 
-BD_sa %>% 
-  ggplot(aes(z,volume_m3))+
+BD_sa %>% ggplot(aes(z,volume_m3))+
   geom_point()+
   xlab("Water Depth (m)")+
   ylab("Volume (m3)")
 
-vol_model <- lm(volume_m3 ~ poly(z,2,raw=T),data=BD_sa)
-x_axis <- seq(0,0.6,length=58)
-plot(BD_sa$z,BD_sa$volume_m3,
-     xlab = "Depth (m)",
-     ylab = "Volume (m^3)")
-lines(x_axis,predict(vol_model,data.frame(x=x_axis)),col='blue')
-summary(vol_model) #vol_m3 = 255.384(z^2) + 28.988(z) - 4.173
+#find max area
+max(BD_sa$area_m) #94 sq m @ z = 0.52
+
+#filter to where there's breaks in the data trends
+BD_sa_lower <- sa_97 %>% filter(Site_ID == "BD-SW") %>% filter(z < 0.52)
+BD_sa_upper <- sa_97 %>% filter(Site_ID == "BD-SW") %>% filter(z >= 0.52)
+
+#fit equation to stage-area and stage-volume relationships
+#stage - area
+BD_sa_lower %>%
+  ggplot(aes(z,area_m))+
+  geom_point(size=2)+
+  xlab("Water Depth (m)")+
+  ylab("Area (m2)")+
+  geom_smooth(method = 'glm',
+              formula = y ~ poly(x,5,raw=T),
+              se = FALSE)+
+  theme(axis.text = element_text(size = 14))
+
+BD_area_model <- lm(area_m ~ poly(z,5,raw=T), data = BD_sa_lower)
+summary(BD_area_model) 
+#area_m = 33160z^5 - 43080z^4 - 1747z^3 + 1883z^2 + 69.32z + 0.6514
+
+#stage - volume is cubic polynomial when z < 0.5 and linear z > -.5
+OB_sa_lower %>% 
+  ggplot(aes(z,volume_m3))+
+  geom_point()+
+  xlab("Water Depth (m)")+
+  ylab("Volume (m3)")+
+  geom_smooth(method = 'glm',formula = y ~ poly(x,3,raw=T),se=FALSE)
+
+OB_sa_upper %>% 
+  ggplot(aes(z,volume_m3))+
+  geom_point()+
+  xlab("Water Depth (m)")+
+  ylab("Volume (m3)")+
+  geom_smooth(method = 'lm',formula = y ~ x,se=FALSE)
+
+OB_vol_model_lower <- lm(volume_m3 ~ poly(z,3,raw=T),data=OB_sa_lower)
+summary(OB_vol_model_lower) #vol_m3 = -2110.5033z^3 + 1817.4408(z^2) - 132.9173(z) + 2.6822
+OB_vol_model_upper <- lm(volume_m3 ~ z,data=OB_sa_upper)
+summary(OB_vol_model_upper) #vol_m3 = 187z + 36.33
 
 #calculating change in area and volume on a daily timestep
-BD_WL <- WL %>% filter(Site_Name == "BD-SW") %>% 
-  mutate(area_m2 = if_else(dly_mean_wtrlvl > 0.025,((221.046*dly_mean_wtrlvl)-14.446),0),
-         volume_m3 = if_else(dly_mean_wtrlvl > 0.025,((255.384*(dly_mean_wtrlvl^2)) + (28.998*(dly_mean_wtrlvl)) - 4.173),0),
+OB_WL <- WL %>% 
+  filter(Site_Name == "OB-SW") %>% 
+  filter(dly_mean_wtrlvl >= 0) %>% 
+  mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.5 & dly_mean_wtrlvl > 0, 
+                           ((3442.178*(dly_mean_wtrlvl^4)) - 
+                              (6008.535*(dly_mean_wtrlvl^3)) + 
+                              (2426.926*(dly_mean_wtrlvl^2)) +  
+                              (216.826*dly_mean_wtrlvl)-
+                              2.547),187),
+         volume_m3 = if_else(dly_mean_wtrlvl < 0.5 & dly_mean_wtrlvl > 0,
+                             ((-2110.5037*(dly_mean_wtrlvl^3)) + 
+                                (1817.4408*(dly_mean_wtrlvl^2)) -
+                                (132.9173*(dly_mean_wtrlvl)) + 
+                                2.6822),
+                             ((187*dly_mean_wtrlvl) + 36.33)),
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
-#****had to mess around with the water level threshold so I wouldn't get negative area values
-
-#plot area over time
-ggplot(BD_WL )+
-  geom_line(aes(ymd(Date),delta_area))+ #mirrors WL since it's a linear relationship
-  ylab("Change in Area (m2)")+
-  xlab("Date")+
-  theme(axis.text.y   = element_text(size=16),
-        axis.text.x   = element_text(size=16),
-        axis.title.y  = element_text(size=18),
-        axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))+
-  ggtitle("BD-SW daily change in wetland area")
 
 
 ### DB-SW ---------------------------------
-DB_sa <- sa_97 %>% filter(Site_ID == "DB-SW") %>% filter(z < 1.1)
 
-#stage - area roughly linear
-DB_sa %>% 
-  ggplot(aes(z,area_m))+
-  geom_point(size=2)+
-  xlab("Water Depth (m)")+
-  ylab("Area (m2)")+
-  geom_smooth(method = 'lm',se=FALSE)+
-  stat_regline_equation(label.x = 0.2)+
-  stat_cor()+
-  theme(axis.text = element_text(size = 14))
-#geom_abline(slope = coef(area_model)[["z"]], 
-#intercept = coef(area_model)[["(Intercept)"]])
-
-area_model <- lm(area_m ~ z, data = DB_sa)
-summary(area_model) #area_m = 510.628*Z - 20.911
-
-#stage - volume is roughly a power curve 
-DB_sa %>% 
-  ggplot(aes(z,volume_m3))+
-  geom_point()+
-  xlab("Water Depth (m)")+
-  ylab("Volume (m3)")
-
-vol_model <- lm(volume_m3 ~ poly(z,2,raw=T),data=DB_sa)
-x_axis <- seq(0,1.1,length=58)
-plot(DB_sa$z,DB_sa$volume_m3,
-     xlab = "Depth (m)",
-     ylab = "Volume (m^3)")
-lines(x_axis,predict(vol_model,data.frame(x=x_axis)),col='blue')
-summary(vol_model) #vol_m3 = 538.824(z^2) + 211.054(z) - 35.989
-
-#calculating change in area and volume on a daily timestep
-DB_WL <- WL %>% filter(Site_Name == "DB-SW") %>% 
-  mutate(area_m2 = if_else(dly_mean_wtrlvl > 0.025,((510.628*dly_mean_wtrlvl)-20.911),0),
-         volume_m3 = if_else(dly_mean_wtrlvl > 0.025,((538.824*(dly_mean_wtrlvl^2)) + (211.054*(dly_mean_wtrlvl)) - 35.989),0),
-         delta_area = area_m2 - lag(area_m2),
-         delta_vol = volume_m3 - lag(volume_m3))
-#****had to mess around with the water level threshold so I wouldn't get negative area values
-
-#plot area over time
-ggplot(DB_WL )+
-  geom_line(aes(ymd(Date),delta_area))+ #mirrors WL since it's a linear relationship
-  ylab("Change in Area (m2)")+
-  xlab("Date")+
-  theme(axis.text.y   = element_text(size=16),
-        axis.text.x   = element_text(size=16),
-        axis.title.y  = element_text(size=18),
-        axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))+
-  ggtitle("DB-SW daily change in wetland area")
 
 
 ### DK-SW ------------------------------
