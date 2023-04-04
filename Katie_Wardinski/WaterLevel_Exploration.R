@@ -24,6 +24,7 @@ library(raster)
 library(patchwork)
 library(plotly)
 library(ggrepel)
+library(ggpmisc)
 
 #set theme classic
 theme_set(theme_classic())
@@ -489,47 +490,104 @@ BD_sa_lower %>%
 
 BD_area_model <- lm(area_m ~ poly(z,5,raw=T), data = BD_sa_lower)
 summary(BD_area_model) 
-#area_m = 33160z^5 - 43080z^4 - 1747z^3 + 1883z^2 + 69.32z + 0.6514
+#area_m = 33160z^5 - 43080z^4 - 1747z^3 - 1883z^2 + 69.32z + 0.6514
 
-#stage - volume is cubic polynomial when z < 0.5 and linear z > -.5
-OB_sa_lower %>% 
+#stage - volume is cubic polynomial when z < 0.52 and linear z > -.52
+BD_sa_lower %>% 
   ggplot(aes(z,volume_m3))+
   geom_point()+
   xlab("Water Depth (m)")+
   ylab("Volume (m3)")+
-  geom_smooth(method = 'glm',formula = y ~ poly(x,3,raw=T),se=FALSE)
+  geom_smooth(method = 'glm',formula = y ~ poly(x,4,raw=F),se=FALSE)
 
-OB_sa_upper %>% 
+BD_sa_upper %>% 
   ggplot(aes(z,volume_m3))+
   geom_point()+
   xlab("Water Depth (m)")+
   ylab("Volume (m3)")+
   geom_smooth(method = 'lm',formula = y ~ x,se=FALSE)
 
-OB_vol_model_lower <- lm(volume_m3 ~ poly(z,3,raw=T),data=OB_sa_lower)
-summary(OB_vol_model_lower) #vol_m3 = -2110.5033z^3 + 1817.4408(z^2) - 132.9173(z) + 2.6822
-OB_vol_model_upper <- lm(volume_m3 ~ z,data=OB_sa_upper)
-summary(OB_vol_model_upper) #vol_m3 = 187z + 36.33
+BD_vol_model_lower <- lm(volume_m3 ~ poly(z,4,raw=T),data=BD_sa_lower)
+summary(BD_vol_model_lower) 
+#vol_m3 = -3419.1853 + 2432.1954z^3 - 21.2333(z^2) - 30.0523(z) + 0.8768
+BD_vol_model_lower2 <- lm(volume_m3 ~ poly(z,4),data=BD_sa_lower);summary(BD_vol_model_lower2)
+
+new_vals <- seq(from=0,to=0.51,by=0.005)
+predict_BD_vol_model_lower <- predict(BD_vol_model_lower,newdata = list(z = new_vals))
+plot(x=BD_sa_lower$z,y=BD_sa_lower$volume_m3)
+points(x=new_vals,y=predict_BD_vol_model_lower,col="blue")
+
+BD_vol_model_upper <- lm(volume_m3 ~ z,data=BD_sa_upper)
+summary(BD_vol_model_upper) #vol_m3 = 94z + 26.36
 
 #calculating change in area and volume on a daily timestep
-OB_WL <- WL %>% 
-  filter(Site_Name == "OB-SW") %>% 
+BD_WL <- WL %>% 
+  filter(Site_Name == "BD-SW") %>% 
   filter(dly_mean_wtrlvl >= 0) %>% 
-  mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.5 & dly_mean_wtrlvl > 0, 
-                           ((3442.178*(dly_mean_wtrlvl^4)) - 
-                              (6008.535*(dly_mean_wtrlvl^3)) + 
-                              (2426.926*(dly_mean_wtrlvl^2)) +  
-                              (216.826*dly_mean_wtrlvl)-
-                              2.547),187),
-         volume_m3 = if_else(dly_mean_wtrlvl < 0.5 & dly_mean_wtrlvl > 0,
-                             ((-2110.5037*(dly_mean_wtrlvl^3)) + 
-                                (1817.4408*(dly_mean_wtrlvl^2)) -
-                                (132.9173*(dly_mean_wtrlvl)) + 
-                                2.6822),
-                             ((187*dly_mean_wtrlvl) + 36.33)),
+  #area_m = 33160z^5 - 43080z^4 - 1747z^3 - 1883z^2 + 69.32z + 0.6514
+  mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.52 & dly_mean_wtrlvl > 0, 
+                           ((33160*(dly_mean_wtrlvl^5)) -
+                             (43080*(dly_mean_wtrlvl^4)) - 
+                              (1747*(dly_mean_wtrlvl^3)) - 
+                              (1883*(dly_mean_wtrlvl^2)) +  
+                              (69.32*dly_mean_wtrlvl) +
+                              0.6514),
+                              94), #otherwise print max area
+  #vol_m3 = -3419.1853z^4 + 2432.1954z^3 - 21.2333(z^2) - 30.0523(z) + 0.8768
+         volume_m3 = if_else(dly_mean_wtrlvl < 0.52 & dly_mean_wtrlvl > 0,
+                             ((-3419.1853*(dly_mean_wtrlvl^4)) + #print polynomial
+                                (2432.1954*(dly_mean_wtrlvl^3)) - 
+                                (21.2333*(dly_mean_wtrlvl^2)) -
+                                (30.0523*(dly_mean_wtrlvl)) + 
+                                0.8768),
+                             ((94*dly_mean_wtrlvl) + 24.26)), #otherwise print linear model
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
 
+
+#plot water level over time
+BD_p1 <- WL %>% 
+  filter(Site_Name == "BD-SW") %>%
+  ggplot()+
+  geom_line(aes(ymd(Date),dly_mean_wtrlvl))+ 
+  ylab("Water level (m)")+
+  xlab("Date")+
+  ggtitle("BD-SW daily wetland water level")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))
+
+#plot area over time
+BD_p2 <- ggplot(BD_WL)+
+  geom_line(aes(ymd(Date),area_m2))+ 
+  ylab("Area (m2)")+
+  xlab("Date")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))+
+  ggtitle("BD-SW daily wetland area")
+
+#plot change in area over time
+BD_p3 <- ggplot(BD_WL)+
+  geom_line(aes(ymd(Date),delta_area))+
+  ylab("Delta Area (m2)")+
+  xlab("Date")+  
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))+
+  ggtitle("BD-SW daily change in wetland area")
+
+BD_p1 / BD_p2 / BD_p3
+
+#plot volume over time
+ggplot(BD_WL )+
+  geom_line(aes(ymd(Date),volume_m3)) 
 
 ### DB-SW ---------------------------------
 
