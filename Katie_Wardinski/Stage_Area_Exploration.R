@@ -199,9 +199,8 @@ summary(BD_vol_model_upper)
 #calculating change in area and volume on a daily timestep
 BD_WL <- WL %>% 
   filter(Site_Name == "BD-SW") %>% 
-  filter(dly_mean_wtrlvl >= 0) %>% 
-  #for area, if water level is <0.5, use stage-area polynomial function, otherwise 
-  #print the max area value
+  #for area, if water level is <0.5, use stage-area polynomial function, 
+  #if WL < 0 print 0, if WL > 0.5 print max area
   mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.52 & dly_mean_wtrlvl > 0, 
                            ((BD_area_model$coefficients[6]*(dly_mean_wtrlvl^5)) + 
                             (BD_area_model$coefficients[5]*(dly_mean_wtrlvl^4)) +
@@ -209,18 +208,20 @@ BD_WL <- WL %>%
                             (BD_area_model$coefficients[3]*(dly_mean_wtrlvl^2)) +  
                             (BD_area_model$coefficients[2]*dly_mean_wtrlvl) +
                              BD_area_model$coefficients[1]),
-                           max(BD_sa$area_m)),
+                   if_else(dly_mean_wtrlvl >= 0.52,max(BD_sa$area_m),0)),
+                   #if_else(dly_mean_wtrlvl <= 0,0,NA))),
          
-  #for volume, if water level is <0.5, use stage-area polynomial function, otherwise
-  #use the linear relationship
+  #for volume, if water level is <0.5, use stage-area polynomial function, 
+  #if WL > 0.5 use the linear relationship, if wl < 0 print 0
          volume_m3 = if_else(dly_mean_wtrlvl < 0.52 & dly_mean_wtrlvl > 0,
                              ((BD_vol_model_lower$coefficients[5]*(dly_mean_wtrlvl^4)) + 
                               (BD_vol_model_lower$coefficients[4]*(dly_mean_wtrlvl^3)) + 
                               (BD_vol_model_lower$coefficients[3]*(dly_mean_wtrlvl^2)) +
                               (BD_vol_model_lower$coefficients[2]*(dly_mean_wtrlvl)) + 
                                BD_vol_model_lower$coefficients[1]),
-                             ((BD_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
-                               BD_vol_model_upper$coefficients[1])),
+                             if_else(dly_mean_wtrlvl >= 0.52,
+                                     (BD_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
+                                     (BD_vol_model_upper$coefficients[1]),0)),                            # if_else(dly_mean_wtrlvl <= 0,0,NA))),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -355,8 +356,6 @@ summary(DB_vol_model_upper) #vol_m3 = 187z + 36.33
 #calculating change in area and volume on a daily timestep
 DB_WL <- WL %>% 
   filter(Site_Name == "DB-SW") %>% 
-  filter(dly_mean_wtrlvl >= 0) %>% 
-  
   #for area, if water level is <0.5, use stage-area polynomial function, otherwise 
   #print the max area value
   mutate(area_m2 = if_else(dly_mean_wtrlvl < 1.08 & dly_mean_wtrlvl > 0, 
@@ -366,7 +365,8 @@ DB_WL <- WL %>%
                             (DB_area_model$coefficients[3]*(dly_mean_wtrlvl^2)) +  
                             (DB_area_model$coefficients[2]*dly_mean_wtrlvl) +
                              DB_area_model$coefficients[1]),
-                           max(DB_sa$area_m)),
+                           if_else(dly_mean_wtrlvl >= 1.08,max(DB_sa$area_m),0)),
+        
          #for volume, if water level is <0.5, use stage-area polynomial function, otherwise
          #use the linear relationship
          volume_m3 = if_else(dly_mean_wtrlvl < 1.08 & dly_mean_wtrlvl > 0,
@@ -375,8 +375,9 @@ DB_WL <- WL %>%
                               (DB_vol_model_lower$coefficients[3]*(dly_mean_wtrlvl^2)) +
                               (DB_vol_model_lower$coefficients[2]*(dly_mean_wtrlvl)) + 
                                DB_vol_model_lower$coefficients[1]),
-                             ((DB_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
-                               DB_vol_model_upper$coefficients[1])),
+                             if_else(dly_mean_wtrlvl >= 1.08,
+                                     (DB_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
+                                      DB_vol_model_upper$coefficients[1],0)),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -512,8 +513,6 @@ summary(DK_vol_model_upper)
 #calculating change in area and volume on a daily timestep
 DK_WL <- WL %>% 
   filter(Site_Name == "DK-SW") %>% 
-  filter(dly_mean_wtrlvl >= 0) %>% 
-  
   #for area, if water level is <0.5, use stage-area polynomial function, otherwise 
   #print the max area value
   mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.54 & dly_mean_wtrlvl > 0, 
@@ -525,7 +524,7 @@ DK_WL <- WL %>%
                             (DK_area_model$coefficients[3]*(dly_mean_wtrlvl^2)) +  
                             (DK_area_model$coefficients[2]*dly_mean_wtrlvl) +
                              DK_area_model$coefficients[1]),
-                            max(DK_sa$area_m)),
+                            if_else(dly_mean_wtrlvl >= 0.54,max(DK_sa$area_m),0)),
          #for volume, if water level is <0.5, use stage-area polynomial function, otherwise
          #use the linear relationship
          volume_m3 = if_else(dly_mean_wtrlvl < 0.54 & dly_mean_wtrlvl > 0,
@@ -536,8 +535,9 @@ DK_WL <- WL %>%
                               (DK_vol_model_lower$coefficients[3]*(dly_mean_wtrlvl^2)) +
                               (DK_vol_model_lower$coefficients[2]*(dly_mean_wtrlvl)) + 
                                DK_vol_model_lower$coefficients[1]),
-                             ((DK_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
-                               DK_vol_model_upper$coefficients[1])),
+                             if_else(dly_mean_wtrlvl >= 0.54,
+                                     (DK_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
+                                      DK_vol_model_upper$coefficients[1],0)),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -671,8 +671,6 @@ summary(HB_vol_model_upper)
 #calculating change in area and volume on a daily timestep
 HB_WL <- WL %>% 
   filter(Site_Name == "HB-SW") %>% 
-  filter(dly_mean_wtrlvl >= 0) %>% 
-  
   #for area, if water level is <0.5, use stage-area polynomial function, otherwise 
   #print the max area value
   mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.48 & dly_mean_wtrlvl > 0, 
@@ -682,7 +680,7 @@ HB_WL <- WL %>%
                             (HB_area_model$coefficients[3]*(dly_mean_wtrlvl^2)) +  
                             (HB_area_model$coefficients[2]*dly_mean_wtrlvl) +
                              HB_area_model$coefficients[1]),
-                           max(HB_sa$area_m)),
+                           if_else(dly_mean_wtrlvl >= 0.48,max(HB_sa$area_m),0)),
          #for volume, if water level is <0.5, use stage-area polynomial function, otherwise
          #use the linear relationship
          volume_m3 = if_else(dly_mean_wtrlvl < 0.48 & dly_mean_wtrlvl > 0,
@@ -692,8 +690,9 @@ HB_WL <- WL %>%
                               (HB_vol_model_lower$coefficients[3]*(dly_mean_wtrlvl^2)) +
                               (HB_vol_model_lower$coefficients[2]*(dly_mean_wtrlvl)) + 
                                HB_vol_model_lower$coefficients[1]),
-                             ((HB_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
-                               HB_vol_model_upper$coefficients[1])),
+                             if_else(dly_mean_wtrlvl >= 0.48,
+                                     (HB_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
+                                      HB_vol_model_upper$coefficients[1],0)),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -828,7 +827,6 @@ summary(JA_vol_model_upper)
 #calculating change in area and volume on a daily timestep
 JA_WL <- WL %>% 
   filter(Site_Name == "JA-SW") %>% 
-  filter(dly_mean_wtrlvl >= 0) %>% 
   
   #for area, if water level is <0.5, use stage-area polynomial function, otherwise 
   #print the max area value
@@ -839,7 +837,7 @@ JA_WL <- WL %>%
                             (JA_area_model$coefficients[3]*(dly_mean_wtrlvl^2)) +  
                             (JA_area_model$coefficients[2]*dly_mean_wtrlvl) +
                              JA_area_model$coefficients[1]),
-                         max(JA_sa$area_m)),
+                         if_else(dly_mean_wtrlvl >= 0.23,max(JA_sa$area_m),0)),
          #for volume, if water level is <0.5, use stage-area polynomial function, otherwise
          #use the linear relationship
          volume_m3 = if_else(dly_mean_wtrlvl < 0.23 & dly_mean_wtrlvl > 0,
@@ -849,8 +847,9 @@ JA_WL <- WL %>%
                               (JA_vol_model_lower$coefficients[3]*(dly_mean_wtrlvl^2)) +
                               (JA_vol_model_lower$coefficients[2]*(dly_mean_wtrlvl)) + 
                                JA_vol_model_lower$coefficients[1]),
-                             ((JA_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
-                               JA_vol_model_upper$coefficients[1])),
+                             if_else(dly_mean_wtrlvl >= 0.23,
+                                    (JA_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
+                                      JA_vol_model_upper$coefficients[1],0)),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -985,8 +984,6 @@ summary(JB_vol_model_upper)
 #calculating change in area and volume on a daily timestep
 JB_WL <- WL %>% 
   filter(Site_Name == "JB-SW") %>% 
-  filter(dly_mean_wtrlvl >= 0) %>% 
-  
   #for area, if water level is <0.53, use stage-area polynomial function, otherwise 
   #print the max area value
   mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.53 & dly_mean_wtrlvl > 0, 
@@ -1003,7 +1000,7 @@ JB_WL <- WL %>%
                             (JB_area_model$coefficients[3]*(dly_mean_wtrlvl^2)) +  
                             (JB_area_model$coefficients[2]*dly_mean_wtrlvl) +
                              JB_area_model$coefficients[1]),
-                           max(JB_sa$area_m)),
+                           if_else(dly_mean_wtrlvl >= 0.53,max(JB_sa$area_m),0)),
          #for volume, if water level is <0.5, use stage-area polynomial function, otherwise
          #use the linear relationship
          volume_m3 = if_else(dly_mean_wtrlvl < 0.53 & dly_mean_wtrlvl > 0,
@@ -1015,8 +1012,9 @@ JB_WL <- WL %>%
                               (JB_vol_model_lower$coefficients[3]*(dly_mean_wtrlvl^2)) +
                               (JB_vol_model_lower$coefficients[2]*(dly_mean_wtrlvl)) + 
                                JB_vol_model_lower$coefficients[1]),
-                             ((JB_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
-                               JB_vol_model_upper$coefficients[1])),
+                             if_else(dly_mean_wtrlvl >= 0.53,
+                                     (JB_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
+                                      JB_vol_model_upper$coefficients[1],0)),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -1151,8 +1149,6 @@ summary(JC_vol_model_upper)
 #calculating change in area and volume on a daily timestep
 JC_WL <- WL %>% 
   filter(Site_Name == "JC-SW") %>% 
-  filter(dly_mean_wtrlvl >= 0) %>% 
-  
   #for area, if water level is <0.53, use stage-area polynomial function, otherwise 
   #print the max area value
   mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.36 & dly_mean_wtrlvl > 0, 
@@ -1163,7 +1159,7 @@ JC_WL <- WL %>%
                             (JC_area_model$coefficients[3]*(dly_mean_wtrlvl^2)) +  
                             (JC_area_model$coefficients[2]*dly_mean_wtrlvl) +
                              JC_area_model$coefficients[1]),
-                           max(JC_sa$area_m)),
+                           if_else(dly_mean_wtrlvl >= 0.36,max(JC_sa$area_m),0)),
          #for volume, if water level is <0.5, use stage-area polynomial function, otherwise
          #use the linear relationship
          volume_m3 = if_else(dly_mean_wtrlvl < 0.36 & dly_mean_wtrlvl > 0,
@@ -1174,8 +1170,9 @@ JC_WL <- WL %>%
                               (JC_vol_model_lower$coefficients[3]*(dly_mean_wtrlvl^2)) +
                               (JC_vol_model_lower$coefficients[2]*(dly_mean_wtrlvl)) + 
                                JC_vol_model_lower$coefficients[1]),
-                             ((JC_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
-                               JC_vol_model_upper$coefficients[1])),
+                             if_else(dly_mean_wtrlvl >= 0.36,
+                                     (JC_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
+                                      JC_vol_model_upper$coefficients[1],0)),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -1310,7 +1307,6 @@ summary(MB_vol_model_upper)
 #calculating change in area and volume on a daily timestep
 MB_WL <- WL %>% 
   filter(Site_Name == "MB-SW") %>% 
-  filter(dly_mean_wtrlvl >= 0) %>% 
   
   #for area, if water level is <0.75, use stage-area polynomial function, otherwise 
   #print the max area value
@@ -1322,7 +1318,7 @@ MB_WL <- WL %>%
                             (MB_area_model$coefficients[3]*(dly_mean_wtrlvl^2)) +  
                             (MB_area_model$coefficients[2]*dly_mean_wtrlvl) +
                              MB_area_model$coefficients[1]),
-                         max(MB_sa$area_m)),
+                         if_else(dly_mean_wtrlvl >= 0.75,max(MB_sa$area_m),0)),
          #for volume, if water level is <0.75, use stage-area polynomial function, otherwise
          #use the linear relationship
          volume_m3 = if_else(dly_mean_wtrlvl < 0.75 & dly_mean_wtrlvl > 0,
@@ -1332,8 +1328,9 @@ MB_WL <- WL %>%
                               (MB_vol_model_lower$coefficients[3]*(dly_mean_wtrlvl^2)) +
                               (MB_vol_model_lower$coefficients[2]*(dly_mean_wtrlvl)) + 
                                MB_vol_model_lower$coefficients[1]),
-                             ((MB_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
-                               MB_vol_model_upper$coefficients[1])),
+                             if_else(dly_mean_wtrlvl >= 0.75,
+                                     (MB_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
+                                      MB_vol_model_upper$coefficients[1],0)),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -1468,8 +1465,6 @@ summary(NB_vol_model_upper)
 #calculating change in area and volume on a daily timestep
 NB_WL <- WL %>% 
   filter(Site_Name == "NB-SW") %>% 
-  filter(dly_mean_wtrlvl >= 0) %>% 
-  
   #for area, if water level is <0.5, use stage-area polynomial function, otherwise 
   #print the max area value
   mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.29 & dly_mean_wtrlvl > 0, 
@@ -1480,7 +1475,7 @@ NB_WL <- WL %>%
                             (NB_area_model$coefficients[3]*(dly_mean_wtrlvl^2)) +  
                             (NB_area_model$coefficients[2]*dly_mean_wtrlvl) +
                              NB_area_model$coefficients[1]),
-                         max(NB_sa$area_m)),
+                         if_else(dly_mean_wtrlvl >= 0.29,max(NB_sa$area_m),0)),
          #for volume, if water level is <0.5, use stage-area polynomial function, otherwise
          #use the linear relationship
          volume_m3 = if_else(dly_mean_wtrlvl < 0.29 & dly_mean_wtrlvl > 0,
@@ -1490,8 +1485,9 @@ NB_WL <- WL %>%
                               (NB_vol_model_lower$coefficients[3]*(dly_mean_wtrlvl^2)) +
                               (NB_vol_model_lower$coefficients[2]*(dly_mean_wtrlvl)) + 
                                NB_vol_model_lower$coefficients[1]),
-                             ((NB_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
-                               NB_vol_model_upper$coefficients[1])),
+                             if_else(dly_mean_wtrlvl >= 0.29,
+                                     (NB_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
+                                    NB_vol_model_upper$coefficients[1],0)),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -1626,8 +1622,6 @@ summary(ND_vol_model_upper)
 #calculating change in area and volume on a daily timestep
 ND_WL <- WL %>% 
   filter(Site_Name == "ND-SW") %>% 
-  filter(dly_mean_wtrlvl >= 0) %>% 
-  
   #for area, if water level is <0.87, use stage-area polynomial function, otherwise 
   #print the max area value
   mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.87 & dly_mean_wtrlvl > 0, 
@@ -1644,7 +1638,7 @@ ND_WL <- WL %>%
                             (ND_area_model$coefficients[3]*(dly_mean_wtrlvl^2)) +  
                             (ND_area_model$coefficients[2]*dly_mean_wtrlvl) +
                              ND_area_model$coefficients[1]),
-                           max(ND_sa$area_m)),
+                           if_else(dly_mean_wtrlvl >= 0.87,max(ND_sa$area_m),0)),
          #for volume, if water level is <0.87, use stage-area polynomial function, otherwise
          #use the linear relationship
          volume_m3 = if_else(dly_mean_wtrlvl < 0.87 & dly_mean_wtrlvl > 0,
@@ -1654,8 +1648,9 @@ ND_WL <- WL %>%
                               (ND_vol_model_lower$coefficients[3]*(dly_mean_wtrlvl^2)) +
                               (ND_vol_model_lower$coefficients[2]*(dly_mean_wtrlvl)) + 
                                ND_vol_model_lower$coefficients[1]),
-                             ((ND_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
-                               ND_vol_model_upper$coefficients[1])),
+                             if_else(dly_mean_wtrlvl >= 0.87,
+                                     (ND_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
+                                      ND_vol_model_upper$coefficients[1],0)),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -1792,8 +1787,6 @@ summary(OB_vol_model_upper) #vol_m3 = 187z + 36.33
 #calculating change in area and volume on a daily timestep
 OB_WL <- WL %>% 
   filter(Site_Name == "OB-SW") %>% 
-  filter(dly_mean_wtrlvl >= 0) %>% 
-  
   #for area, if water level is <0.5, use stage-area polynomial function, otherwise 
   #print the max area value
   mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.5 & dly_mean_wtrlvl > 0, 
@@ -1802,7 +1795,7 @@ OB_WL <- WL %>%
                               (OB_area_model$coefficients[3]*(dly_mean_wtrlvl^2)) +  
                               (OB_area_model$coefficients[2]*dly_mean_wtrlvl) +
                               OB_area_model$coefficients[1]),
-                           max(OB_sa$area_m)),
+                           if_else(dly_mean_wtrlvl >= 0.5,max(OB_sa$area_m),0)),
          #for volume, if water level is <0.5, use stage-area polynomial function, otherwise
          #use the linear relationship
          volume_m3 = if_else(dly_mean_wtrlvl < 0.5 & dly_mean_wtrlvl > 0,
@@ -1810,8 +1803,9 @@ OB_WL <- WL %>%
                                 (OB_vol_model_lower$coefficients[3]*(dly_mean_wtrlvl^2)) +
                                 (OB_vol_model_lower$coefficients[2]*(dly_mean_wtrlvl)) + 
                                 OB_vol_model_lower$coefficients[1]),
-                             ((OB_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
-                                OB_vol_model_upper$coefficients[1])),
+                             if_else(dly_mean_wtrlvl >= 0.5,
+                                     (OB_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
+                                      OB_vol_model_upper$coefficients[1],0)),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -1971,8 +1965,6 @@ summary(QB_vol_model_upper)
 #calculating change in area and volume on a daily timestep
 QB_WL <- WL %>% 
   filter(Site_Name == "QB-SW") %>% 
-  filter(dly_mean_wtrlvl >= 0) %>% 
-  
   #for area, if water level is <0.74, use stage-area polynomial function, otherwise 
   #print the max area value
   mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.74 & dly_mean_wtrlvl > 0, 
@@ -1987,7 +1979,7 @@ QB_WL <- WL %>%
                             (QB_area_model$coefficients[3]*(dly_mean_wtrlvl^2)) +  
                             (QB_area_model$coefficients[2]*dly_mean_wtrlvl) +
                              QB_area_model$coefficients[1]),
-                         max(QB_sa$area_m)),
+                         if_else(dly_mean_wtrlvl >= 0.74,max(QB_sa$area_m),0)),
          #for volume, if water level is <0.5, use stage-area polynomial function, otherwise
          #use the linear relationship
          volume_m3 = if_else(dly_mean_wtrlvl < 0.74 & dly_mean_wtrlvl > 0,
@@ -1999,8 +1991,9 @@ QB_WL <- WL %>%
                               (QB_vol_model_lower$coefficients[3]*(dly_mean_wtrlvl^2)) +
                               (QB_vol_model_lower$coefficients[2]*(dly_mean_wtrlvl)) + 
                                QB_vol_model_lower$coefficients[1]),
-                             ((QB_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
-                               QB_vol_model_upper$coefficients[1])),
+                             if_else(dly_mean_wtrlvl >= 0.74 ,
+                                     (QB_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
+                                      QB_vol_model_upper$coefficients[1],0)),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -2135,8 +2128,6 @@ summary(TA_vol_model_upper)
 #calculating change in area and volume on a daily timestep
 TA_WL <- WL %>% 
   filter(Site_Name == "TA-SW") %>% 
-  filter(dly_mean_wtrlvl >= 0) %>% 
-  
   #for area, if water level is <1.03, use stage-area polynomial function, otherwise 
   #print the max area value
   mutate(area_m2 = if_else(dly_mean_wtrlvl < 1.03 & dly_mean_wtrlvl > 0, 
@@ -2149,7 +2140,7 @@ TA_WL <- WL %>%
                             (TA_area_model$coefficients[3]*(dly_mean_wtrlvl^2)) +  
                             (TA_area_model$coefficients[2]*dly_mean_wtrlvl) +
                              TA_area_model$coefficients[1]),
-                         max(TA_sa$area_m)),
+                         if_else(dly_mean_wtrlvl >= 1.03,max(TA_sa$area_m),0)),
          #for volume, if water level is <1.03, use stage-area polynomial function, otherwise
          #use the linear relationship
          volume_m3 = if_else(dly_mean_wtrlvl < 1.03 & dly_mean_wtrlvl > 0,
@@ -2159,8 +2150,9 @@ TA_WL <- WL %>%
                               (TA_vol_model_lower$coefficients[3]*(dly_mean_wtrlvl^2)) +
                               (TA_vol_model_lower$coefficients[2]*(dly_mean_wtrlvl)) + 
                                TA_vol_model_lower$coefficients[1]),
-                             ((TA_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
-                               TA_vol_model_upper$coefficients[1])),
+                             if_else(dly_mean_wtrlvl >= 1.03,
+                                     (TA_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
+                                      TA_vol_model_upper$coefficients[1],0)),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -2295,8 +2287,6 @@ summary(TB_vol_model_upper)
 #calculating change in area and volume on a daily timestep
 TB_WL <- WL %>% 
   filter(Site_Name == "TB-SW") %>% 
-  filter(dly_mean_wtrlvl >= 0) %>% 
-  
   #for area, if water level is <0.8, use stage-area polynomial function, otherwise 
   #print the max area value
   mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.8 & dly_mean_wtrlvl > 0, 
@@ -2307,7 +2297,7 @@ TB_WL <- WL %>%
                             (TB_area_model$coefficients[3]*(dly_mean_wtrlvl^2)) +  
                             (TB_area_model$coefficients[2]*dly_mean_wtrlvl) +
                              TB_area_model$coefficients[1]),
-                         max(TB_sa$area_m)),
+                         if_else(dly_mean_wtrlvl >= 0.8,max(TB_sa$area_m),0)),
          #for volume, if water level is <0.8, use stage-area polynomial function, otherwise
          #use the linear relationship
          volume_m3 = if_else(dly_mean_wtrlvl < 0.8 & dly_mean_wtrlvl > 0,
@@ -2318,8 +2308,9 @@ TB_WL <- WL %>%
                               (TB_vol_model_lower$coefficients[3]*(dly_mean_wtrlvl^2)) +
                               (TB_vol_model_lower$coefficients[2]*(dly_mean_wtrlvl)) + 
                                TB_vol_model_lower$coefficients[1]),
-                             ((TB_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
-                               TB_vol_model_upper$coefficients[1])),
+                            if_else(dly_mean_wtrlvl >= 0.8,
+                                    (TB_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
+                                      TB_vol_model_upper$coefficients[1],0)),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -2454,8 +2445,6 @@ summary(TI_vol_model_upper)
 #calculating change in area and volume on a daily timestep
 TI_WL <- WL %>% 
   filter(Site_Name == "TI-SW") %>% 
-  filter(dly_mean_wtrlvl >= 0) %>% 
-  
   #for area, if water level is <0.45, use stage-area polynomial function, otherwise 
   #print the max area value
   mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.45 & dly_mean_wtrlvl > 0, 
@@ -2471,7 +2460,7 @@ TI_WL <- WL %>%
                             (TI_area_model$coefficients[3]*(dly_mean_wtrlvl^2)) +  
                             (TI_area_model$coefficients[2]*dly_mean_wtrlvl) +
                              TI_area_model$coefficients[1]),
-                         max(TI_sa$area_m)),
+                        if_else(dly_mean_wtrlvl >= 0.45,max(TI_sa$area_m),0)),
          #for volume, if water level is <0.45, use stage-area polynomial function, otherwise
          #use the linear relationship
          volume_m3 = if_else(dly_mean_wtrlvl < 0.45 & dly_mean_wtrlvl > 0,
@@ -2483,8 +2472,9 @@ TI_WL <- WL %>%
                               (TI_vol_model_lower$coefficients[3]*(dly_mean_wtrlvl^2)) +
                               (TI_vol_model_lower$coefficients[2]*(dly_mean_wtrlvl)) + 
                                TI_vol_model_lower$coefficients[1]),
-                             ((TI_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
-                               TI_vol_model_upper$coefficients[1])),
+                             if_else(dly_mean_wtrlvl >= 0.45,
+                                     (TI_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
+                                      TI_vol_model_upper$coefficients[1],0)),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -2619,8 +2609,6 @@ summary(TS_vol_model_upper)
 #calculating change in area and volume on a daily timestep
 TS_WL <- WL %>% 
   filter(Site_Name == "TS-SW") %>% 
-  filter(dly_mean_wtrlvl >= 0) %>% 
-  
   #for area, if water level is <0.6, use stage-area polynomial function, otherwise 
   #print the max area value
   mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.6 & dly_mean_wtrlvl > 0, 
@@ -2630,7 +2618,7 @@ TS_WL <- WL %>%
                             (TS_area_model$coefficients[3]*(dly_mean_wtrlvl^2)) +  
                             (TS_area_model$coefficients[2]*dly_mean_wtrlvl) +
                              TS_area_model$coefficients[1]),
-                         max(TS_sa$area_m)),
+                         if_else(dly_mean_wtrlvl >= 0.6,max(TS_sa$area_m),0)),
          #for volume, if water level is <0.6, use stage-area polynomial function, otherwise
          #use the linear relationship
          volume_m3 = if_else(dly_mean_wtrlvl < 0.6 & dly_mean_wtrlvl > 0,
@@ -2640,8 +2628,9 @@ TS_WL <- WL %>%
                               (TS_vol_model_lower$coefficients[3]*(dly_mean_wtrlvl^2)) +
                               (TS_vol_model_lower$coefficients[2]*(dly_mean_wtrlvl)) + 
                                TS_vol_model_lower$coefficients[1]),
-                             ((TS_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
-                               TS_vol_model_upper$coefficients[1])),
+                             if_else(dly_mean_wtrlvl >= 0.6 ,
+                                     (TS_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
+                                      TS_vol_model_upper$coefficients[1],0)),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -2776,7 +2765,6 @@ summary(XB_vol_model_upper)
 #calculating change in area and volume on a daily timestep
 XB_WL <- WL %>% 
   filter(Site_Name == "XB-SW") %>% 
-  filter(dly_mean_wtrlvl >= 0) %>% 
   
   #for area, if water level is <0.29, use stage-area polynomial function, otherwise 
   #print the max area value
@@ -2787,7 +2775,7 @@ XB_WL <- WL %>%
                             (XB_area_model$coefficients[3]*(dly_mean_wtrlvl^2)) +  
                             (XB_area_model$coefficients[2]*dly_mean_wtrlvl) +
                              XB_area_model$coefficients[1]),
-                         max(XB_sa$area_m)),
+                         if_else(dly_mean_wtrlvl >= 0.29,max(XB_sa$area_m),0)),
          #for volume, if water level is <0.29, use stage-area polynomial function, otherwise
          #use the linear relationship
          volume_m3 = if_else(dly_mean_wtrlvl < 0.29 & dly_mean_wtrlvl > 0,
@@ -2797,8 +2785,9 @@ XB_WL <- WL %>%
                               (XB_vol_model_lower$coefficients[3]*(dly_mean_wtrlvl^2)) +
                               (XB_vol_model_lower$coefficients[2]*(dly_mean_wtrlvl)) + 
                                XB_vol_model_lower$coefficients[1]),
-                             ((XB_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
-                               XB_vol_model_upper$coefficients[1])),
+                             if_else(dly_mean_wtrlvl >= 0.29,
+                                     (XB_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
+                                      XB_vol_model_upper$coefficients[1],0)),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -2868,7 +2857,7 @@ XB_p1 / XB_p2 / XB_p3
 ALL_WL <- SW_Clean %>% 
   filter(Site_Name != "DF-SW") %>% 
   filter(Site_Name != "FN-SW") %>% 
-  filter(Date > ymd("2021-02-01")) %>% 
+  #filter(Date > ymd("2021-02-01")) %>% 
   ggplot(aes(Date,dly_mean_wtrlvl,col=Site_Name))+
   geom_line()+
   ylab("Daily Mean Water Level (m)")+
@@ -3019,12 +3008,49 @@ ggplot()+
                               "XB" = "#C77CFF"))
 
 ## 4.2 Break up by catchment -----------------------
+#Also add in precip for comparison
+#read in Jackson Lane / Jones Rd precip data from Michael W (2021 water year)
+DMVPrecip <- read_csv("2021_WaterYear_Precip_Cleaned.csv")
+
+#calcualte daily precip at each stie
+Daily <- DMVPrecip %>% mutate(day = cut(timestamp,breaks="day")) %>% 
+  group_by(day) %>% 
+  summarise(Jackson_Daily_mm = sum(JacksonLane_Precip_mm),
+            Jones_Daily_mm = sum(JonesRoad_Precip_mm))
+
+#Plot daily precip
+Jack_Day <- Daily %>% 
+  ggplot(aes(ymd(day),Jackson_Daily_mm))+
+  geom_bar(stat="identity")+
+  ggtitle("Jackson Ln Daily Precip")+
+  #xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+  #xlim(ymd("2021-08-05"),ymd("2021-08-12"))+
+  ylab("Precp (mm)")+
+  xlab("Date")
+ 
+Jones_Day <- Daily %>% 
+  ggplot(aes(ymd(day),Jones_Daily_mm))+
+  geom_bar(stat="identity")+
+  ggtitle("Jones Rd Daily Precip")+
+  #xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+  ylab("Precp (mm)")+
+  xlab("Date")+
+  ylim(0,120)
+
+Jack_Day / Jones_Day
+
+
+#JL
+JL <- SW_Clean %>% 
+  filter(Site_Name %in% c("BD-SW","DK-SW","ND-SW","TS-SW")) 
+  
 
 ### 4.2.1 Jackson Lane -------------------------------
 #All SW plot
-SW_Clean %>% 
+JL_SW <- SW_Clean %>% 
   filter(Site_Name %in% c("BD-SW","DK-SW","ND-SW","TS-SW")) %>% 
-  filter(Date > ymd("2021-02-01")) %>% 
+  #filter(Date > ymd("2021-08-05") & Date < ymd("2021-08-12")) %>% 
+  #filter(Date > ymd("2021-02-01")) %>% 
   ggplot(aes(Date,dly_mean_wtrlvl,col=Site_Name))+
   geom_line()+
   ylab("Daily Mean Water Level (m)")+
@@ -3033,12 +3059,13 @@ SW_Clean %>%
         legend.text = element_text(size=12))
 
 #All daily wetland area
-ggplot()+
+JL_day_area <- ggplot()+
   geom_line(aes(ymd(Date),area_m2,col="BD"),data=BD_WL)+
   geom_line(aes(ymd(Date),area_m2,col="DK"),data=DK_WL)+ 
   geom_line(aes(ymd(Date),area_m2,col="ND"),data=ND_WL)+ 
   geom_line(aes(ymd(Date),area_m2,col="TS"),data=TS_WL)+ 
-  xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+  #xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+  #xlim(ymd("2021-08-05"),ymd("2021-08-12"))+
   ylab("Area (m2)")+
   xlab("Date")+
   theme(axis.text.y   = element_text(size=16),
@@ -3053,14 +3080,19 @@ ggplot()+
                               "ND" = "#00B8E7",
                               "TS" = "#C77CFF"))
 
-#All daily wetland area normalized to max area
 ggplot()+
+  geom_line(aes(ymd(Date),area_m2,col="BD"),data=BD_WL)+
+  xlim(ymd("2021-07-05"),ymd("2021-08-12"))
+
+#All daily wetland area normalized to max area
+JL_norm <- ggplot()+
   geom_line(aes(ymd(Date),area_m2/max(BD_sa$area_m),col="BD"),data=BD_WL)+ 
   geom_line(aes(ymd(Date),area_m2/max(DK_sa$area_m),col="DK"),data=DK_WL)+ 
   geom_line(aes(ymd(Date),area_m2/max(ND_sa$area_m),col="ND"),data=ND_WL)+ 
   geom_line(aes(ymd(Date),area_m2/max(TS_sa$area_m),col="TS"),data=TS_WL)+
   ylab("Area (m^2) / Max Area (m^2)")+
-  xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+  #xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+  #xlim(ymd("2021-08-05"),ymd("2021-08-12"))+
   xlab("Date")+
   theme(axis.text.y   = element_text(size=16),
         axis.text.x   = element_text(size=16),
@@ -3075,12 +3107,13 @@ ggplot()+
                               "TS" = "#C77CFF"))
 
 #All daily change in wetland area
-ggplot()+
+JL_change <- ggplot()+
   geom_line(aes(ymd(Date),delta_area,col="BD"),data=BD_WL)+ 
   geom_line(aes(ymd(Date),delta_area,col="DK"),data=DK_WL)+ 
   geom_line(aes(ymd(Date),delta_area,col="ND"),data=ND_WL)+ 
   geom_line(aes(ymd(Date),delta_area,col="TS"),data=TS_WL)+ 
-  xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+  #xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+  xlim(ymd("2021-08-05"),ymd("2021-08-12"))+
   #ylim(-100,100)+
   ylab("Area (m2)")+
   xlab("Date")+
@@ -3095,6 +3128,7 @@ ggplot()+
                               "DK" = "#7CAE00",
                               "ND" = "#00B8E7",
                               "TS" = "#C77CFF"))
+Jack_Day / JL_SW / JL_day_area / JL_norm / JL_change
 
 ### 4.2.2 Baltimore Corner -----------------------
 
