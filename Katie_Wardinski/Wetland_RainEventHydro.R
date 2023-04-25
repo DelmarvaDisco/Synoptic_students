@@ -260,12 +260,17 @@ Jack_Day <- Daily %>%
   ggplot(aes(ymd(day),Jackson_Daily_mm))+
   geom_bar(stat="identity")+
   ggtitle("Jackson Ln Daily Precip")+
-  ylab("Precp (mm)")
+  ylab("Precp (mm)")+
+  xlab("Date")+
+  xlim(ymd("2021-02-01"),ymd("2022-04-11"))
 Jones_Day <- Daily %>% 
   ggplot(aes(ymd(day),Jones_Daily_mm))+
   geom_bar(stat="identity")+
   ggtitle("Jones Rd Daily Precip")+
-  ylab("Precp (mm)")
+  xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+  ylab("Precp (mm)")+
+  xlab("Date")+
+  ylim(0,120)
 
 Jack_Day / Jones_Day
 
