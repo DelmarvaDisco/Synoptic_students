@@ -1655,6 +1655,7 @@ ND_WL <- WL %>%
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
 
+max(ND_WL$delta_area,na.rm=T)
 
 #plot water level over time
 ND_p1 <- WL %>% 
@@ -2635,6 +2636,8 @@ TS_WL <- WL %>%
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
 
+max(TS_WL$delta_area,na.rm=T)
+
 #plot water level over time
 TS_p1 <- WL %>% 
   filter(Site_Name == "TS-SW") %>%
@@ -2853,6 +2856,22 @@ XB_p1 / XB_p2 / XB_p3
 #Focus in on dates when all wetland water level loggers were online (after 2021-02)
 
 ## 4.1 All sites together -----------------------
+#Long term Jackson Lane precip
+JacksonPrecip <- read_csv("Jackson_Lane_precip_2018_2021.csv")
+JL_Daily <- JacksonPrecip %>% mutate(day = cut(timestamp,breaks="day")) %>% 
+  group_by(day) %>% 
+  summarise(Jackson_Daily_mm = sum(precip_mm))
+JL_rain <- JL_Daily %>% 
+  ggplot(aes(ymd(day),Jackson_Daily_mm))+
+  geom_bar(stat="identity")+
+  ggtitle("Jackson Ln Daily Precip")+
+  xlim(ymd("2019-12-31"),ymd("2022-04-11"))+
+  #xlim(ymd("2021-08-05"),ymd("2021-08-12"))+
+  ylab("Daily Precip (mm)")+
+  xlab("Date")+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 14))
+
 #All SW plot
 ALL_WL <- SW_Clean %>% 
   filter(Site_Name != "DF-SW") %>% 
@@ -2864,6 +2883,9 @@ ALL_WL <- SW_Clean %>%
   theme(axis.title = element_text(size = 14),
         axis.text = element_text(size = 12),
         legend.text = element_text(size=12))
+
+JL_rain / ALL_WL
+
 
 #All daily wetland area
 ggplot()+
@@ -2891,7 +2913,8 @@ ggplot()+
         axis.text.x   = element_text(size=16),
         axis.title.y  = element_text(size=18),
         axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))+
+        title = element_text(size = 18),
+        legend.text = element_text(size=16))+
   ggtitle("Daily wetland area")+
   scale_color_manual(name="Legend",
                      values=c("BD" = "#88CCEE",
@@ -2938,7 +2961,8 @@ ggplot()+
         axis.text.x   = element_text(size=16),
         axis.title.y  = element_text(size=18),
         axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))+
+        title = element_text(size = 18),
+        legend.text = element_text(size=16))+
   ggtitle("Daily wetland area")+
   scale_color_manual(name="Legend",
                      values=c("BD" = "#88CCEE",
@@ -2980,13 +3004,14 @@ ggplot()+
   geom_line(aes(ymd(Date),delta_area,col="XB"),data=XB_WL)+ 
   xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
   #ylim(-100,100)+
-  ylab("Area (m2)")+
+  ylab("Change in Area (m2)")+
   xlab("Date")+
   theme(axis.text.y   = element_text(size=16),
         axis.text.x   = element_text(size=16),
         axis.title.y  = element_text(size=18),
         axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))+
+        title = element_text(size = 18),
+        legend.text = element_text(size=16))+
   ggtitle("Daily change in wetland area")+
   scale_color_manual(name="Legend",
                      values=c("BD" = "#88CCEE",
@@ -3023,10 +3048,12 @@ Jack_Day <- Daily %>%
   ggplot(aes(ymd(day),Jackson_Daily_mm))+
   geom_bar(stat="identity")+
   ggtitle("Jackson Ln Daily Precip")+
-  #xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+  #xlim(ymd("2020-01-01"),ymd("2022-04-11"))+
   #xlim(ymd("2021-08-05"),ymd("2021-08-12"))+
   ylab("Precp (mm)")+
-  xlab("Date")
+  xlab("Date")+
+  theme(axis.title = element_text(size = 16),
+        axis.text = element_text(size = 16))
  
 Jones_Day <- Daily %>% 
   ggplot(aes(ymd(day),Jones_Daily_mm))+
@@ -3035,7 +3062,9 @@ Jones_Day <- Daily %>%
   #xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
   ylab("Precp (mm)")+
   xlab("Date")+
-  ylim(0,120)
+  ylim(0,120)+
+  theme(axis.title = element_text(size = 16),
+        axis.text = element_text(size = 16))
 
 Jack_Day / Jones_Day
 
@@ -3054,9 +3083,10 @@ JL_SW <- SW_Clean %>%
   ggplot(aes(Date,dly_mean_wtrlvl,col=Site_Name))+
   geom_line()+
   ylab("Daily Mean Water Level (m)")+
-  theme(axis.title = element_text(size = 14),
-        axis.text = element_text(size = 12),
-        legend.text = element_text(size=12))
+  ggtitle("Jackson Lane Daily Water Level")+
+  theme(axis.title = element_text(size = 16),
+        axis.text = element_text(size = 16),
+        legend.text = element_text(size=16))
 
 #All daily wetland area
 JL_day_area <- ggplot()+
@@ -3072,7 +3102,8 @@ JL_day_area <- ggplot()+
         axis.text.x   = element_text(size=16),
         axis.title.y  = element_text(size=18),
         axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))+
+        title = element_text(size = 16),
+        legend.text = element_text(size=16))+
   ggtitle("Jackson Lane daily wetland area")+
   scale_color_manual(name="Legend",
                      values=c("BD" = "#F8766D",
@@ -3080,9 +3111,9 @@ JL_day_area <- ggplot()+
                               "ND" = "#00B8E7",
                               "TS" = "#C77CFF"))
 
-ggplot()+
-  geom_line(aes(ymd(Date),area_m2,col="BD"),data=BD_WL)+
-  xlim(ymd("2021-07-05"),ymd("2021-08-12"))
+#ggplot()+
+  #geom_line(aes(ymd(Date),area_m2,col="BD"),data=BD_WL)+
+  #xlim(ymd("2021-07-05"),ymd("2021-08-12"))
 
 #All daily wetland area normalized to max area
 JL_norm <- ggplot()+
@@ -3098,7 +3129,8 @@ JL_norm <- ggplot()+
         axis.text.x   = element_text(size=16),
         axis.title.y  = element_text(size=18),
         axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))+
+        title = element_text(size = 16),
+        legend.text = element_text(size=16))+
   ggtitle("Jackson Lane daily wetland area")+
   scale_color_manual(name="Legend",
                      values=c("BD" = "#F8766D",
@@ -3113,7 +3145,7 @@ JL_change <- ggplot()+
   geom_line(aes(ymd(Date),delta_area,col="ND"),data=ND_WL)+ 
   geom_line(aes(ymd(Date),delta_area,col="TS"),data=TS_WL)+ 
   #xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
-  xlim(ymd("2021-08-05"),ymd("2021-08-12"))+
+  #xlim(ymd("2021-08-05"),ymd("2021-08-12"))+
   #ylim(-100,100)+
   ylab("Area (m2)")+
   xlab("Date")+
@@ -3121,7 +3153,8 @@ JL_change <- ggplot()+
         axis.text.x   = element_text(size=16),
         axis.title.y  = element_text(size=18),
         axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))+
+        title = element_text(size = 16),
+        legend.text = element_text(size=16))+
   ggtitle("Daily change in wetland area")+
   scale_color_manual(name="Legend",
                      values=c("BD" = "#F8766D",
@@ -3133,30 +3166,31 @@ Jack_Day / JL_SW / JL_day_area / JL_norm / JL_change
 ### 4.2.2 Baltimore Corner -----------------------
 
 #All SW plot
-SW_Clean %>% 
+BC_WL <- SW_Clean %>% 
   filter(Site_Name %in% c("HB-SW","MB-SW","OB-SW","XB-SW")) %>% 
-  filter(Date > ymd("2021-02-01")) %>% 
+  #filter(Date > ymd("2021-02-01")) %>% 
   ggplot(aes(Date,dly_mean_wtrlvl,col=Site_Name))+
   geom_line()+
   ylab("Daily Mean Water Level (m)")+
-  theme(axis.title = element_text(size = 14),
-        axis.text = element_text(size = 12),
-        legend.text = element_text(size=12))
+  theme(axis.title = element_text(size = 16),
+        axis.text = element_text(size = 16),
+        legend.text = element_text(size=16))
 
 #All daily wetland area
-ggplot()+ 
+BC_area <- ggplot()+ 
   geom_line(aes(ymd(Date),area_m2,col="HB"),data=HB_WL)+ 
   geom_line(aes(ymd(Date),area_m2,col="MB"),data=MB_WL)+ 
   geom_line(aes(ymd(Date),area_m2,col="OB"),data=OB_WL)+ 
   geom_line(aes(ymd(Date),area_m2,col="XB"),data=XB_WL)+ 
-  xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+  #xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
   ylab("Area (m2)")+
   xlab("Date")+
   theme(axis.text.y   = element_text(size=16),
         axis.text.x   = element_text(size=16),
         axis.title.y  = element_text(size=18),
         axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))+
+        title = element_text(size = 18),
+        legend.text = element_text(size=16))+
   ggtitle("Daily wetland area")+
   scale_color_manual(name="Legend",
                      values=c(
@@ -3166,19 +3200,20 @@ ggplot()+
                               "XB" = "#C77CFF"))
 
 #All daily wetland area normalized to max area
-ggplot()+
+BC_norm <- ggplot()+
   geom_line(aes(ymd(Date),area_m2/max(HB_sa$area_m),col="HB"),data=HB_WL)+ 
   geom_line(aes(ymd(Date),area_m2/max(MB_sa$area_m),col="MB"),data=MB_WL)+ 
   geom_line(aes(ymd(Date),area_m2/max(OB_sa$area_m),col="OB"),data=OB_WL)+ 
   geom_line(aes(ymd(Date),area_m2/max(XB_sa$area_m),col="XB"),data=XB_WL)+ 
   ylab("Area (m^2) / Max Area (m^2)")+
-  xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+ #xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
   xlab("Date")+
   theme(axis.text.y   = element_text(size=16),
         axis.text.x   = element_text(size=16),
         axis.title.y  = element_text(size=18),
         axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))+
+        title = element_text(size = 18),
+        legend.text = element_text(size=16))+
   ggtitle("Daily wetland area")+
   scale_color_manual(name="Legend",
                      values=c("HB" = "#F8766D",
@@ -3187,20 +3222,21 @@ ggplot()+
                               "XB" = "#C77CFF"))
 
 #All daily change in wetland area
-ggplot()+
+BC_change <- ggplot()+
   geom_line(aes(ymd(Date),delta_area,col="HB"),data=HB_WL)+  
   geom_line(aes(ymd(Date),delta_area,col="MB"),data=MB_WL)+  
   geom_line(aes(ymd(Date),delta_area,col="OB"),data=OB_WL)+
   geom_line(aes(ymd(Date),delta_area,col="XB"),data=XB_WL)+ 
-  xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+  #xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
   #ylim(-100,100)+
-  ylab("Area (m2)")+
+  ylab("Change in Area (m2)")+
   xlab("Date")+
   theme(axis.text.y   = element_text(size=16),
         axis.text.x   = element_text(size=16),
         axis.title.y  = element_text(size=18),
         axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))+
+        title = element_text(size = 18),
+        legend.text = element_text(size=16))+
   ggtitle("Daily change in wetland area")+
   scale_color_manual(name="Legend",
                      values=c("HB" = "#F8766D",
@@ -3208,28 +3244,29 @@ ggplot()+
                               "OB" = "#00B8E7",
                               "XB" = "#C77CFF"))
 
+BC_WL / BC_area / BC_norm / BC_change
 
 ### 4.2.3 Baltimore Corner Extras ------------------------
 #All SW plot
-SW_Clean %>% 
+BCE_WL <- SW_Clean %>% 
   filter(Site_Name %in% c("QB-SW","TI-SW","JA-SW","JB-SW","JC-SW","NB-SW" )) %>% 
-  filter(Date > ymd("2021-02-01")) %>% 
+  #filter(Date > ymd("2021-02-01")) %>% 
   ggplot(aes(Date,dly_mean_wtrlvl,col=Site_Name))+
   geom_line()+
   ylab("Daily Mean Water Level (m)")+
-  theme(axis.title = element_text(size = 14),
-        axis.text = element_text(size = 12),
-        legend.text = element_text(size=12))
+  theme(axis.title = element_text(size = 16),
+        axis.text = element_text(size = 16),
+        legend.text = element_text(size=16))
 
 #All daily wetland area
-ggplot()+ 
+BCE_area <- ggplot()+ 
   geom_line(aes(ymd(Date),area_m2,col="JA"),data=JA_WL)+ 
   geom_line(aes(ymd(Date),area_m2,col="JB"),data=JB_WL)+ 
   geom_line(aes(ymd(Date),area_m2,col="JC"),data=JC_WL)+ 
   geom_line(aes(ymd(Date),area_m2,col="NB"),data=NB_WL)+  
   geom_line(aes(ymd(Date),area_m2,col="QB"),data=QB_WL)+ 
   geom_line(aes(ymd(Date),area_m2,col="TI"),data=TI_WL)+  
-  xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+  #xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
   ylab("Area (m2)")+
   xlab("Date")+
   theme(axis.text.y   = element_text(size=16),
@@ -3247,7 +3284,7 @@ ggplot()+
                               "TI" = "#FF61CC"))
 
 #All daily wetland area normalized to max area
-ggplot()+
+BCE_norm <- ggplot()+
   geom_line(aes(ymd(Date),area_m2/max(JA_sa$area_m),col="JA"),data=JA_WL)+ 
   geom_line(aes(ymd(Date),area_m2/max(JB_sa$area_m),col="JB"),data=JB_WL)+ 
   geom_line(aes(ymd(Date),area_m2/max(JC_sa$area_m),col="JC"),data=JC_WL)+  
@@ -3255,7 +3292,7 @@ ggplot()+
   geom_line(aes(ymd(Date),area_m2/max(QB_sa$area_m),col="QB"),data=QB_WL)+
   geom_line(aes(ymd(Date),area_m2/max(TI_sa$area_m),col="TI"),data=TI_WL)+ 
   ylab("Area (m^2) / Max Area (m^2)")+
-  xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+  #xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
   xlab("Date")+
   theme(axis.text.y   = element_text(size=16),
         axis.text.x   = element_text(size=16),
@@ -3272,14 +3309,14 @@ ggplot()+
                               "TI" = "#FF61CC"))
 
 #All daily change in wetland area
-ggplot()+ 
+BCE_change <- ggplot()+ 
   geom_line(aes(ymd(Date),delta_area,col="JA"),data=JA_WL)+ 
   geom_line(aes(ymd(Date),delta_area,col="JB"),data=JB_WL)+ 
   geom_line(aes(ymd(Date),delta_area,col="JC"),data=JC_WL)+ 
   geom_line(aes(ymd(Date),delta_area,col="NB"),data=NB_WL)+  
   geom_line(aes(ymd(Date),delta_area,col="QB"),data=QB_WL)+ 
   geom_line(aes(ymd(Date),delta_area,col="TI"),data=TI_WL)+  
-  xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+  #xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
   #ylim(-100,100)+
   ylab("Area (m2)")+
   xlab("Date")+
@@ -3297,24 +3334,26 @@ ggplot()+
                               "QB" = "#00B8E7",
                               "TI" = "#FF61CC"))
 
+BCE_WL / BCE_area / BCE_norm / BCE_change
+
 ### 4.2.4 Bee Tree -------------------------------
 #All SW plot
-SW_Clean %>% 
+BT_WL <- SW_Clean %>% 
   filter(Site_Name %in% c("DB-SW","TA-SW","TB-SW")) %>% 
-  filter(Date > ymd("2021-02-01")) %>% 
+  #filter(Date > ymd("2021-02-01")) %>% 
   ggplot(aes(Date,dly_mean_wtrlvl,col=Site_Name))+
   geom_line()+
   ylab("Daily Mean Water Level (m)")+
-  theme(axis.title = element_text(size = 14),
-        axis.text = element_text(size = 12),
-        legend.text = element_text(size=12))
+  theme(axis.title = element_text(size = 16),
+        axis.text = element_text(size = 16),
+        legend.text = element_text(size=16))
 
 #All daily wetland area
-ggplot()+
+BT_area <- ggplot()+
   geom_line(aes(ymd(Date),area_m2,col="DB"),data=DB_WL)+  
   geom_line(aes(ymd(Date),area_m2,col="TA"),data=TA_WL)+ 
   geom_line(aes(ymd(Date),area_m2,col="TB"),data=TB_WL)+ 
-  xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+  #xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
   ylab("Area (m2)")+
   xlab("Date")+
   theme(axis.text.y   = element_text(size=16),
@@ -3329,12 +3368,12 @@ ggplot()+
                               "TB" = "#00A9FF"))
 
 #All daily wetland area normalized to max area
-ggplot()+
+BT_norm <- ggplot()+
   geom_line(aes(ymd(Date),area_m2/max(DB_sa$area_m),col="DB"),data=DB_WL)+  
   geom_line(aes(ymd(Date),area_m2/max(TA_sa$area_m),col="TA"),data=TA_WL)+ 
   geom_line(aes(ymd(Date),area_m2/max(TB_sa$area_m),col="TB"),data=TB_WL)+  
   ylab("Area (m^2) / Max Area (m^2)")+
-  xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+  #xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
   xlab("Date")+
   theme(axis.text.y   = element_text(size=16),
         axis.text.x   = element_text(size=16),
@@ -3348,11 +3387,11 @@ ggplot()+
                               "TB" = "#00A9FF"))
 
 #All daily change in wetland area
-ggplot()+
+BT_change <- ggplot()+
   geom_line(aes(ymd(Date),delta_area,col="DB"),data=DB_WL)+
   geom_line(aes(ymd(Date),delta_area,col="TA"),data=TA_WL)+ 
   geom_line(aes(ymd(Date),delta_area,col="TB"),data=TB_WL)+
-  xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+  #xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
   #ylim(-100,100)+
   ylab("Area (m2)")+
   xlab("Date")+
@@ -3366,3 +3405,5 @@ ggplot()+
                      values=c("DB" = "#F8766D",
                               "TA" = "#0CB702",
                               "TB" = "#00A9FF"))
+
+BT_WL / BT_area / BT_norm / BT_change 
