@@ -1335,6 +1335,8 @@ MB_WL <- WL %>%
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
 
+max(MB_WL$delta_area,na.rm=TRUE)
+
 #plot water level over time
 MB_p1 <- WL %>% 
   filter(Site_Name == "MB-SW") %>%
@@ -1810,6 +1812,8 @@ OB_WL <- WL %>%
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
+
+max(OB_WL$delta_area,na.rm=TRUE)
 
 #plot water level over time
 OB_p1 <- WL %>% 
@@ -3059,7 +3063,7 @@ Jones_Day <- Daily %>%
   ggplot(aes(ymd(day),Jones_Daily_mm))+
   geom_bar(stat="identity")+
   ggtitle("Jones Rd Daily Precip")+
-  #xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
+  xlim(ymd("2021-04-01"),ymd("2022-04-11"))+
   ylab("Precp (mm)")+
   xlab("Date")+
   ylim(0,120)+
@@ -3095,7 +3099,7 @@ JL_day_area <- ggplot()+
   geom_line(aes(ymd(Date),area_m2,col="ND"),data=ND_WL)+ 
   geom_line(aes(ymd(Date),area_m2,col="TS"),data=TS_WL)+ 
   #xlim(ymd("2021-02-01"),ymd("2022-04-11"))+
-  #xlim(ymd("2021-08-05"),ymd("2021-08-12"))+
+  xlim(ymd("2021-08-05"),ymd("2021-08-12"))+
   ylab("Area (m2)")+
   xlab("Date")+
   theme(axis.text.y   = element_text(size=16),

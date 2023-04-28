@@ -438,3 +438,58 @@ Jack_Day <- Daily %>%
   geom_bar(stat="identity")
 
 Jack_Day
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#7.0 Do wetlands respond similarly to rain events ------------------------------
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#look at large rainfall event on Aug 9th (116 mm)
+
+#Zoom in on hourly rainfall
+Hourly %>% 
+  ggplot(aes(ymd_hms(hour),Jackson_Hrly_mm))+
+  geom_bar(stat="identity")+
+  xlim(ymd_hms("2021-08-07 00:00:00"),ymd_hms("2021-08-11 00:00:00"))+  
+  xlab("Date")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 16),
+        legend.text = element_text(size=16))
+
+#use high frequency data 
+highfreq <- read_csv("output_JM_2019_2022.csv")
+
+#filter to Jackson lane over this rain event
+JL_event <- highfreq %>% 
+            filter(Site_Name %in% c("BD-SW","DK-SW","ND-SW","TS-SW")) %>% 
+            filter(Timestamp > ymd_hms("2021-08-07 00:00:00") & Timestamp < ymd_hms("2021-08-11 00:00:00"))
+
+#plot
+JL_event %>% 
+  ggplot(aes(Timestamp,waterLevel,col=Site_Name))+
+  geom_line(size=1)+
+  xlim(ymd_hms("2021-08-07 00:00:00"),ymd_hms("2021-08-011 00:00:00"))+
+  ylab("Water Level (m)")+
+  ggtitle("Jackson Lane Water Level")+
+  theme(axis.title = element_text(size = 16),
+        axis.text = element_text(size = 16),
+        legend.text = element_text(size=16),
+        legend.title = element_text(size=16))
+
+#filter to Jackson lane over this rain event
+BC_event <- highfreq %>% 
+  filter(Site_Name %in% c("OB-SW","MB-SW","HB-SW","XB-SW")) %>% 
+  filter(Timestamp > ymd_hms("2021-08-07 00:00:00") & Timestamp < ymd_hms("2021-08-11 00:00:00"))
+
+#plot
+BC_event %>% 
+  ggplot(aes(Timestamp,waterLevel,col=Site_Name))+
+  geom_line(size=1)+
+  xlim(ymd_hms("2021-08-07 00:00:00"),ymd_hms("2021-08-011 00:00:00"))+
+  ylab("Water Level (m)")+
+  ggtitle("Baltimore Corner Water Level")+
+  theme(axis.title = element_text(size = 16),
+        axis.text = element_text(size = 16),
+        legend.text = element_text(size=16),
+        legend.title = element_text(size=16))
