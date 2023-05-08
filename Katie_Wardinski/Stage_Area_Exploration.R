@@ -99,6 +99,19 @@ sa_97 %>%
         axis.text = element_text(size = 12),
         legend.text = element_text(size=12))
 
+#Jackson Lane stage area
+sa_97 %>% 
+  filter(Site_ID %in% c("ND-SW","TS-SW","DK-SW","BD-SW")) %>%    
+  ggplot(aes(z,area_m,col=Site_ID))+
+  geom_line(size=1.25)+
+  ggtitle("97% threshold for basin delineation")+
+  xlab("Water Depth (m)")+
+  ylab("Area (sq. m.)")+
+  theme(axis.title = element_text(size = 20),
+        axis.text = element_text(size = 16),
+        legend.text = element_text(size=16),
+        plot.title = element_text(size = 20))
+
 #Explore stage-volume
 sa_97 %>% 
   filter(Site_ID != "DF-SW") %>% 
@@ -157,7 +170,8 @@ BD_sa_lower %>%
   geom_smooth(method = 'glm',
               formula = y ~ poly(x,5,raw=T),
               se = FALSE)+
-  theme(axis.text = element_text(size = 14))
+  theme(axis.text = element_text(size = 16),
+        axis.title=element_text(size=16))
 
 BD_area_model <- lm(area_m ~ poly(z,5,raw=T), data = BD_sa_lower) 
 summary(BD_area_model) 
@@ -225,6 +239,10 @@ BD_WL <- WL %>%
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
+
+max(BD_WL$delta_area,na.rm=T)
+cv(BD_WL$delta_area,na.rm=T)
+cv(BD_WL$area_m2)
 
 #plot water level over time
 BD_p1 <- WL %>% 
@@ -1335,6 +1353,10 @@ MB_WL <- WL %>%
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
 
+max(MB_WL$delta_area,na.rm=T)
+cv(MB_WL$delta_area,na.rm=T)
+cv(MB_WL$area_m2)
+
 #plot water level over time
 MB_p1 <- WL %>% 
   filter(Site_Name == "MB-SW") %>%
@@ -1656,6 +1678,8 @@ ND_WL <- WL %>%
          delta_vol = volume_m3 - lag(volume_m3))
 
 max(ND_WL$delta_area,na.rm=T)
+cv(ND_WL$delta_area,na.rm=T)
+cv(ND_WL$area_m2)
 
 #plot water level over time
 ND_p1 <- WL %>% 
@@ -2637,6 +2661,8 @@ TS_WL <- WL %>%
          delta_vol = volume_m3 - lag(volume_m3))
 
 max(TS_WL$delta_area,na.rm=T)
+cv(TS_WL$delta_area,na.rm=T)
+cv(TS_WL$area_m2)
 
 #plot water level over time
 TS_p1 <- WL %>% 
@@ -3110,10 +3136,27 @@ JL_day_area <- ggplot()+
                               "DK" = "#7CAE00",
                               "ND" = "#00B8E7",
                               "TS" = "#C77CFF"))
-
-#ggplot()+
-  #geom_line(aes(ymd(Date),area_m2,col="BD"),data=BD_WL)+
-  #xlim(ymd("2021-07-05"),ymd("2021-08-12"))
+#zoom in on wet up event
+ggplot()+
+  geom_line(aes(ymd(Date),area_m2,col="BD"),data=BD_WL,size=1.25)+
+  geom_line(aes(ymd(Date),area_m2,col="DK"),data=DK_WL,size=1.25)+ 
+  geom_line(aes(ymd(Date),area_m2,col="ND"),data=ND_WL,size=1.25)+ 
+  geom_line(aes(ymd(Date),area_m2,col="TS"),data=TS_WL,size=1.25)+
+  xlim(ymd("2021-08-05"),ymd("2021-08-12"))+
+  ylab("Area (m2)")+
+  xlab("Date")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 16),
+        legend.text = element_text(size=16))+
+  ggtitle("Jackson Lane daily wetland area")+
+  scale_color_manual(name="Legend",
+                     values=c("BD" = "#F8766D",
+                              "DK" = "#7CAE00",
+                              "ND" = "#00B8E7",
+                              "TS" = "#C77CFF"))
 
 #All daily wetland area normalized to max area
 JL_norm <- ggplot()+
