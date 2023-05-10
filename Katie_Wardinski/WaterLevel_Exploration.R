@@ -269,7 +269,7 @@ MS_WL <- read_csv("MS_2020WY_waterLevel_by_station.csv") %>%
 #survey data for transect points and soil horzion depths
 survey <- read_csv("MS_transect_survey.csv")
 
-# 6.1 Visualize 2019-20 winter wet up event -----------------------------------------
+## 6.1 Visualize 2019-20 winter wet up event -----------------------------------------
 #Zoom in on wet up from December to March, drop upland
 ND_winter <- MS_WL %>% 
   filter(wetland == "ND" ) %>%
