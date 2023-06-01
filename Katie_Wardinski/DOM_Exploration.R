@@ -296,3 +296,39 @@ DOC_CH4 <- synoptic %>%
         legend.title = element_text(size=14))
 
 DOC_CO2 / DOC_CH4
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#4.0 DOM Composition ---------------------------------------------------
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#FI - boxplot by date
+df %>%
+  ggplot(aes(factor(Date_M),FI,fill=Type))+
+  geom_boxplot()+
+  ylab("FI")+
+  xlab(element_blank())+
+  theme_classic()+
+  theme(axis.title.y = element_text(size = 14),
+        axis.text.y = element_text(size = 12),
+        axis.text.x = element_text(size = 10))
+
+#SR - boxplot by date
+df %>%
+  ggplot(aes(factor(Date_M),S_R,fill=Type))+
+  geom_boxplot()+
+  ylab("SR")+
+  xlab(element_blank())+
+  theme_classic()+
+  theme(axis.title.y = element_text(size = 14),
+        axis.text.y = element_text(size = 12),
+        axis.text.x = element_text(size = 10))
+#BIX
+df %>%
+  ggplot(aes(factor(Date_M),BIX,fill=Type))+
+  geom_boxplot()+
+  ylab("BIX")+
+  xlab(element_blank())+
+  theme_classic()+
+  theme(axis.title.y = element_text(size = 14),
+        axis.text.y = element_text(size = 12),
+        axis.text.x = element_text(size = 10))
