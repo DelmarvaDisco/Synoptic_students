@@ -31,7 +31,7 @@ theme_set(theme_classic())
 
 #Read data
 WL <- read_csv("all_data_JM_2019-2022.csv") #daily mean water level
-
+high_freq_WL <- read_csv("output_JM_2019_2022.csv") #15 minute water level data
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #2.0 Water level data -----------------------------------------------------------
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1734,6 +1734,102 @@ ND_p4 <- ggplot(ND_WL )+
 
 
 ND_p1 / ND_p2 / ND_p3
+
+
+##redo using high frequency water level data
+ND_WL_hf <- high_freq_WL %>% 
+  filter(Site_Name == "ND-SW") %>% 
+  #for area, if water level is <0.87, use stage-area polynomial function, otherwise 
+  #print the max area value
+  mutate(area_m2 = if_else(waterLevel < 0.87 & waterLevel > 0, 
+                           ((ND_area_model$coefficients[13]*(waterLevel^12)) +
+                              (ND_area_model$coefficients[12]*(waterLevel^11)) +
+                              (ND_area_model$coefficients[11]*(waterLevel^10)) +
+                              (ND_area_model$coefficients[10]*(waterLevel^9)) +
+                              (ND_area_model$coefficients[9]*(waterLevel^8)) +
+                              (ND_area_model$coefficients[8]*(waterLevel^7)) +
+                              (ND_area_model$coefficients[7]*(waterLevel^6)) +
+                              (ND_area_model$coefficients[6]*(waterLevel^5)) + 
+                              (ND_area_model$coefficients[5]*(waterLevel^4)) + 
+                              (ND_area_model$coefficients[4]*(waterLevel^3)) + 
+                              (ND_area_model$coefficients[3]*(waterLevel^2)) +  
+                              (ND_area_model$coefficients[2]*waterLevel) +
+                              ND_area_model$coefficients[1]),
+                           if_else(waterLevel >= 0.87,max(ND_sa$area_m),0)),
+         #for volume, if water level is <0.87, use stage-area polynomial function, otherwise
+         #use the linear relationship
+         volume_m3 = if_else(waterLevel < 0.87 & waterLevel > 0,
+                             ((ND_vol_model_lower$coefficients[6]*(waterLevel^5)) +
+                                (ND_vol_model_lower$coefficients[5]*(waterLevel^4)) +
+                                (ND_vol_model_lower$coefficients[4]*(waterLevel^3)) + 
+                                (ND_vol_model_lower$coefficients[3]*(waterLevel^2)) +
+                                (ND_vol_model_lower$coefficients[2]*(waterLevel)) + 
+                                ND_vol_model_lower$coefficients[1]),
+                             if_else(waterLevel>= 0.87,
+                                     (ND_vol_model_upper$coefficients[2]*waterLevel) + 
+                                       ND_vol_model_upper$coefficients[1],0)),
+         #calculate daily change in area and volume
+         delta_area = area_m2 - lag(area_m2),
+         delta_vol = volume_m3 - lag(volume_m3))
+
+max(ND_WL_hf$delta_area,na.rm=T)
+cv(ND_WL_hf$delta_area,na.rm=T)
+cv(ND_WL_hf$area_m2)
+
+#plot water level over time
+ND_p1_hf <- high_freq_WL %>% 
+  filter(Site_Name == "ND-SW") %>%
+  ggplot()+
+  geom_line(aes(ymd_hms(Timestamp),waterLevel))+
+  geom_hline(yintercept=0,linetype="dashed")+
+  ylab("Water level (m)")+
+  xlab("Date")+
+  ggtitle("ND-SW wetland water level")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))
+
+#plot area over time
+ND_p2_hf <- ggplot(ND_WL_hf)+
+  geom_line(aes(ymd_hms(Timestamp),area_m2))+ 
+  ylab("Area (m2)")+
+  xlab("Date")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))+
+  ggtitle("ND-SW wetland area")
+
+#plot change in area over time
+ND_p3_hf <- ggplot(ND_WL_hf)+
+  geom_line(aes(ymd_hms(Timestamp),delta_area))+
+  ylab("Delta Area (m2)")+
+  xlab("Date")+  
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))+
+  ggtitle("ND-SW change in wetland area")
+
+#plot volume over time
+ND_p4_hf <- ggplot(ND_WL_hf)+
+  geom_line(aes(ymd_hms(Timestamp),volume_m3)) +
+  ylab("Volume (m3)")+
+  xlab("Date")+  
+  ggtitle("ND-SW volume")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))
+
+
+ND_p1_hf / ND_p2_hf / ND_p3_hf
+
 
 ## OB-SW  ----------------------------
 #plot stage-area relationship
