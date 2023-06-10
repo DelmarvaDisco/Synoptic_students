@@ -1811,7 +1811,7 @@ ND_p2_hf <- ggplot(ND_WL_hf)+
 ggplot(ND_WL_hf)+
   geom_line(aes(ymd_hms(Timestamp),dist_m))+
   ylab("Dist from Wetland Center (m)")+
-  xlim(ymd_hms("2021-08-07 00:00:00"),ymd_hms("2021-08-17 00:00:00"))+
+  #xlim(ymd_hms("2021-08-07 00:00:00"),ymd_hms("2021-08-17 00:00:00"))+
   xlab("Date")+  
   theme(axis.text.y   = element_text(size=16),
         axis.text.x   = element_text(size=16),
