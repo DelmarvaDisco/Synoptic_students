@@ -1769,8 +1769,8 @@ ND_WL_hf <- high_freq_WL %>%
                                      (ND_vol_model_upper$coefficients[2]*waterLevel) + 
                                        ND_vol_model_upper$coefficients[1],0)),
          #calculate distance from wetland center using equation fitted in excel from survey data
-         dist_m = if_else(waterLevel < 0.87 & waterLevel > 0,
-                          2.907 - (sqrt(0.0006508 - 0.0172*waterLevel)/0.0086),0),
+         dist_m = if_else(waterLevel > 0,
+                          ((42.627*waterLevel^3) - (76.782*waterLevel^2) + (53.956*waterLevel) + 1.0874),0),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -1778,6 +1778,7 @@ ND_WL_hf <- high_freq_WL %>%
 max(ND_WL_hf$delta_area,na.rm=T)
 cv(ND_WL_hf$delta_area,na.rm=T)
 cv(ND_WL_hf$area_m2)
+max(ND_WL_hf$dist_m)
 
 #plot water level over time
 ND_p1_hf <- high_freq_WL %>% 
@@ -1805,6 +1806,19 @@ ND_p2_hf <- ggplot(ND_WL_hf)+
         axis.title.x  = element_text(size=18),
         title = element_text(size = 18))+
   ggtitle("ND-SW wetland area")
+
+#distance from center over time
+ggplot(ND_WL_hf)+
+  geom_line(aes(ymd_hms(Timestamp),dist_m))+
+  ylab("Dist from Wetland Center (m)")+
+  xlim(ymd_hms("2021-08-07 00:00:00"),ymd_hms("2021-08-17 00:00:00"))+
+  xlab("Date")+  
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))+
+  ggtitle("ND-SW Water Edge Dist from Wetland Center")
 
 #plot change in area over time
 ND_p3_hf <- ggplot(ND_WL_hf)+
