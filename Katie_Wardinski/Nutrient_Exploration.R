@@ -2,7 +2,7 @@
 #Title: Synoptic Data Exploration
 #Coder: Katie Wardinski
 #Created: 2022-06-02
-#Purpose: Get familiar with nutrient trends in data to assist with PhD planning
+#Purpose: Get familiar with nutrient and metal trends to assist with PhD planning
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -26,7 +26,7 @@ site <- read_csv("wetland_info.csv") #site info including wetland order
 df <- left_join(synoptic,site,by="Site")
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#2.0 Temporal -----------------------------------------------------------
+#2.0 Nutrients -----------------------------------------------------------
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #2.1 Boxplots by sample type --------------
@@ -149,3 +149,44 @@ ggplot()+
   xlab(element_blank())+
   theme(axis.title.y = element_text(size = 18),
         axis.text = element_text(size = 16))
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#3.0 Metals -----------------------------------------------------------
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+## 3.1 Metals by site including all dates --------------------
+#In GW only
+df %>% 
+  filter(SW_GW == "GW") %>%
+  filter(Type != "Channel") %>% 
+  ggplot(aes(Sample_Name,Fe_ppb))+
+  ylim(0,20000)+ #cut off outliers in XB
+  geom_boxplot()+
+  theme_classic()
+
+df %>% 
+  filter(SW_GW == "GW") %>%
+  filter(Type != "Channel") %>% 
+  ggplot(aes(Sample_Name,Mn_ppb))+
+  ylim(0,100)+ #cut off negative values
+  geom_boxplot()+
+  theme_classic()
+
+df %>% 
+  filter(SW_GW == "GW") %>%
+  filter(Type != "Channel") %>% 
+  ggplot(aes(Sample_Name,SO4_mg_L))+
+  ylim(0,100)+ #cut off negative values
+  geom_boxplot()+
+  theme_classic()
+
+df %>% 
+  filter(SW_GW == "GW") %>%
+  filter(Type != "Channel") %>% 
+  ggplot(aes(Sample_Name,Al_ppb))+
+  #ylim(0,100)+ #cut off negative values
+  geom_boxplot()+
+  theme_classic()
+
+#sites that could work as GW source for core: ND-UW1, DK-UW1, TB-UW1

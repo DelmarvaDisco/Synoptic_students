@@ -2833,6 +2833,114 @@ TS_p4 <- ggplot(TS_WL )+
 
 TS_p1 / TS_p2 / TS_p3
 
+##redo using high frequency water level data
+TS_WL_hf <- high_freq_WL %>% 
+  filter(Site_Name == "TS-SW") %>%
+  #for area, if water level is <0.6, use stage-area polynomial function, otherwise 
+  #print the max area value
+  mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.6 & dly_mean_wtrlvl > 0, 
+                           ((TS_area_model$coefficients[6]*(dly_mean_wtrlvl^5)) + 
+                              (TS_area_model$coefficients[5]*(dly_mean_wtrlvl^4)) + 
+                              (TS_area_model$coefficients[4]*(dly_mean_wtrlvl^3)) + 
+                              (TS_area_model$coefficients[3]*(dly_mean_wtrlvl^2)) +  
+                              (TS_area_model$coefficients[2]*dly_mean_wtrlvl) +
+                              TS_area_model$coefficients[1]),
+                           if_else(dly_mean_wtrlvl >= 0.6,max(TS_sa$area_m),0)),
+         #for volume, if water level is <0.6, use stage-area polynomial function, otherwise
+         #use the linear relationship
+         volume_m3 = if_else(dly_mean_wtrlvl < 0.6 & dly_mean_wtrlvl > 0,
+                             ((TS_vol_model_lower$coefficients[6]*(dly_mean_wtrlvl^5)) +
+                                (TS_vol_model_lower$coefficients[5]*(dly_mean_wtrlvl^4)) +
+                                (TS_vol_model_lower$coefficients[4]*(dly_mean_wtrlvl^3)) + 
+                                (TS_vol_model_lower$coefficients[3]*(dly_mean_wtrlvl^2)) +
+                                (TS_vol_model_lower$coefficients[2]*(dly_mean_wtrlvl)) + 
+                                TS_vol_model_lower$coefficients[1]),
+                             if_else(dly_mean_wtrlvl >= 0.6 ,
+                                     (TS_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
+                                       TS_vol_model_upper$coefficients[1],0)),
+         
+         #calculate distance from wetland center using equation fitted in excel from survey data
+         dist_m = if_else(waterLevel > 0,
+                          ((-23.11*waterLevel^2) + (37.197*waterLevel) + 0.2789),0),
+         #calculate daily change in area and volume
+         delta_area = area_m2 - lag(area_m2),
+         delta_vol = volume_m3 - lag(volume_m3))
+
+
+
+
+max(TS_WL_hf$delta_area,na.rm=T)
+cv(TS_WL_hf$delta_area,na.rm=T)
+cv(TS_WL_hf$area_m2)
+max(TS_WL_hf$dist_m)
+
+#plot water level over time
+TS_p1_hf <- high_freq_WL %>% 
+  filter(Site_Name == "TS-SW") %>%
+  ggplot()+
+  geom_line(aes(ymd_hms(Timestamp),waterLevel))+
+  geom_hline(yintercept=0,linetype="dashed")+
+  ylab("Water level (m)")+
+  xlab("Date")+
+  ggtitle("TS-SW wetland water level")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))
+
+#plot area over time
+TS_p2_hf <- ggplot(TS_WL_hf)+
+  geom_line(aes(ymd_hms(Timestamp),area_m2))+ 
+  ylab("Area (m2)")+
+  xlab("Date")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))+
+  ggtitle("TS-SW wetland area")
+
+#distance from center over time
+ggplot(TS_WL_hf)+
+  geom_line(aes(ymd_hms(Timestamp),dist_m))+
+  ylab("Dist from Wetland Center (m)")+
+  #xlim(ymd_hms("2021-08-07 00:00:00"),ymd_hms("2021-08-17 00:00:00"))+
+  xlab("Date")+  
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))+
+  ggtitle("TS-SW Water Edge Dist from Wetland Center")
+
+#plot change in area over time
+TS_p3_hf <- ggplot(TS_WL_hf)+
+  geom_line(aes(ymd_hms(Timestamp),delta_area))+
+  ylab("Delta Area (m2)")+
+  xlab("Date")+  
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))+
+  ggtitle("TS-SW change in wetland area")
+
+#plot volume over time
+TS_p4_hf <- ggplot(TS_WL_hf)+
+  geom_line(aes(ymd_hms(Timestamp),volume_m3)) +
+  ylab("Volume (m3)")+
+  xlab("Date")+  
+  ggtitle("TS-SW volume")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))
+
+
+TS_p1_hf / TS_p2_hf / TS_p3_hf
+
 ## XB-SW ------------------------------
 #plot stage-area relationship
 XB_sa <- sa_97 %>% filter(Site_ID == "XB-SW") 
