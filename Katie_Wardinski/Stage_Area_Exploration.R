@@ -1680,6 +1680,8 @@ ND_WL <- WL %>%
 max(ND_WL$delta_area,na.rm=T)
 cv(ND_WL$delta_area,na.rm=T)
 cv(ND_WL$area_m2)
+mean(ND_WL$area_m2)
+max(ND_WL$area_m2)
 
 #plot water level over time
 ND_p1 <- WL %>% 
@@ -1778,7 +1780,12 @@ ND_WL_hf <- high_freq_WL %>%
 max(ND_WL_hf$delta_area,na.rm=T)
 cv(ND_WL_hf$delta_area,na.rm=T)
 cv(ND_WL_hf$area_m2)
+mean(ND_WL_hf$area_m2)
+max(ND_WL_hf$area_m2)
+mean(ND_WL_hf$dist_m)
+min(ND_WL_hf$dist_m)
 max(ND_WL_hf$dist_m)
+cv(ND_WL_hf$dist_m)
 
 #plot water level over time
 ND_p1_hf <- high_freq_WL %>% 
@@ -2778,6 +2785,8 @@ TS_WL <- WL %>%
 max(TS_WL$delta_area,na.rm=T)
 cv(TS_WL$delta_area,na.rm=T)
 cv(TS_WL$area_m2)
+mean(TS_WL$area_m2)
+max(TS_WL$area_m2)
 
 #plot water level over time
 TS_p1 <- WL %>% 
@@ -2838,25 +2847,25 @@ TS_WL_hf <- high_freq_WL %>%
   filter(Site_Name == "TS-SW") %>%
   #for area, if water level is <0.6, use stage-area polynomial function, otherwise 
   #print the max area value
-  mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.6 & dly_mean_wtrlvl > 0, 
-                           ((TS_area_model$coefficients[6]*(dly_mean_wtrlvl^5)) + 
-                              (TS_area_model$coefficients[5]*(dly_mean_wtrlvl^4)) + 
-                              (TS_area_model$coefficients[4]*(dly_mean_wtrlvl^3)) + 
-                              (TS_area_model$coefficients[3]*(dly_mean_wtrlvl^2)) +  
-                              (TS_area_model$coefficients[2]*dly_mean_wtrlvl) +
+  mutate(area_m2 = if_else(waterLevel < 0.6 & waterLevel > 0, 
+                           ((TS_area_model$coefficients[6]*(waterLevel^5)) + 
+                              (TS_area_model$coefficients[5]*(waterLevel^4)) + 
+                              (TS_area_model$coefficients[4]*(waterLevel^3)) + 
+                              (TS_area_model$coefficients[3]*(waterLevel^2)) +  
+                              (TS_area_model$coefficients[2]*waterLevel) +
                               TS_area_model$coefficients[1]),
-                           if_else(dly_mean_wtrlvl >= 0.6,max(TS_sa$area_m),0)),
+                           if_else(waterLevel >= 0.6,max(TS_sa$area_m),0)),
          #for volume, if water level is <0.6, use stage-area polynomial function, otherwise
          #use the linear relationship
-         volume_m3 = if_else(dly_mean_wtrlvl < 0.6 & dly_mean_wtrlvl > 0,
-                             ((TS_vol_model_lower$coefficients[6]*(dly_mean_wtrlvl^5)) +
-                                (TS_vol_model_lower$coefficients[5]*(dly_mean_wtrlvl^4)) +
-                                (TS_vol_model_lower$coefficients[4]*(dly_mean_wtrlvl^3)) + 
-                                (TS_vol_model_lower$coefficients[3]*(dly_mean_wtrlvl^2)) +
-                                (TS_vol_model_lower$coefficients[2]*(dly_mean_wtrlvl)) + 
+         volume_m3 = if_else(waterLevel < 0.6 & waterLevel > 0,
+                             ((TS_vol_model_lower$coefficients[6]*(waterLevel^5)) +
+                                (TS_vol_model_lower$coefficients[5]*(waterLevel^4)) +
+                                (TS_vol_model_lower$coefficients[4]*(waterLevel^3)) + 
+                                (TS_vol_model_lower$coefficients[3]*(waterLevel^2)) +
+                                (TS_vol_model_lower$coefficients[2]*(waterLevel)) + 
                                 TS_vol_model_lower$coefficients[1]),
-                             if_else(dly_mean_wtrlvl >= 0.6 ,
-                                     (TS_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
+                             if_else(waterLevel >= 0.6 ,
+                                     (TS_vol_model_upper$coefficients[2]*waterLevel) + 
                                        TS_vol_model_upper$coefficients[1],0)),
          
          #calculate distance from wetland center using equation fitted in excel from survey data
@@ -2866,13 +2875,13 @@ TS_WL_hf <- high_freq_WL %>%
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
 
-
-
-
 max(TS_WL_hf$delta_area,na.rm=T)
 cv(TS_WL_hf$delta_area,na.rm=T)
 cv(TS_WL_hf$area_m2)
 max(TS_WL_hf$dist_m)
+mean(TS_WL_hf$dist_m)
+min(TS_WL_hf$dist_m)
+cv(TS_WL_hf$dist_m)
 
 #plot water level over time
 TS_p1_hf <- high_freq_WL %>% 
