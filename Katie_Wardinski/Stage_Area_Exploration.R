@@ -1772,7 +1772,7 @@ ND_WL_hf <- high_freq_WL %>%
                                        ND_vol_model_upper$coefficients[1],0)),
          #calculate distance from wetland center using equation fitted in excel from survey data
          dist_m = if_else(waterLevel > 0,
-                          ((42.627*waterLevel^3) - (76.782*waterLevel^2) + (53.956*waterLevel) + 1.0874),0),
+                          ((14.697*waterLevel^3) - (43.52*waterLevel^2) + (47.209*waterLevel)),0),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
@@ -2870,7 +2870,7 @@ TS_WL_hf <- high_freq_WL %>%
          
          #calculate distance from wetland center using equation fitted in excel from survey data
          dist_m = if_else(waterLevel > 0,
-                          ((-23.11*waterLevel^2) + (37.197*waterLevel) + 0.2789),0),
+                          ((-101.42*waterLevel^2) + (106.23*waterLevel)),0),
          #calculate daily change in area and volume
          delta_area = area_m2 - lag(area_m2),
          delta_vol = volume_m3 - lag(volume_m3))
