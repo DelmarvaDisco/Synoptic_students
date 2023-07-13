@@ -30,15 +30,67 @@ library(ggpmisc)
 theme_set(theme_classic())
 
 #Read water level data
-WL <- read_csv("all_data_JM_2019-2022.csv") #daily mean water level
+WL <- read_csv("dly_mean_output_NC_2019_2022.csv") #daily mean water level through fall 2022 updated by Nick 
 high_freq_WL <- read_csv("output_JM_2019_2022.csv") #15 minute water level data
 
 #Read in stage area relationships
 sa_97 <- read_csv("stage_area_relationships_97.csv") #97% threshold for identifying depressions
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#2.0 Water level data --------------------------------------------------
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## 2.1 Daily Mean Water Level ----------------------
+#Data through October 2022
+## SW only ##
+SW_Daily <- WL %>% filter(grepl("SW",Site_ID))
+SW_Daily$Date <- mdy(SW_Daily$Date)
+
+#Plot all SW data
+SW_Daily %>% 
+  filter(Site_ID %in% c("ND-SW","TS-SW")) %>% 
+  filter(Date > "2021-03-31") %>% 
+  ggplot(aes(Date,dly_mean_wtrlvl,col=Site_ID))+
+  geom_line()+
+  ylab("Daily Mean Water Level (m)")+
+  xlab("Date")+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size=12))
+
+#Interactive SW plot
+SW_Daily %>% 
+  filter(Site_ID %in% c("ND-SW","TS-SW")) %>% 
+  filter(Date > "2021-03-31") %>%
+  plot_ly(x = ~Date) %>% 
+  add_trace(y = ~dly_mean_wtrlvl, type = 'scatter', mode = 'lines',color = ~Site_ID) 
+
+
+## 2.2 High frequency water level ---------------------
+##Only have a shorter interval of data here (ends April 2022)
+## SW only ##
+SW_hf <- high_freq_WL %>% filter(grepl("SW",Site_Name))
+
+#Plot all SW data
+SW_hf %>% 
+  filter(Site_Name %in% c("ND-SW","TS-SW")) %>% 
+  filter(Timestamp > "2021-03-31 00:00:00") %>% 
+  ggplot(aes(Timestamp,waterLevel,col=Site_Name))+
+  geom_line()+
+  ylab("Water Level (m)")+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size=12))
+
+#Interactive SW plot
+SW_hf %>% 
+  filter(Site_Name %in% c("ND-SW","TS-SW")) %>% 
+  filter(Timestamp > "2021-03-31 00:00:00") %>% 
+  plot_ly(x = ~Timestamp) %>% 
+  add_trace(y = ~waterLevel, type = 'scatter', mode = 'lines',color = ~Site_Name) 
+
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#2.0 Stage-area relationships --------------------------------------------------
+#3.0 Stage-area relationships --------------------------------------------------
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## ND-SW ------------------------------
 #plot stage-area relationship
@@ -115,7 +167,7 @@ summary(ND_vol_model_upper)
 
 #calculating change in area and volume on a daily timestep
 ND_WL <- WL %>% 
-  filter(Site_Name == "ND-SW") %>% 
+  filter(Site_ID == "ND-SW") %>% 
   #for area, if water level is <0.87, use stage-area polynomial function, otherwise 
   #print the max area value
   mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.87 & dly_mean_wtrlvl > 0, 
@@ -157,9 +209,9 @@ max(ND_WL$area_m2)
 
 #plot water level over time
 ND_p1 <- WL %>% 
-  filter(Site_Name == "ND-SW") %>%
+  filter(Site_ID == "ND-SW") %>%
   ggplot()+
-  geom_line(aes(ymd(Date),dly_mean_wtrlvl))+
+  geom_line(aes(mdy(Date),dly_mean_wtrlvl))+
   geom_hline(yintercept=0,linetype="dashed")+
   ylab("Water level (m)")+
   xlab("Date")+
@@ -172,7 +224,7 @@ ND_p1 <- WL %>%
 
 #plot area over time
 ND_p2 <- ggplot(ND_WL)+
-  geom_line(aes(ymd(Date),area_m2))+ 
+  geom_line(aes(mdy(Date),area_m2))+ 
   ylab("Area (m2)")+
   xlab("Date")+
   theme(axis.text.y   = element_text(size=16),
@@ -184,7 +236,7 @@ ND_p2 <- ggplot(ND_WL)+
 
 #plot change in area over time
 ND_p3 <- ggplot(ND_WL)+
-  geom_line(aes(ymd(Date),delta_area))+
+  geom_line(aes(mdy(Date),delta_area))+
   ylab("Delta Area (m2)")+
   xlab("Date")+  
   theme(axis.text.y   = element_text(size=16),
