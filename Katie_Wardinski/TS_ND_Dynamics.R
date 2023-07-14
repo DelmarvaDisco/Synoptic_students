@@ -36,6 +36,9 @@ high_freq_WL <- read_csv("output_JM_2019_2022.csv") #15 minute water level data
 #Read in stage area relationships
 sa_97 <- read_csv("stage_area_relationships_97.csv") #97% threshold for identifying depressions
 
+#read in NOAA daily rainfall data (need NOAA because Jackson Lane record isn't long enough)
+Precip <- read_csv("NOAA_Denton_DailyPrecip_2021-22.csv")
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #2.0 Water level data --------------------------------------------------
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -88,9 +91,21 @@ SW_hf %>%
   plot_ly(x = ~Timestamp) %>% 
   add_trace(y = ~waterLevel, type = 'scatter', mode = 'lines',color = ~Site_Name) 
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#3.0 Daily Precip --------------------------------------------------
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#summary of 1/31/21-12/31/22 (record of WL data)
+Precip_Summary <- Precip %>% 
+  dplyr::select(DATE,PRCP_mm,SNOW_mm) %>% 
+  filter(PRCP_mm > 0) %>% 
+  summarize(MedianPrecip = median(PRCP_mm),
+            MeanPrecip = mean(PRCP_mm),
+            MaxPrecip = max(PRCP_mm), #max daily precip = 76.2 mm
+            N_observations = length(PRCP_mm)) #median daily precip is 3.8 mm
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#3.0 Stage-area relationships --------------------------------------------------
+#4.0 Stage-area relationships --------------------------------------------------
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## ND-SW ------------------------------
 #plot stage-area relationship
