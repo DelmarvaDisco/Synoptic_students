@@ -49,7 +49,7 @@ SW_Daily <- WL %>% filter(grepl("SW",Site_ID))
 SW_Daily$Date <- mdy(SW_Daily$Date)
 
 #Plot all SW data
-SW_Daily %>% 
+WL_Plot <- SW_Daily %>% 
   filter(Site_ID %in% c("ND-SW","TS-SW")) %>% 
   filter(Date > "2021-03-31") %>% 
   ggplot(aes(Date,dly_mean_wtrlvl,col=Site_ID))+
@@ -61,7 +61,7 @@ SW_Daily %>%
         legend.text = element_text(size=12))
 
 #Interactive SW plot
-SW_Daily %>% 
+WL_Plotly <- SW_Daily %>% 
   filter(Site_ID %in% c("ND-SW","TS-SW")) %>% 
   filter(Date > "2021-03-31") %>%
   plot_ly(x = ~Date) %>% 
@@ -95,6 +95,8 @@ SW_hf %>%
 #3.0 Daily Precip --------------------------------------------------
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Precip$DATE <- mdy(Precip$DATE)
+
 #summary of 1/31/21-12/31/22 (record of WL data)
 Precip_Summary <- Precip %>% 
   dplyr::select(DATE,PRCP_mm,SNOW_mm) %>% 
@@ -103,6 +105,22 @@ Precip_Summary <- Precip %>%
             MeanPrecip = mean(PRCP_mm),
             MaxPrecip = max(PRCP_mm), #max daily precip = 76.2 mm
             N_observations = length(PRCP_mm)) #median daily precip is 3.8 mm
+
+#plot precip and filter to dates where we have water level data
+Precip_Plot <- Precip %>% 
+  dplyr::select(DATE,PRCP_mm,SNOW_mm) %>% 
+  filter(DATE > "2021-03-31" & DATE < "2021-10-08") %>% 
+  ggplot(aes(DATE, PRCP_mm)) +
+  geom_bar(stat="identity") +   
+  xlab("Date") + ylab("Daily Precipitation (mm)") 
+
+#Interactive SW plot
+Precip_Plotly <- Precip %>% 
+  dplyr::select(DATE,PRCP_mm,SNOW_mm) %>% 
+  filter(DATE > "2021-03-31" & DATE < "2021-10-08") %>% 
+  plot_ly(x = ~DATE, y = ~PRCP_mm) %>% 
+  add_bars() 
+
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #4.0 Stage-area relationships --------------------------------------------------
@@ -181,7 +199,7 @@ ND_vol_model_upper <- lm(volume_m3 ~ z,data=ND_sa_upper)
 summary(ND_vol_model_upper) 
 
 #calculating change in area and volume on a daily timestep
-ND_WL <- WL %>% 
+ND_WL <- SW_Daily %>% 
   filter(Site_ID == "ND-SW") %>% 
   #for area, if water level is <0.87, use stage-area polynomial function, otherwise 
   #print the max area value
@@ -212,21 +230,34 @@ ND_WL <- WL %>%
                              if_else(dly_mean_wtrlvl >= 0.87,
                                      (ND_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
                                        ND_vol_model_upper$coefficients[1],0)),
+         #calculate distance from wetland center using equation fitted in excel from survey data
+         dist_m = if_else(dly_mean_wtrlvl > 0,
+                          ((14.697*dly_mean_wtrlvl^3) - (43.52*dly_mean_wtrlvl^2) + (47.209*dly_mean_wtrlvl)),0),
          #calculate daily change in area and volume
+         delta_waterlevel = dly_mean_wtrlvl - lag(dly_mean_wtrlvl),
          delta_area = area_m2 - lag(area_m2),
-         delta_vol = volume_m3 - lag(volume_m3))
+         delta_vol = volume_m3 - lag(volume_m3),
+         delta_dist = dist_m - lag(dist_m))
 
+#delta area
 max(ND_WL$delta_area,na.rm=T)
 cv(ND_WL$delta_area,na.rm=T)
+#area
 cv(ND_WL$area_m2)
 mean(ND_WL$area_m2)
 max(ND_WL$area_m2)
+cv(ND_WL$area_m2)
+#distance
+max(ND_WL$dist_m)
+mean(ND_WL$dist_m)
+min(ND_WL$dist_m)
+cv(ND_WL$dist_m)
 
 #plot water level over time
-ND_p1 <- WL %>% 
-  filter(Site_ID == "ND-SW") %>%
+ND_p1 <- ND_WL %>% 
+  filter(Date > "2021-03-31") %>% 
   ggplot()+
-  geom_line(aes(mdy(Date),dly_mean_wtrlvl))+
+  geom_line(aes(ymd(Date),dly_mean_wtrlvl))+
   geom_hline(yintercept=0,linetype="dashed")+
   ylab("Water level (m)")+
   xlab("Date")+
@@ -238,8 +269,10 @@ ND_p1 <- WL %>%
         title = element_text(size = 18))
 
 #plot area over time
-ND_p2 <- ggplot(ND_WL)+
-  geom_line(aes(mdy(Date),area_m2))+ 
+ND_p2 <- ND_WL %>%
+  filter(Date > "2021-03-31") %>% 
+  ggplot()+
+  geom_line(aes(ymd(Date),area_m2))+ 
   ylab("Area (m2)")+
   xlab("Date")+
   theme(axis.text.y   = element_text(size=16),
@@ -250,8 +283,10 @@ ND_p2 <- ggplot(ND_WL)+
   ggtitle("ND-SW daily wetland area")
 
 #plot change in area over time
-ND_p3 <- ggplot(ND_WL)+
-  geom_line(aes(mdy(Date),delta_area))+
+ND_p3 <- ND_WL %>%
+  filter(Date > "2021-03-31") %>% 
+  ggplot()+
+  geom_line(aes(ymd(Date),delta_area))+
   ylab("Delta Area (m2)")+
   xlab("Date")+  
   theme(axis.text.y   = element_text(size=16),
@@ -261,8 +296,23 @@ ND_p3 <- ggplot(ND_WL)+
         title = element_text(size = 18))+
   ggtitle("ND-SW daily change in wetland area")
 
+
+#plot distance over time
+ND_p4 <- ND_WL %>%
+  filter(Date > "2021-03-31") %>% 
+  ggplot()+
+  geom_line(aes(ymd(Date),dist_m)) +
+  ylab("Edge distance (m)")+
+  xlab("Date")+  
+  ggtitle("ND-SW Edge of water distance from wetland center")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))
+
 #plot volume over time
-ND_p4 <- ggplot(ND_WL )+
+ggplot(ND_WL )+
   geom_line(aes(ymd(Date),volume_m3)) +
   ylab("Volume (m3)")+
   xlab("Date")+  
@@ -274,124 +324,8 @@ ND_p4 <- ggplot(ND_WL )+
         title = element_text(size = 18))
 
 
-ND_p1 / ND_p2 / ND_p3
+ND_p1 / ND_p2 / ND_p3 / ND_p4
 
-
-##redo using high frequency water level data
-ND_WL_hf <- high_freq_WL %>% 
-  filter(Site_Name == "ND-SW") %>% 
-  #for area, if water level is <0.87, use stage-area polynomial function, otherwise 
-  #print the max area value
-  mutate(area_m2 = if_else(waterLevel < 0.87 & waterLevel > 0, 
-                           ((ND_area_model$coefficients[13]*(waterLevel^12)) +
-                              (ND_area_model$coefficients[12]*(waterLevel^11)) +
-                              (ND_area_model$coefficients[11]*(waterLevel^10)) +
-                              (ND_area_model$coefficients[10]*(waterLevel^9)) +
-                              (ND_area_model$coefficients[9]*(waterLevel^8)) +
-                              (ND_area_model$coefficients[8]*(waterLevel^7)) +
-                              (ND_area_model$coefficients[7]*(waterLevel^6)) +
-                              (ND_area_model$coefficients[6]*(waterLevel^5)) + 
-                              (ND_area_model$coefficients[5]*(waterLevel^4)) + 
-                              (ND_area_model$coefficients[4]*(waterLevel^3)) + 
-                              (ND_area_model$coefficients[3]*(waterLevel^2)) +  
-                              (ND_area_model$coefficients[2]*waterLevel) +
-                              ND_area_model$coefficients[1]),
-                           if_else(waterLevel >= 0.87,max(ND_sa$area_m),0)),
-         #for volume, if water level is <0.87, use stage-area polynomial function, otherwise
-         #use the linear relationship
-         volume_m3 = if_else(waterLevel < 0.87 & waterLevel > 0,
-                             ((ND_vol_model_lower$coefficients[6]*(waterLevel^5)) +
-                                (ND_vol_model_lower$coefficients[5]*(waterLevel^4)) +
-                                (ND_vol_model_lower$coefficients[4]*(waterLevel^3)) + 
-                                (ND_vol_model_lower$coefficients[3]*(waterLevel^2)) +
-                                (ND_vol_model_lower$coefficients[2]*(waterLevel)) + 
-                                ND_vol_model_lower$coefficients[1]),
-                             if_else(waterLevel>= 0.87,
-                                     (ND_vol_model_upper$coefficients[2]*waterLevel) + 
-                                       ND_vol_model_upper$coefficients[1],0)),
-         #calculate distance from wetland center using equation fitted in excel from survey data
-         dist_m = if_else(waterLevel > 0,
-                          ((14.697*waterLevel^3) - (43.52*waterLevel^2) + (47.209*waterLevel)),0),
-         #calculate daily change in area and volume
-         delta_area = area_m2 - lag(area_m2),
-         delta_vol = volume_m3 - lag(volume_m3))
-
-max(ND_WL_hf$delta_area,na.rm=T)
-cv(ND_WL_hf$delta_area,na.rm=T)
-cv(ND_WL_hf$area_m2)
-mean(ND_WL_hf$area_m2)
-max(ND_WL_hf$area_m2)
-mean(ND_WL_hf$dist_m)
-min(ND_WL_hf$dist_m)
-max(ND_WL_hf$dist_m)
-cv(ND_WL_hf$dist_m)
-
-#plot water level over time
-ND_p1_hf <- high_freq_WL %>% 
-  filter(Site_Name == "ND-SW") %>%
-  ggplot()+
-  geom_line(aes(ymd_hms(Timestamp),waterLevel))+
-  geom_hline(yintercept=0,linetype="dashed")+
-  ylab("Water level (m)")+
-  xlab("Date")+
-  ggtitle("ND-SW wetland water level")+
-  theme(axis.text.y   = element_text(size=16),
-        axis.text.x   = element_text(size=16),
-        axis.title.y  = element_text(size=18),
-        axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))
-
-#plot area over time
-ND_p2_hf <- ggplot(ND_WL_hf)+
-  geom_line(aes(ymd_hms(Timestamp),area_m2))+ 
-  ylab("Area (m2)")+
-  xlab("Date")+
-  theme(axis.text.y   = element_text(size=16),
-        axis.text.x   = element_text(size=16),
-        axis.title.y  = element_text(size=18),
-        axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))+
-  ggtitle("ND-SW wetland area")
-
-#distance from center over time
-ggplot(ND_WL_hf)+
-  geom_line(aes(ymd_hms(Timestamp),dist_m))+
-  ylab("Dist from Wetland Center (m)")+
-  #xlim(ymd_hms("2021-08-07 00:00:00"),ymd_hms("2021-08-17 00:00:00"))+
-  xlab("Date")+  
-  theme(axis.text.y   = element_text(size=16),
-        axis.text.x   = element_text(size=16),
-        axis.title.y  = element_text(size=18),
-        axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))+
-  ggtitle("ND-SW Water Edge Dist from Wetland Center")
-
-#plot change in area over time
-ND_p3_hf <- ggplot(ND_WL_hf)+
-  geom_line(aes(ymd_hms(Timestamp),delta_area))+
-  ylab("Delta Area (m2)")+
-  xlab("Date")+  
-  theme(axis.text.y   = element_text(size=16),
-        axis.text.x   = element_text(size=16),
-        axis.title.y  = element_text(size=18),
-        axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))+
-  ggtitle("ND-SW change in wetland area")
-
-#plot volume over time
-ND_p4_hf <- ggplot(ND_WL_hf)+
-  geom_line(aes(ymd_hms(Timestamp),volume_m3)) +
-  ylab("Volume (m3)")+
-  xlab("Date")+  
-  ggtitle("ND-SW volume")+
-  theme(axis.text.y   = element_text(size=16),
-        axis.text.x   = element_text(size=16),
-        axis.title.y  = element_text(size=18),
-        axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))
-
-
-ND_p1_hf / ND_p2_hf / ND_p3_hf
 
 ## TS-SW ------------------------------
 #plot stage-area relationship
@@ -467,8 +401,8 @@ TS_vol_model_upper <- lm(volume_m3 ~ z,data=TS_sa_upper)
 summary(TS_vol_model_upper) 
 
 #calculating change in area and volume on a daily timestep
-TS_WL <- WL %>% 
-  filter(Site_Name == "TS-SW") %>% 
+TS_WL <- SW_Daily %>% 
+  filter(Site_ID == "TS-SW") %>% 
   #for area, if water level is <0.6, use stage-area polynomial function, otherwise 
   #print the max area value
   mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.6 & dly_mean_wtrlvl > 0, 
@@ -491,19 +425,35 @@ TS_WL <- WL %>%
                              if_else(dly_mean_wtrlvl >= 0.6 ,
                                      (TS_vol_model_upper$coefficients[2]*dly_mean_wtrlvl) + 
                                        TS_vol_model_upper$coefficients[1],0)),
+         #calculate distance from wetland center using equation fitted in excel from survey data
+         dist_m = if_else(dly_mean_wtrlvl > 0,
+                          ((-101.42*dly_mean_wtrlvl^2) + (106.23*dly_mean_wtrlvl)),0),
          #calculate daily change in area and volume
+         delta_waterlevel = dly_mean_wtrlvl - lag(dly_mean_wtrlvl),
          delta_area = area_m2 - lag(area_m2),
-         delta_vol = volume_m3 - lag(volume_m3))
+         delta_vol = volume_m3 - lag(volume_m3),
+         delta_dist = dist_m - lag(dist_m))
 
+#delta area
 max(TS_WL$delta_area,na.rm=T)
 cv(TS_WL$delta_area,na.rm=T)
+#area
 cv(TS_WL$area_m2)
 mean(TS_WL$area_m2)
 max(TS_WL$area_m2)
+cv(TS_WL$area_m2)
+#distance
+max(TS_WL$dist_m)
+mean(TS_WL$dist_m)
+min(TS_WL$dist_m)
+cv(TS_WL$dist_m)
+#water level
+mean(TS_WL$dly_mean_wtrlvl)
+#delta water level
+mean(TS_WL$delta_waterlevel,na.rm=T)
 
 #plot water level over time
-TS_p1 <- WL %>% 
-  filter(Site_Name == "TS-SW") %>%
+TS_p1 <- TS_WL %>% 
   ggplot()+
   geom_line(aes(ymd(Date),dly_mean_wtrlvl))+
   geom_hline(yintercept=0,linetype="dashed")+
@@ -541,11 +491,11 @@ TS_p3 <- ggplot(TS_WL)+
   ggtitle("TS-SW daily change in wetland area")
 
 #plot volume over time
-TS_p4 <- ggplot(TS_WL )+
-  geom_line(aes(ymd(Date),volume_m3)) +
-  ylab("Volume (m3)")+
+TS_p4 <- ggplot(TS_WL)+
+  geom_line(aes(ymd(Date),dist_m)) +
+  ylab("Edge distance (m)")+
   xlab("Date")+  
-  ggtitle("TS-SW daily volume")+
+  ggtitle("TS-SW Edge of water distance from wetland center")+
   theme(axis.text.y   = element_text(size=16),
         axis.text.x   = element_text(size=16),
         axis.title.y  = element_text(size=18),
@@ -553,112 +503,65 @@ TS_p4 <- ggplot(TS_WL )+
         title = element_text(size = 18))
 
 
-TS_p1 / TS_p2 / TS_p3
+TS_p1 / TS_p2 / TS_p3 /TS_p4 
 
-##redo using high frequency water level data
-TS_WL_hf <- high_freq_WL %>% 
-  filter(Site_Name == "TS-SW") %>%
-  #for area, if water level is <0.6, use stage-area polynomial function, otherwise 
-  #print the max area value
-  mutate(area_m2 = if_else(waterLevel < 0.6 & waterLevel > 0, 
-                           ((TS_area_model$coefficients[6]*(waterLevel^5)) + 
-                              (TS_area_model$coefficients[5]*(waterLevel^4)) + 
-                              (TS_area_model$coefficients[4]*(waterLevel^3)) + 
-                              (TS_area_model$coefficients[3]*(waterLevel^2)) +  
-                              (TS_area_model$coefficients[2]*waterLevel) +
-                              TS_area_model$coefficients[1]),
-                           if_else(waterLevel >= 0.6,max(TS_sa$area_m),0)),
-         #for volume, if water level is <0.6, use stage-area polynomial function, otherwise
-         #use the linear relationship
-         volume_m3 = if_else(waterLevel < 0.6 & waterLevel > 0,
-                             ((TS_vol_model_lower$coefficients[6]*(waterLevel^5)) +
-                                (TS_vol_model_lower$coefficients[5]*(waterLevel^4)) +
-                                (TS_vol_model_lower$coefficients[4]*(waterLevel^3)) + 
-                                (TS_vol_model_lower$coefficients[3]*(waterLevel^2)) +
-                                (TS_vol_model_lower$coefficients[2]*(waterLevel)) + 
-                                TS_vol_model_lower$coefficients[1]),
-                             if_else(waterLevel >= 0.6 ,
-                                     (TS_vol_model_upper$coefficients[2]*waterLevel) + 
-                                       TS_vol_model_upper$coefficients[1],0)),
-         
-         #calculate distance from wetland center using equation fitted in excel from survey data
-         dist_m = if_else(waterLevel > 0,
-                          ((-101.42*waterLevel^2) + (106.23*waterLevel)),0),
-         #calculate daily change in area and volume
-         delta_area = area_m2 - lag(area_m2),
-         delta_vol = volume_m3 - lag(volume_m3))
 
-max(TS_WL_hf$delta_area,na.rm=T)
-cv(TS_WL_hf$delta_area,na.rm=T)
-cv(TS_WL_hf$area_m2)
-max(TS_WL_hf$dist_m)
-mean(TS_WL_hf$dist_m)
-min(TS_WL_hf$dist_m)
-cv(TS_WL_hf$dist_m)
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#4.0 Explore relationship between rain event and WL response -------------------
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#plot water level over time
-TS_p1_hf <- high_freq_WL %>% 
-  filter(Site_Name == "TS-SW") %>%
-  ggplot()+
-  geom_line(aes(ymd_hms(Timestamp),waterLevel))+
-  geom_hline(yintercept=0,linetype="dashed")+
-  ylab("Water level (m)")+
-  xlab("Date")+
-  ggtitle("TS-SW wetland water level")+
+#this analysis uses daily data so all temporal scales of precip and water level data match
+
+#combine precip and water level plots
+Short_Precip <- Precip %>% 
+  dplyr::select(DATE,PRCP_mm,SNOW_mm) %>% 
+  filter(DATE > "2021-03-31" & DATE < "2022-10-08")
+
+WL_Plotly %>% 
+  add_bars(data=Short_Precip, x = ~DATE, y = ~PRCP_mm,name="Precip (mm)",color="red")
+
+#clean and join precip and water level data for subsequent analyses
+Cleaned_WL <- SW_Daily %>% filter(Date > "2021-03-31") %>% 
+  filter(Site_ID %in% c("ND-SW","TS-SW"))
+
+Cleaned_WL_wide <- pivot_wider(Cleaned_WL,names_from = Site_ID,values_from = dly_mean_wtrlvl)
+
+Data_Joined <- left_join(Cleaned_WL_wide,Short_Precip,by=c("Date"="DATE"))
+
+#join stage area data
+Data_Join_ND <- left_join(Data_Joined,ND_WL,by="Date")
+Data_Join_ND <- Data_Join_ND %>% 
+                select(Date,Site_ID,PRCP_mm,SNOW_mm,dly_mean_wtrlvl,area_m2,volume_m3,
+                       dist_m,delta_waterlevel,delta_area,delta_vol,delta_dist) %>% 
+                mutate(month = month(ymd(Date)))
+
+Data_Join_TS <- left_join(Data_Joined,TS_WL,by="Date")
+Data_Join_TS <- Data_Join_TS %>% 
+  select(Date,Site_ID,PRCP_mm,SNOW_mm,dly_mean_wtrlvl,area_m2,volume_m3,
+         dist_m,delta_waterlevel,delta_area,delta_vol,delta_dist) %>% 
+  mutate(month = month(ymd(Date)))
+
+
+#plot precip amount versis change in water level
+ggplot(Data_Join_ND)+
+  geom_point(aes(PRCP_mm,delta_waterlevel,col=month)) +
+  ylab("Change in daily water level (m)")+
+  xlab("Daily Precip (mm)")+
+  ggtitle("ND")+
   theme(axis.text.y   = element_text(size=16),
         axis.text.x   = element_text(size=16),
         axis.title.y  = element_text(size=18),
         axis.title.x  = element_text(size=18),
         title = element_text(size = 18))
 
-#plot area over time
-TS_p2_hf <- ggplot(TS_WL_hf)+
-  geom_line(aes(ymd_hms(Timestamp),area_m2))+ 
-  ylab("Area (m2)")+
-  xlab("Date")+
-  theme(axis.text.y   = element_text(size=16),
-        axis.text.x   = element_text(size=16),
-        axis.title.y  = element_text(size=18),
-        axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))+
-  ggtitle("TS-SW wetland area")
-
-#distance from center over time
-ggplot(TS_WL_hf)+
-  geom_line(aes(ymd_hms(Timestamp),dist_m))+
-  ylab("Dist from Wetland Center (m)")+
-  #xlim(ymd_hms("2021-08-07 00:00:00"),ymd_hms("2021-08-17 00:00:00"))+
-  xlab("Date")+  
-  theme(axis.text.y   = element_text(size=16),
-        axis.text.x   = element_text(size=16),
-        axis.title.y  = element_text(size=18),
-        axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))+
-  ggtitle("TS-SW Water Edge Dist from Wetland Center")
-
-#plot change in area over time
-TS_p3_hf <- ggplot(TS_WL_hf)+
-  geom_line(aes(ymd_hms(Timestamp),delta_area))+
-  ylab("Delta Area (m2)")+
-  xlab("Date")+  
-  theme(axis.text.y   = element_text(size=16),
-        axis.text.x   = element_text(size=16),
-        axis.title.y  = element_text(size=18),
-        axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))+
-  ggtitle("TS-SW change in wetland area")
-
-#plot volume over time
-TS_p4_hf <- ggplot(TS_WL_hf)+
-  geom_line(aes(ymd_hms(Timestamp),volume_m3)) +
-  ylab("Volume (m3)")+
-  xlab("Date")+  
-  ggtitle("TS-SW volume")+
+ggplot(Data_Join_TS)+
+  geom_point(aes(PRCP_mm,delta_waterlevel,col=month)) +
+  ylab("Change in daily water level (m)")+
+  xlab("Daily Precip (mm)")+
+  ggtitle("TS")+
   theme(axis.text.y   = element_text(size=16),
         axis.text.x   = element_text(size=16),
         axis.title.y  = element_text(size=18),
         axis.title.x  = element_text(size=18),
         title = element_text(size = 18))
 
-
-TS_p1_hf / TS_p2_hf / TS_p3_hf
