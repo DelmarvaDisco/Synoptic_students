@@ -3,6 +3,8 @@
 #Coder: Katie Wardinski
 #Created: 2023-04-04
 #Purpose: In-depth exploration of TS and ND stage-area, hydrology, and rain response
+#Notes: This analysis focuses on daily data so temporal scales of precip and water level data match
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -68,29 +70,6 @@ WL_Plotly <- SW_Daily %>%
   add_trace(y = ~dly_mean_wtrlvl, type = 'scatter', mode = 'lines',color = ~Site_ID) 
 
 
-## 2.2 High frequency water level ---------------------
-##Only have a shorter interval of data here (ends April 2022)
-## SW only ##
-SW_hf <- high_freq_WL %>% filter(grepl("SW",Site_Name))
-
-#Plot all SW data
-SW_hf %>% 
-  filter(Site_Name %in% c("ND-SW","TS-SW")) %>% 
-  filter(Timestamp > "2021-03-31 00:00:00") %>% 
-  ggplot(aes(Timestamp,waterLevel,col=Site_Name))+
-  geom_line()+
-  ylab("Water Level (m)")+
-  theme(axis.title = element_text(size = 14),
-        axis.text = element_text(size = 12),
-        legend.text = element_text(size=12))
-
-#Interactive SW plot
-SW_hf %>% 
-  filter(Site_Name %in% c("ND-SW","TS-SW")) %>% 
-  filter(Timestamp > "2021-03-31 00:00:00") %>% 
-  plot_ly(x = ~Timestamp) %>% 
-  add_trace(y = ~waterLevel, type = 'scatter', mode = 'lines',color = ~Site_Name) 
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #3.0 Daily Precip --------------------------------------------------
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -125,7 +104,10 @@ Precip_Plotly <- Precip %>%
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #4.0 Stage-area relationships --------------------------------------------------
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## ND-SW ------------------------------
+
+#Copied from stage-area script
+
+## 4.1 ND-SW ------------------------------
 #plot stage-area relationship
 ND_sa <- sa_97 %>% filter(Site_ID == "ND-SW") 
 
@@ -201,6 +183,7 @@ summary(ND_vol_model_upper)
 #calculating change in area and volume on a daily timestep
 ND_WL <- SW_Daily %>% 
   filter(Site_ID == "ND-SW") %>% 
+  filter(Date > "2021-03-29") %>% 
   #for area, if water level is <0.87, use stage-area polynomial function, otherwise 
   #print the max area value
   mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.87 & dly_mean_wtrlvl > 0, 
@@ -246,7 +229,6 @@ cv(ND_WL$delta_area,na.rm=T)
 cv(ND_WL$area_m2)
 mean(ND_WL$area_m2)
 max(ND_WL$area_m2)
-cv(ND_WL$area_m2)
 #distance
 max(ND_WL$dist_m)
 mean(ND_WL$dist_m)
@@ -327,7 +309,7 @@ ggplot(ND_WL )+
 ND_p1 / ND_p2 / ND_p3 / ND_p4
 
 
-## TS-SW ------------------------------
+## 4.2 TS-SW ------------------------------
 #plot stage-area relationship
 TS_sa <- sa_97 %>% filter(Site_ID == "TS-SW") 
 
@@ -436,12 +418,12 @@ TS_WL <- SW_Daily %>%
 
 #delta area
 max(TS_WL$delta_area,na.rm=T)
+mean(TS_WL$delta_area,na.rm=T)
 cv(TS_WL$delta_area,na.rm=T)
 #area
 cv(TS_WL$area_m2)
 mean(TS_WL$area_m2)
 max(TS_WL$area_m2)
-cv(TS_WL$area_m2)
 #distance
 max(TS_WL$dist_m)
 mean(TS_WL$dist_m)
@@ -507,9 +489,10 @@ TS_p1 / TS_p2 / TS_p3 /TS_p4
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#4.0 Explore relationship between rain event and WL response -------------------
+#5.0 Explore relationship between rain event and WL response -------------------
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+## 5.1 Prep data ----------------------------------
 #this analysis uses daily data so all temporal scales of precip and water level data match
 
 #combine precip and water level plots
@@ -542,26 +525,92 @@ Data_Join_TS <- Data_Join_TS %>%
   mutate(month = month(ymd(Date)))
 
 
-#plot precip amount versis change in water level
-ggplot(Data_Join_ND)+
-  geom_point(aes(PRCP_mm,delta_waterlevel,col=month)) +
+## 5.2 Plot precip vs water level change ----------------------------------
+#For times when Precip > 0 and Change in WL > 0
+
+#Daily time scale
+Data_Join_ND %>% 
+  filter(PRCP_mm > 0 & delta_waterlevel > 0) %>% 
+  #filter(month %in% c("8","9","10")) %>% 
+  ggplot(aes(PRCP_mm,delta_waterlevel,col=month))+
+  geom_point(size=3) +
+  geom_smooth(method='lm')+
+  stat_regline_equation(label.x = 1.9,label.y = 0.22)+
+  stat_cor(label.x = 1.9,label.y = 0.2)+
+  scale_color_continuous(type = "viridis")+
   ylab("Change in daily water level (m)")+
   xlab("Daily Precip (mm)")+
-  ggtitle("ND")+
+  ggtitle("ND-SW")+
   theme(axis.text.y   = element_text(size=16),
         axis.text.x   = element_text(size=16),
         axis.title.y  = element_text(size=18),
         axis.title.x  = element_text(size=18),
         title = element_text(size = 18))
 
-ggplot(Data_Join_TS)+
-  geom_point(aes(PRCP_mm,delta_waterlevel,col=month)) +
+Data_Join_TS %>% 
+  filter(PRCP_mm > 0 & delta_waterlevel > 0) %>% 
+  #filter(month %in% c("8","9","10")) %>% 
+  ggplot(aes(PRCP_mm,delta_waterlevel,col=month))+
+  geom_point(size=3) +
+  geom_smooth(method='lm')+
+  stat_regline_equation(label.x = 1.9,label.y = 0.22)+
+  stat_cor(label.x = 1.9,label.y = 0.2)+
+  scale_color_continuous(type = "viridis")+
   ylab("Change in daily water level (m)")+
   xlab("Daily Precip (mm)")+
-  ggtitle("TS")+
+  ggtitle("TS-SW")+
   theme(axis.text.y   = element_text(size=16),
         axis.text.x   = element_text(size=16),
         axis.title.y  = element_text(size=18),
         axis.title.x  = element_text(size=18),
         title = element_text(size = 18))
 
+## 5.3 Summarize Aug - Oct dynamics ----------------------
+
+### 5.3.1 ND-SW ----------------------------------
+ND_Summary <- Data_Join_ND %>% 
+                filter(month %in% c("7","8","9","10")) %>%
+                group_by(month) %>% 
+                summarise(Min_WL = min(dly_mean_wtrlvl,na.rm=T),
+                          Mean_WL = mean(dly_mean_wtrlvl,na.rm=T),
+                          Max_WL = max(dly_mean_wtrlvl,na.rm=T),
+                          CV_WL = cv(dly_mean_wtrlvl,na.rm=T),
+                          Min_Dist = min(dist_m,na.rm=T),
+                          Mean_Dist = mean(dist_m,na.rm=T),
+                          Max_Dist = max(dist_m,na.rm=T),
+                          CV_Dist = cv(dist_m,na.rm=T),
+                          Min_Area = min(area_m2,na.rm=T),
+                          Mean_Area = mean(area_m2,na.rm=T),
+                          Max_Area = max(area_m2,na.rm=T),
+                          Mean_Delta_WL = mean(delta_waterlevel,na.rm=T),
+                          Max_Delta_WL = max(delta_waterlevel,na.rm=T),
+                          Mean_Delta_Area = mean(delta_area,na.rm=T),
+                          Max_Delta_Area = max(delta_area,na.rm=T),
+                          Mean_Delta_Dist = mean(delta_dist,na.rm=T),
+                          Max_Delta_Dist = max(delta_dist,na.rm=T),
+                          Precip_Total = sum(PRCP_mm,na.rm=T))
+
+
+### 5.3.2 TS-SW ----------------------------------
+#Note TS-SW has some NA values in 2022
+TS_Summary <- Data_Join_TS %>% 
+  filter(month %in% c("7","8","9","10")) %>%
+  group_by(month) %>% 
+  summarise(Min_WL = min(dly_mean_wtrlvl,na.rm=T),
+            Mean_WL = mean(dly_mean_wtrlvl,na.rm=T),
+            Max_WL = max(dly_mean_wtrlvl,na.rm=T),
+            CV_WL = cv(dly_mean_wtrlvl,na.rm=T),
+            Min_Dist = min(dist_m,na.rm=T),
+            Mean_Dist = mean(dist_m,na.rm=T),
+            Max_Dist = max(dist_m,na.rm=T),
+            CV_Dist = cv(dist_m,na.rm=T), 
+            Min_Area = min(area_m2,na.rm=T),
+            Mean_Area = mean(area_m2,na.rm=T),
+            Max_Area = max(area_m2,na.rm=T),
+            Mean_Delta_WL = mean(delta_waterlevel,na.rm=T),
+            Max_Delta_WL = max(delta_waterlevel,na.rm=T),
+            Mean_Delta_Area = mean(delta_area,na.rm=T),
+            Max_Delta_Area = max(delta_area,na.rm=T),
+            Mean_Delta_Dist = mean(delta_dist,na.rm=T),
+            Max_Delta_Dist = max(delta_dist,na.rm=T),
+            Precip_Total = sum(PRCP_mm,na.rm=T))
