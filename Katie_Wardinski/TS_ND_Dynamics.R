@@ -41,6 +41,14 @@ sa_97 <- read_csv("stage_area_relationships_97.csv") #97% threshold for identify
 #read in NOAA daily rainfall data (need NOAA because Jackson Lane record isn't long enough)
 Precip <- read_csv("NOAA_Denton_DailyPrecip_2021-22.csv")
 
+#read in Jackson Lane precip for comparison to NOAA data and put on a daily time step
+DMV_Precip <- read_csv("Jackson_Lane_precip_2018_2021.csv")
+Daily_DMV <- DMV_Precip %>% mutate(day = cut(timestamp,breaks="day")) %>% 
+            group_by(day) %>% 
+            summarise(Daily_Precip_mm = sum(precip_mm)) %>% 
+            filter(ymd(day) >= "2021-01-01")
+Daily_DMV$Date <- ymd(Daily_DMV$day)
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #2.0 Water level data --------------------------------------------------
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -74,6 +82,7 @@ WL_Plotly <- SW_Daily %>%
 #3.0 Daily Precip --------------------------------------------------
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+## 3.1 NOAA Precip ------------------------------
 Precip$DATE <- mdy(Precip$DATE)
 
 #summary of 1/31/21-12/31/22 (record of WL data)
@@ -100,6 +109,31 @@ Precip_Plotly <- Precip %>%
   plot_ly(x = ~DATE, y = ~PRCP_mm) %>% 
   add_bars() 
 
+## 3.2 Compare NOAA to Jackson Lane ------------------------
+Short_Precip <- Precip %>% 
+  dplyr::select(DATE,PRCP_mm,SNOW_mm) %>% 
+  filter(DATE >= "2021-01-01" & DATE < "2022-10-08")
+
+ggplot() +
+  geom_bar(data = Short_Precip,mapping=aes(DATE, PRCP_mm),stat="identity",color="Red") + 
+  geom_bar(data = Daily_DMV,mapping=aes(Date,Daily_Precip_mm),stat="identity",color="Blue") +
+  xlab("Date") + ylab("Daily Precipitation (mm)")
+
+Precip_Join <- left_join(Daily_DMV,Short_Precip,by=c("Date" = "DATE"))
+
+Precip_Join %>% 
+  #filter(Daily_Precip_mm > 0 & PRCP_mm > 0) %>% 
+  ggplot()+
+    geom_point(aes(Daily_Precip_mm,PRCP_mm,col=Date),size=3)+
+    ylab("NOAA Denton, MD Precip (mm)")+
+    xlab("Jackson Lane UMD Precip (mm)")+
+    geom_abline(intercept = 0, slope = 1)+
+    theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))
+    
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #4.0 Stage-area relationships --------------------------------------------------
@@ -284,7 +318,7 @@ ND_p4 <- ND_WL %>%
   filter(Date > "2021-03-31") %>% 
   ggplot()+
   geom_line(aes(ymd(Date),dist_m)) +
-  ylab("Edge distance (m)")+
+  ylab("Edge of water distance (m)")+
   xlab("Date")+  
   ggtitle("ND-SW Edge of water distance from wetland center")+
   theme(axis.text.y   = element_text(size=16),
@@ -292,6 +326,24 @@ ND_p4 <- ND_WL %>%
         axis.title.y  = element_text(size=18),
         axis.title.x  = element_text(size=18),
         title = element_text(size = 18))
+  
+ND_WL %>%
+    filter(Date > "2021-03-31") %>% 
+    ggplot()+
+    geom_line(aes(ymd(Date),dist_m),size = 2) +
+    ylab("Edge of water distance (m)")+
+    geom_hline(yintercept = 3.6,linetype="dashed")+ #transect spot 1
+    geom_hline(yintercept = 7.2,linetype="dashed")+  #transect spot 2
+    geom_hline(yintercept = 10.8,linetype="dashed")+  #transect spot 3
+    geom_hline(yintercept = 14.4,linetype="dashed")+  #transect spot 4
+    geom_hline(yintercept = 18.6,linetype="dashed")+  #max distance
+    xlab("Date")+  
+    ggtitle("ND-SW Edge of water distance from wetland center")+
+    theme(axis.text.y   = element_text(size=16),
+          axis.text.x   = element_text(size=16),
+          axis.title.y  = element_text(size=18),
+          axis.title.x  = element_text(size=18),
+          title = element_text(size = 18))
 
 #plot volume over time
 ggplot(ND_WL )+
@@ -472,10 +524,27 @@ TS_p3 <- ggplot(TS_WL)+
         title = element_text(size = 18))+
   ggtitle("TS-SW daily change in wetland area")
 
-#plot volume over time
+#plot distance over time
 TS_p4 <- ggplot(TS_WL)+
   geom_line(aes(ymd(Date),dist_m)) +
   ylab("Edge distance (m)")+
+  xlab("Date")+  
+  ggtitle("TS-SW Edge of water distance from wetland center")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))
+
+TS_WL %>%
+  ggplot()+
+  geom_line(aes(ymd(Date),dist_m),size = 2) +
+  ylab("Edge of water distance (m)")+
+  geom_hline(yintercept = 4.8,linetype="dashed")+ #transect spot 1
+  geom_hline(yintercept = 9.6,linetype="dashed")+  #transect spot 2
+  geom_hline(yintercept = 14.4,linetype="dashed")+  #transect spot 3
+  geom_hline(yintercept = 19.2,linetype="dashed")+  #transect spot 4
+  geom_hline(yintercept = 27.8,linetype="dashed")+  #max distance
   xlab("Date")+  
   ggtitle("TS-SW Edge of water distance from wetland center")+
   theme(axis.text.y   = element_text(size=16),
@@ -500,9 +569,6 @@ Short_Precip <- Precip %>%
   dplyr::select(DATE,PRCP_mm,SNOW_mm) %>% 
   filter(DATE > "2021-03-31" & DATE < "2022-10-08")
 
-WL_Plotly %>% 
-  add_bars(data=Short_Precip, x = ~DATE, y = ~PRCP_mm,name="Precip (mm)",color="red")
-
 #clean and join precip and water level data for subsequent analyses
 Cleaned_WL <- SW_Daily %>% filter(Date > "2021-03-31") %>% 
   filter(Site_ID %in% c("ND-SW","TS-SW"))
@@ -526,8 +592,13 @@ Data_Join_TS <- Data_Join_TS %>%
 
 
 ## 5.2 Plot precip vs water level change ----------------------------------
+#water level and precip plotted together
+WL_Plotly %>% 
+  add_bars(data=Short_Precip, x = ~DATE, y = ~PRCP_mm,name="Precip (mm)",
+           yaxis = "y2",color="Red") %>% 
+  layout(yaxis2 = list(overlaying = "y", side = "right"))
+  
 #For times when Precip > 0 and Change in WL > 0
-
 #Daily time scale
 Data_Join_ND %>% 
   filter(PRCP_mm > 0 & delta_waterlevel > 0) %>% 
