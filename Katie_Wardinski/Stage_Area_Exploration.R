@@ -1818,7 +1818,12 @@ ND_p2_hf <- ggplot(ND_WL_hf)+
 ggplot(ND_WL_hf)+
   geom_line(aes(ymd_hms(Timestamp),dist_m))+
   ylab("Dist from Wetland Center (m)")+
-  #xlim(ymd_hms("2021-08-07 00:00:00"),ymd_hms("2021-08-17 00:00:00"))+
+  geom_hline(yintercept = 3.6,linetype="dashed")+ #transect spot 1
+  geom_hline(yintercept = 7.2,linetype="dashed")+  #transect spot 2
+  geom_hline(yintercept = 10.8,linetype="dashed")+  #transect spot 3
+  geom_hline(yintercept = 14.4,linetype="dashed")+  #transect spot 4
+  geom_hline(yintercept = 18.6,linetype="dashed")+ #max distance
+  xlim(ymd_hms("2021-08-09 18:00:00"),ymd_hms("2021-08-10 01:00:00"))+
   xlab("Date")+  
   theme(axis.text.y   = element_text(size=16),
         axis.text.x   = element_text(size=16),
@@ -2914,7 +2919,12 @@ TS_p2_hf <- ggplot(TS_WL_hf)+
 ggplot(TS_WL_hf)+
   geom_line(aes(ymd_hms(Timestamp),dist_m))+
   ylab("Dist from Wetland Center (m)")+
-  #xlim(ymd_hms("2021-08-07 00:00:00"),ymd_hms("2021-08-17 00:00:00"))+
+  xlim(ymd_hms("2021-08-07 00:00:00"),ymd_hms("2021-08-12 00:00:00"))+
+  geom_hline(yintercept = 4.8,linetype="dashed")+ #transect spot 1
+  geom_hline(yintercept = 9.6,linetype="dashed")+  #transect spot 2
+  geom_hline(yintercept = 14.4,linetype="dashed")+  #transect spot 3
+  geom_hline(yintercept = 19.2,linetype="dashed")+  #transect spot 4
+  geom_hline(yintercept = 27.8,linetype="dashed")+  #max distance
   xlab("Date")+  
   theme(axis.text.y   = element_text(size=16),
         axis.text.x   = element_text(size=16),

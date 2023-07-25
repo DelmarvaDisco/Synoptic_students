@@ -35,11 +35,27 @@ theme_set(theme_classic())
 WL <- read_csv("dly_mean_output_NC_2019_2022.csv") #daily mean water level through fall 2022 updated by Nick 
 high_freq_WL <- read_csv("output_JM_2019_2022.csv") #15 minute water level data
 
+## SW only ##
+SW_Daily <- WL %>% filter(grepl("SW",Site_ID))
+SW_Daily$Date <- mdy(SW_Daily$Date)
+
+#filter to TS and ND
+Cleaned_WL <- SW_Daily %>% filter(Date > "2021-03-31") %>% 
+  filter(Site_ID %in% c("ND-SW","TS-SW"))
+
 #Read in stage area relationships
 sa_97 <- read_csv("stage_area_relationships_97.csv") #97% threshold for identifying depressions
 
 #read in NOAA daily rainfall data (need NOAA because Jackson Lane record isn't long enough)
 Precip <- read_csv("NOAA_Denton_DailyPrecip_2021-22.csv")
+Precip$DATE <- mdy(Precip$DATE)
+
+#Shorten NOAA precip record to match water level data
+Short_Precip <- Precip %>% 
+  dplyr::select(DATE,PRCP_mm,SNOW_mm) %>% 
+  filter(DATE > "2021-03-31")
+  #filter(DATE >= "2021-01-01" & DATE < "2022-10-08")
+
 
 #read in Jackson Lane precip for comparison to NOAA data and put on a daily time step
 DMV_Precip <- read_csv("Jackson_Lane_precip_2018_2021.csv")
@@ -54,9 +70,6 @@ Daily_DMV$Date <- ymd(Daily_DMV$day)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## 2.1 Daily Mean Water Level ----------------------
 #Data through October 2022
-## SW only ##
-SW_Daily <- WL %>% filter(grepl("SW",Site_ID))
-SW_Daily$Date <- mdy(SW_Daily$Date)
 
 #Plot all SW data
 WL_Plot <- SW_Daily %>% 
@@ -75,7 +88,9 @@ WL_Plotly <- SW_Daily %>%
   filter(Site_ID %in% c("ND-SW","TS-SW")) %>% 
   filter(Date > "2021-03-31") %>%
   plot_ly(x = ~Date) %>% 
-  add_trace(y = ~dly_mean_wtrlvl, type = 'scatter', mode = 'lines',color = ~Site_ID) 
+  add_trace(y = ~dly_mean_wtrlvl, type = 'scatter', 
+            mode = 'lines',color = ~Site_ID,
+            line=list(width=4)) 
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -83,7 +98,6 @@ WL_Plotly <- SW_Daily %>%
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ## 3.1 NOAA Precip ------------------------------
-Precip$DATE <- mdy(Precip$DATE)
 
 #summary of 1/31/21-12/31/22 (record of WL data)
 Precip_Summary <- Precip %>% 
@@ -110,9 +124,6 @@ Precip_Plotly <- Precip %>%
   add_bars() 
 
 ## 3.2 Compare NOAA to Jackson Lane ------------------------
-Short_Precip <- Precip %>% 
-  dplyr::select(DATE,PRCP_mm,SNOW_mm) %>% 
-  filter(DATE >= "2021-01-01" & DATE < "2022-10-08")
 
 ggplot() +
   geom_bar(data = Short_Precip,mapping=aes(DATE, PRCP_mm),stat="identity",color="Red") + 
@@ -217,7 +228,7 @@ summary(ND_vol_model_upper)
 #calculating change in area and volume on a daily timestep
 ND_WL <- SW_Daily %>% 
   filter(Site_ID == "ND-SW") %>% 
-  filter(Date > "2021-03-29") %>% 
+  #filter(Date > "2021-03-29") %>% 
   #for area, if water level is <0.87, use stage-area polynomial function, otherwise 
   #print the max area value
   mutate(area_m2 = if_else(dly_mean_wtrlvl < 0.87 & dly_mean_wtrlvl > 0, 
@@ -328,9 +339,9 @@ ND_p4 <- ND_WL %>%
         title = element_text(size = 18))
   
 ND_WL %>%
-    filter(Date > "2021-03-31") %>% 
+    #filter(Date > "2021-03-31") %>% 
     ggplot()+
-    geom_line(aes(ymd(Date),dist_m),size = 2) +
+    geom_line(aes(ymd(Date),dist_m),size = 1) +
     ylab("Edge of water distance (m)")+
     geom_hline(yintercept = 3.6,linetype="dashed")+ #transect spot 1
     geom_hline(yintercept = 7.2,linetype="dashed")+  #transect spot 2
@@ -564,15 +575,7 @@ TS_p1 / TS_p2 / TS_p3 /TS_p4
 ## 5.1 Prep data ----------------------------------
 #this analysis uses daily data so all temporal scales of precip and water level data match
 
-#combine precip and water level plots
-Short_Precip <- Precip %>% 
-  dplyr::select(DATE,PRCP_mm,SNOW_mm) %>% 
-  filter(DATE > "2021-03-31" & DATE < "2022-10-08")
-
 #clean and join precip and water level data for subsequent analyses
-Cleaned_WL <- SW_Daily %>% filter(Date > "2021-03-31") %>% 
-  filter(Site_ID %in% c("ND-SW","TS-SW"))
-
 Cleaned_WL_wide <- pivot_wider(Cleaned_WL,names_from = Site_ID,values_from = dly_mean_wtrlvl)
 
 Data_Joined <- left_join(Cleaned_WL_wide,Short_Precip,by=c("Date"="DATE"))
