@@ -603,18 +603,17 @@ WL_Plotly %>%
 #Prep data
 #this analysis uses daily data so all temporal scales of precip and water level data match
 
-#use same Clean_WL_wide dataframe but join Jackson lane data
-JL_Data_Joined <- left_join(Cleaned_WL_wide,Short_DMV,by="Date")
+#join water level and precip data
+ND_WL_Precip_Join <- left_join(ND_WL,Daily_JL_2019_2023,by="Date")
+TS_WL_Precip_Join <- left_join(TS_WL,Daily_JL_2019_2023,by="Date")
 
-#join stage area data
-JL_Data_Join_ND <- left_join(JL_Data_Joined,ND_WL,by="Date")
-JL_Data_Join_ND <- JL_Data_Join_ND %>% 
+#select desired variables
+JL_Data_Join_ND <- ND_WL_Precip_Join %>% 
   select(Date,Site_ID,Daily_Precip_mm,dly_mean_wtrlvl,area_m2,volume_m3,
          dist_m,delta_waterlevel,delta_area,delta_vol,delta_dist) %>% 
   mutate(month = month(ymd(Date))) %>% drop_na()
 
-JL_Data_Join_TS <- left_join(JL_Data_Joined,TS_WL,by="Date")
-JL_Data_Join_TS <- JL_Data_Join_TS %>% 
+JL_Data_Join_TS <- TS_WL_Precip_Join %>% 
   select(Date,Site_ID,Daily_Precip_mm,dly_mean_wtrlvl,area_m2,volume_m3,
          dist_m,delta_waterlevel,delta_area,delta_vol,delta_dist) %>% 
   mutate(month = month(ymd(Date))) %>% drop_na()
@@ -624,7 +623,8 @@ JL_Data_Join_TS <- JL_Data_Join_TS %>%
 #Daily time scale
 JL_Data_Join_ND %>% 
   #filter(delta_waterlevel > 0) %>% 
-  #filter(month %in% c("8","9","10")) %>% 
+  filter(Date > "2021-03-30") %>% 
+  filter(month %in% c("8","9","10")) %>% 
   ggplot(aes(Daily_Precip_mm,delta_waterlevel,col=month))+
   geom_hline(yintercept = 0,linetype="dashed")+
   geom_point(size=3) +
@@ -642,8 +642,8 @@ JL_Data_Join_ND %>%
         title = element_text(size = 18))
 
 JL_Data_Join_TS %>% 
-  #filter(delta_waterlevel > 0) %>% 
-  #filter(month %in% c("8","9","10")) %>% 
+  filter(delta_waterlevel > 0) %>% 
+  filter(month %in% c("8","9","10")) %>% 
   ggplot(aes(Daily_Precip_mm,delta_waterlevel,col=month))+
   geom_point(size=3) +
   geom_smooth(method='lm')+
@@ -662,15 +662,9 @@ JL_Data_Join_TS %>%
 
 ### 5.2.2 Longer record of Jackson Lane data at ND -----------------------------
 
-Long_ND_Join <- left_join(ND_WL,Daily_DMV,by="Date") 
-Long_ND_Join_clean <- Long_ND_Join %>% 
-  select(Date,Site_ID,Daily_Precip_mm,dly_mean_wtrlvl,area_m2,volume_m3,
-         dist_m,delta_waterlevel,delta_area,delta_vol,delta_dist) %>% 
-  mutate(month = month(ymd(Date))) %>% drop_na()
-
 #Daily time scale
-Long_ND_Join_clean %>% 
-  filter(delta_waterlevel > 0) %>% 
+JL_Data_Join_ND %>% 
+  #filter(delta_waterlevel > 0) %>% 
   #filter(month %in% c("8","9","10")) %>% 
   ggplot(aes(Daily_Precip_mm,delta_waterlevel,col=month))+
   geom_hline(yintercept = 0,linetype="dashed")+
@@ -689,10 +683,10 @@ Long_ND_Join_clean %>%
         title = element_text(size = 18))
 
 #check out lead precip by 1 day
-Long_ND_Join_clean$lead_delta_WL <- lead(Long_ND_Join_clean$delta_waterlevel,n=1)
-Long_ND_Join_clean$lag_precip <- lag(Long_ND_Join_clean$Daily_Precip_mm,n=1)
+JL_Data_Join_ND$lead_delta_WL <- lead(JL_Data_Join_ND$delta_waterlevel,n=1)
+JL_Data_Join_ND$lag_precip <- lag(JL_Data_Join_ND$Daily_Precip_mm,n=1)
 
-Long_ND_Join_clean %>% 
+JL_Data_Join_ND %>% 
   #filter(delta_waterlevel > 0) %>% 
   #filter(month %in% c("8","9","10")) %>% 
   ggplot(aes(lag_precip,delta_waterlevel,col=month))+
@@ -704,7 +698,7 @@ Long_ND_Join_clean %>%
   scale_color_continuous(type = "viridis")+
   ylab("Change in daily water level (m)")+
   xlab("Lag 1 Day - Daily Precip (mm)")+
-  ggtitle("ND-SW 2019-2021")+
+  ggtitle("ND-SW 2019-2023")+
   theme(axis.text.y   = element_text(size=16),
         axis.text.x   = element_text(size=16),
         axis.title.y  = element_text(size=18),
@@ -712,39 +706,13 @@ Long_ND_Join_clean %>%
         title = element_text(size = 18))
 
 
-### 5.2.4 Limited overlap of JL and TS -------------------------
-
-Long_TS_Join <- left_join(TS_WL,Daily_DMV,by="Date") 
-Long_TS_Join_clean <- Long_TS_Join %>% 
-  select(Date,Site_ID,Daily_Precip_mm,dly_mean_wtrlvl,area_m2,volume_m3,
-         dist_m,delta_waterlevel,delta_area,delta_vol,delta_dist) %>% 
-  mutate(month = month(ymd(Date))) %>% drop_na()
-
-#Daily time scale
-Long_TS_Join_clean %>% 
-  #filter(delta_waterlevel > 0) %>% 
-  #filter(month %in% c("8","9","10")) %>% 
-  ggplot(aes(Daily_Precip_mm,delta_waterlevel,col=month))+
-  geom_hline(yintercept = 0,linetype="dashed")+
-  geom_point(size=3) +
-  geom_smooth(method='lm')+
-  stat_regline_equation(label.x = 1.9,label.y = 0.22)+
-  stat_cor(label.x = 1.9,label.y = 0.2)+
-  scale_color_continuous(type = "viridis")+
-  ylab("Change in daily water level (m)")+
-  xlab("Daily Precip (mm)")+
-  ggtitle("TS-SW Apr - Sept 2021")+
-  theme(axis.text.y   = element_text(size=16),
-        axis.text.x   = element_text(size=16),
-        axis.title.y  = element_text(size=18),
-        axis.title.x  = element_text(size=18),
-        title = element_text(size = 18))
+### 5.2.4 TS shorter record -------------------------
 
 #check out lead precip by 1 day
-Long_TS_Join_clean$lead_delta_WL <- lead(Long_TS_Join_clean$delta_waterlevel,n=1)
-Long_TS_Join_clean$lag_precip <- lag(Long_TS_Join_clean$Daily_Precip_mm,n=1)
+JL_Data_Join_TS$lead_delta_WL <- lead(JL_Data_Join_TS$delta_waterlevel,n=1)
+JL_Data_Join_TS$lag_precip <- lag(JL_Data_Join_TS$Daily_Precip_mm,n=1)
 
-Long_TS_Join_clean %>% 
+JL_Data_Join_TS %>% 
   #filter(delta_waterlevel > 0) %>% 
   #filter(month %in% c("8","9","10")) %>% 
   ggplot(aes(lag_precip,delta_waterlevel,col=month))+
@@ -756,7 +724,7 @@ Long_TS_Join_clean %>%
   scale_color_continuous(type = "viridis")+
   ylab("Change in daily water level (m)")+
   xlab("Lag 1 Day - Daily Precip (mm)")+
-  ggtitle("TS-SW Apr - Sept 2021")+
+  ggtitle("TS-SW 2021-2023")+
   theme(axis.text.y   = element_text(size=16),
         axis.text.x   = element_text(size=16),
         axis.title.y  = element_text(size=18),
@@ -766,18 +734,15 @@ Long_TS_Join_clean %>%
 ## 5.3 Explore cross correlation ----------------------
 
 ### 5.3.1 TS/ND shorter Precip record --------------------------------
-
+ccf(JL_Data_Join_TS$Daily_Precip_mm,JL_Data_Join_TS$delta_waterlevel)
+print(ccf(JL_Data_Join_TS$Daily_Precip_mm,JL_Data_Join_TS$delta_waterlevel))
 
 ### 5.3.2 Longer record of ND data using Jackson Lane precip ----------------------------
-ccf(Long_ND_Join_clean$Daily_Precip_mm,Long_ND_Join_clean$delta_waterlevel)
-print(ccf(Long_ND_Join_clean$Daily_Precip_mm,Long_ND_Join_clean$delta_waterlevel))
+ccf(JL_Data_Join_ND$Daily_Precip_mm,JL_Data_Join_ND$delta_waterlevel)
+print(ccf(JL_Data_Join_ND$Daily_Precip_mm,JL_Data_Join_ND$delta_waterlevel))
 
 library(astsa)
-lag2.plot(Long_ND_Join_clean$Daily_Precip_mm,Long_ND_Join_clean$delta_waterlevel,1)
-
-### 5.3.3 Longer record of ND data using Jackson Lane precip ----------------------------
-ccf(Long_TS_Join_clean$Daily_Precip_mm,Long_TS_Join_clean$delta_waterlevel)
-lag2.plot(Long_TS_Join_clean$Daily_Precip_mm,Long_TS_Join_clean$delta_waterlevel,1)
+lag2.plot(JL_Data_Join_ND$Daily_Precip_mm,JL_Data_Join_ND$delta_waterlevel,1)
 
 ## 5.4 Summarize Aug - Oct dynamics ----------------------
 
