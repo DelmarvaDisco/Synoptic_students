@@ -39,7 +39,7 @@ theme_set(theme_classic())
 #daily mean water level 2019 through fall 2022 updated by Nick 
 WL_2019_2022 <- read_csv("dly_mean_output_NC_2019_2022.csv") 
 
-#daily mean water level jackson lane only 2022 to 2023
+#daily mean water level Jackson lane only 2022 to 2023
 WL_2022_2023 <- read_csv("JL_SW_dailyWL_2022_2023.csv")
 
 #2019 - 2022 15 minute water level data
@@ -124,6 +124,7 @@ WL_Plotly <- Daily_WL %>%
 #read in 2018-2021 Jackson Lane precip and put on a daily time step
 #This is data for the restored site
 JL_2019_2021 <- read_csv("Jackson_Lane_precip_2018_2021.csv")
+
 Daily_JL_2019_2021 <- JL_2019_2021  %>% 
   mutate(day = cut(timestamp,breaks="day")) %>% 
   group_by(day) %>% 
@@ -747,7 +748,7 @@ lag2.plot(JL_Data_Join_ND$Daily_Precip_mm,JL_Data_Join_ND$delta_waterlevel,1)
 ## 5.4 Summarize Aug - Oct dynamics ----------------------
 
 ### 5.4.1 ND-SW ----------------------------------
-ND_Summary <- Data_Join_ND %>% 
+ND_Summary <- JL_Data_Join_ND %>% 
                 filter(month %in% c("7","8","9","10")) %>%
                 group_by(month) %>% 
                 summarise(Min_WL = min(dly_mean_wtrlvl,na.rm=T),
@@ -767,12 +768,12 @@ ND_Summary <- Data_Join_ND %>%
                           Max_Delta_Area = max(delta_area,na.rm=T),
                           Mean_Delta_Dist = mean(delta_dist,na.rm=T),
                           Max_Delta_Dist = max(delta_dist,na.rm=T),
-                          Precip_Total = sum(PRCP_mm,na.rm=T))
+                          Precip_Total = sum(Daily_Precip_mm,na.rm=T))
 
 
 ### 5.4.2 TS-SW ----------------------------------
 #Note TS-SW has some NA values in 2022
-TS_Summary <- Data_Join_TS %>% 
+TS_Summary <- JL_Data_Join_TS %>% 
   filter(month %in% c("7","8","9","10")) %>%
   group_by(month) %>% 
   summarise(Min_WL = min(dly_mean_wtrlvl,na.rm=T),
@@ -792,5 +793,54 @@ TS_Summary <- Data_Join_TS %>%
             Max_Delta_Area = max(delta_area,na.rm=T),
             Mean_Delta_Dist = mean(delta_dist,na.rm=T),
             Max_Delta_Dist = max(delta_dist,na.rm=T),
-            Precip_Total = sum(PRCP_mm,na.rm=T))
+            Precip_Total = sum(Daily_Precip_mm,na.rm=T))
+
+## 5.5 Water normalized to max and WL response ----------------------
+
+JL_Data_Join_ND <- JL_Data_Join_ND %>% 
+                    mutate(WL_relative_max = dly_mean_wtrlvl / max(dly_mean_wtrlvl),
+                           Dry_Flag = if_else(dly_mean_wtrlvl < 0,1,0))
+JL_Data_Join_TS <- JL_Data_Join_TS %>% 
+                   mutate(WL_relative_max = dly_mean_wtrlvl / max(dly_mean_wtrlvl),
+                          Dry_Flag = if_else(dly_mean_wtrlvl < 0,1,0))
+
+JL_Data_Join_ND %>% 
+  #filter(delta_waterlevel > 0) %>% 
+  #filter(Date > "2021-03-30") %>% 
+  filter(month %in% c("8","9","10")) %>% 
+  ggplot(aes(WL_relative_max,delta_waterlevel,col=month))+
+  geom_hline(yintercept = 0,linetype="dashed")+
+  geom_point(size=3) +
+  #geom_smooth(method='lm')+
+  #stat_regline_equation(label.x = 1.9,label.y = 0.22)+
+  #stat_cor(label.x = 1.9,label.y = 0.2)+
+  scale_color_continuous(type = "viridis")+
+  xlab("Daily Water Level / Max Water Level")+
+  ylab("Change in Daily Water Level (m)")+
+  ggtitle("ND-SW")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))
+
+JL_Data_Join_TS %>% 
+  #filter(delta_waterlevel > 0) %>% 
+  #filter(Date > "2021-03-30") %>% 
+  #filter(month %in% c("8","9","10")) %>% 
+  ggplot(aes(WL_relative_max,delta_waterlevel,col=month))+
+  geom_hline(yintercept = 0,linetype="dashed")+
+  geom_point(size=3) +
+  #geom_smooth(method='lm')+
+  #stat_regline_equation(label.x = 1.9,label.y = 0.22)+
+  #stat_cor(label.x = 1.9,label.y = 0.2)+
+  scale_color_continuous(type = "viridis")+
+  xlab("Daily Water Level / Max Water Level")+
+  ylab("Change in Daily Water Level (m)")+
+  ggtitle("TS-SW")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))
 
