@@ -804,12 +804,36 @@ JL_Data_Join_TS <- JL_Data_Join_TS %>%
                    mutate(WL_relative_max = dly_mean_wtrlvl / max(dly_mean_wtrlvl),
                           Dry_Flag = if_else(dly_mean_wtrlvl < 0,1,0))
 
+#ND
 JL_Data_Join_ND %>% 
   #filter(delta_waterlevel > 0) %>% 
   #filter(Date > "2021-03-30") %>% 
-  filter(month %in% c("8","9","10")) %>% 
+  #filter(month %in% c("8","9","10")) %>% 
+  filter(Dry_Flag == 1) %>% 
+  ggplot(aes(Daily_Precip_mm,delta_waterlevel,col=month))+
+  geom_hline(yintercept = 0,linetype="dashed")+
+  geom_point(size=3) +
+  #geom_smooth(method='lm')+
+  #stat_regline_equation(label.x = 1.9,label.y = 0.22)+
+  #stat_cor(label.x = 1.9,label.y = 0.2)+
+  scale_color_continuous(type = "viridis")+
+  xlab("Daily Precip (cm)")+
+  ylab("Change in Daily Water Level (m)")+
+  ggtitle("ND-SW")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))
+
+JL_Data_Join_ND %>% 
+  #filter(delta_waterlevel > 0) %>% 
+  #filter(Date > "2021-03-30") %>% 
+  #filter(month %in% c("8","9","10")) %>% 
+  #filter(Dry_Flag == 1) %>% 
   ggplot(aes(WL_relative_max,delta_waterlevel,col=month))+
   geom_hline(yintercept = 0,linetype="dashed")+
+  geom_vline(xintercept = 0,linetype="dashed")+
   geom_point(size=3) +
   #geom_smooth(method='lm')+
   #stat_regline_equation(label.x = 1.9,label.y = 0.22)+
@@ -824,12 +848,36 @@ JL_Data_Join_ND %>%
         axis.title.x  = element_text(size=18),
         title = element_text(size = 18))
 
+#TS
 JL_Data_Join_TS %>% 
   #filter(delta_waterlevel > 0) %>% 
   #filter(Date > "2021-03-30") %>% 
   #filter(month %in% c("8","9","10")) %>% 
+  filter(Dry_Flag == 1) %>% 
+  ggplot(aes(Daily_Precip_mm,delta_waterlevel,col=month))+
+  geom_hline(yintercept = 0,linetype="dashed")+
+  geom_point(size=3) +
+  #geom_smooth(method='lm')+
+  #stat_regline_equation(label.x = 1.9,label.y = 0.22)+
+  #stat_cor(label.x = 1.9,label.y = 0.2)+
+  scale_color_continuous(type = "viridis")+
+  xlab("Daily Precip (cm)")+
+  ylab("Change in Daily Water Level (m)")+
+  ggtitle("TS-SW")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))
+
+JL_Data_Join_TS %>% 
+  #filter(delta_waterlevel > 0) %>% 
+  #filter(Date > "2021-03-30") %>% 
+  #filter(month %in% c("8","9","10")) %>% 
+  #filter(Dry_Flag == 1) %>% 
   ggplot(aes(WL_relative_max,delta_waterlevel,col=month))+
   geom_hline(yintercept = 0,linetype="dashed")+
+  geom_vline(xintercept = 0,linetype="dashed")+
   geom_point(size=3) +
   #geom_smooth(method='lm')+
   #stat_regline_equation(label.x = 1.9,label.y = 0.22)+
@@ -844,3 +892,91 @@ JL_Data_Join_TS %>%
         axis.title.x  = element_text(size=18),
         title = element_text(size = 18))
 
+## 5.5 Temp as a proxy for ET ----------------------
+
+#Need to use Dover, DE station data because it's the closest NOAA station with temp records
+
+weather <- read_csv("NOAA_DoverDE_2019_2023.csv")
+
+#Join weather to TS and ND data
+
+JL_Data_Join_ND <- left_join(JL_Data_Join_ND,weather,by=c("Date"="DATE"))
+JL_Data_Join_TS <- left_join(JL_Data_Join_TS,weather,by=c("Date"="DATE"))
+
+#Plot Daily Max Temperature versus Daily Water Level
+#ND
+JL_Data_Join_ND %>% 
+  #filter(delta_waterlevel > 0) %>% 
+  #filter(Date > "2021-03-30") %>% 
+  #filter(month %in% c("8","9","10")) %>% 
+  #filter(Dry_Flag == 1) %>% 
+  ggplot(aes(TMAX,dly_mean_wtrlvl,col=month))+
+  geom_hline(yintercept = 0,linetype="dashed")+
+  geom_point(size=3) +
+  scale_color_continuous(type = "viridis")+
+  xlab("Daily Maximum Temperature (C)")+
+  ylab("Mean Daily Water Level (m)")+
+  ggtitle("ND-SW")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))
+
+#TS
+JL_Data_Join_TS %>% 
+  #filter(delta_waterlevel > 0) %>% 
+  #filter(Date > "2021-03-30") %>% 
+  #filter(month %in% c("8","9","10")) %>% 
+  #filter(Dry_Flag == 1) %>% 
+  ggplot(aes(TMAX,dly_mean_wtrlvl,col=month))+
+  geom_hline(yintercept = 0,linetype="dashed")+
+  geom_point(size=3) +
+  scale_color_continuous(type = "viridis")+
+  xlab("Daily Maximum Temperature (C)")+
+  ylab("Mean Daily Water Level (m)")+
+  ggtitle("TS-SW")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))
+
+#Plot Daily Max Temperature versus Daily change in water level
+#ND
+JL_Data_Join_ND %>% 
+  #filter(delta_waterlevel > 0) %>% 
+  #filter(Date > "2021-03-30") %>% 
+  #filter(month %in% c("8","9","10")) %>% 
+  #filter(Dry_Flag == 1) %>% 
+  ggplot(aes(TMAX,delta_waterlevel,col=month))+
+  geom_hline(yintercept = 0,linetype="dashed")+
+  geom_point(size=3) +
+  scale_color_continuous(type = "viridis")+
+  xlab("Daily Maximum Temperature (C)")+
+  ylab("Daily Change in Water Level (m)")+
+  ggtitle("ND-SW")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))
+
+#TS
+JL_Data_Join_TS %>% 
+  #filter(delta_waterlevel > 0) %>% 
+  #filter(Date > "2021-03-30") %>% 
+  #filter(month %in% c("8","9","10")) %>% 
+  #filter(Dry_Flag == 1) %>% 
+  ggplot(aes(TMAX,delta_waterlevel,col=month))+
+  geom_hline(yintercept = 0,linetype="dashed")+
+  geom_point(size=3) +
+  scale_color_continuous(type = "viridis")+
+  xlab("Daily Maximum Temperature (C)")+
+  ylab("Daily Change in Water Level (m)")+
+  ggtitle("TS-SW")+
+  theme(axis.text.y   = element_text(size=16),
+        axis.text.x   = element_text(size=16),
+        axis.title.y  = element_text(size=18),
+        axis.title.x  = element_text(size=18),
+        title = element_text(size = 18))
