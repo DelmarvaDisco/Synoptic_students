@@ -76,15 +76,15 @@ hf_WL_2019_2022b <- hf_WL_2019_2022 %>%
                     rename(Site_ID = Site_Name,
                            Stage = waterLevel) %>% 
                     filter(Site_ID %in% c("ND-SW","TS-SW")) %>% 
-                    select(Timestamp,Site_ID,Stage)
+                    dplyr::select(Timestamp,Site_ID,Stage)
 
 ND_hf_WL_2022_2023b <- ND_hf_WL_2022_2023 %>%  
-                       select(Timestamp,Site_ID,Stage)
+                       dplyr::select(Timestamp,Site_ID,Stage)
 
 ND_hf_WL_2022_2023b$Timestamp <- mdy_hm(ND_hf_WL_2022_2023b$Timestamp)
 
 TS_hf_WL_2022_2023b <- TS_hf_WL_2022_2023 %>% 
-                        select(Timestamp,Site_ID,Stage)
+  dplyr::select(Timestamp,Site_ID,Stage)
 
 TS_hf_WL_2022_2023b$Timestamp <- mdy_hm(TS_hf_WL_2022_2023b$Timestamp)
 
@@ -114,6 +114,52 @@ WL_Plotly <- Daily_WL %>%
   add_trace(y = ~dly_mean_wtrlvl, type = 'scatter', 
             mode = 'lines',color = ~Site_ID,
             line=list(width=4)) 
+
+## 2.4 Plot water level including GW ----------------------
+
+#fix column names, date formate, and filter to ND/TS
+hf_WL_2019_2022_JL <- hf_WL_2019_2022 %>% 
+  rename(Site_ID = Site_Name,
+         Stage = waterLevel) %>% 
+  filter(Site_ID %in% c("ND-SW","ND-UW1","ND-UW2","TS-SW","TS-UW1","BD-CH")) %>% 
+  dplyr::select(Timestamp,Site_ID,Stage)
+
+hf_WL_2019_2022_JL %>% 
+  ggplot(aes(Timestamp,Stage,col=Site_ID))+
+  geom_line()+
+  ylab("Water Level (m)")+
+  xlab("")+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size=12))
+
+### 2.4.1 Plot relationship between SW and GW at each site ------------
+
+hf_WL_2019_2022_wide <- pivot_wider(hf_WL_2019_2022_JL,
+                                    names_from = Site_ID,
+                                    values_from = Stage)
+
+colnames(hf_WL_2019_2022_wide) <- c("Timestamp","BD_CH","ND_UW1","ND_UW2","ND_SW","TS_SW","TS_UW1")
+
+hf_WL_2019_2022_wide %>% 
+  ggplot()+
+  geom_point(aes(ND_SW,ND_UW1,col="UW-1"))+
+  geom_point(aes(ND_SW,ND_UW2,col="UW-2"))+
+  ylab("ND UW1 and ND-UW2 (m)")+
+  xlab("ND-SW (m)")+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size=12))
+
+hf_WL_2019_2022_wide %>% 
+  ggplot()+
+  geom_point(aes(TS_SW,TS_UW1,col="UW-1"))+
+  geom_point(aes(TS_SW,BD_CH,col="UW-2/BD-CH"))+
+  ylab("TS UW1 and TS-UW2 (m)")+
+  xlab("TS-SW (m)")+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size=12))
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
