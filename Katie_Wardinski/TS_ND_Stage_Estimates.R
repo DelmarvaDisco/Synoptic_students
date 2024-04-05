@@ -118,10 +118,10 @@ hf_WL_OW_wide$Month <- format(hf_WL_OW_wide$Timestamp, format="%Y-%m")
 ND_FR <- hf_WL_OW_wide %>% 
   dplyr::select(Timestamp,Year,Month,ND_SW,FR_OW) %>% drop_na()
 
-ND_FR %>% 
-  ggplot()+
-  geom_point(aes(FR_OW,ND_SW))+
-  geom_smooth(method='lm',formula= ND_SW ~ FR_OW)+
+ggplot(data=ND_FR,aes(x=FR_OW,y=ND_SW,col=Year))+
+  geom_point()+
+  geom_smooth(method='lm')+
+  stat_poly_eq() +
   ylab("ND-SW (m)")+
   xlab("FR-OW (m)")+
   theme(axis.title = element_text(size = 14),
