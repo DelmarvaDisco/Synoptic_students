@@ -114,20 +114,141 @@ colnames(hf_WL_OW_wide) <- c("Timestamp","BD_CH","ND_UW1","ND_UW2","ND_SW","TS_S
 hf_WL_OW_wide$Year <- format(hf_WL_OW_wide$Timestamp, format="%Y")
 hf_WL_OW_wide$Month <- format(hf_WL_OW_wide$Timestamp, format="%Y-%m")
 
-#ND vs FR
+#ND-SW vs FR-SW
 ND_FR <- hf_WL_OW_wide %>% 
   dplyr::select(Timestamp,Year,Month,ND_SW,FR_OW) %>% drop_na()
 
 ggplot(data=ND_FR,aes(x=FR_OW,y=ND_SW,col=Year))+
   geom_point()+
   geom_smooth(method='lm')+
-  stat_poly_eq() +
+  stat_regline_equation(label.x = 0.2)+
+  stat_cor(label.x = 0.3)+
   ylab("ND-SW (m)")+
   xlab("FR-OW (m)")+
   theme(axis.title = element_text(size = 14),
         axis.text = element_text(size = 12),
         legend.text = element_text(size=12))
 
+#TS-SW vs FR-SW
+TS_FR <- hf_WL_OW_wide %>% 
+  dplyr::select(Timestamp,Year,Month,TS_SW,FR_OW) %>% drop_na()
+
+ggplot(data=TS_FR,aes(x=FR_OW,y=TS_SW,col=Year))+
+  geom_point()+
+  geom_smooth(method='lm')+
+  stat_regline_equation(label.x = 0.2)+
+  stat_cor(label.x = 0.3)+
+  ylab("TS-SW (m)")+
+  xlab("FR-OW (m)")+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size=12))
+
 ## 3.3 GW vs FR-OW relationships ----------------------------------
+#ND-UW vs FR-SW
+ND_GW_FR <- hf_WL_OW_wide %>% 
+  dplyr::select(Timestamp,Year,Month,ND_UW1,ND_UW2,FR_OW) %>% drop_na()
+
+ggplot(data=ND_GW_FR,aes(x=FR_OW,y=ND_UW1,col=Year))+
+  geom_point()+
+  geom_smooth(method='lm')+
+  stat_regline_equation(label.x = 0.2)+
+  stat_cor(label.x = 0.3)+
+  ylab("ND-UW1 (m)")+
+  xlab("FR-OW (m)")+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size=12))
+
+ggplot(data=ND_GW_FR,aes(x=FR_OW,y=ND_UW2,col=Year))+
+  geom_point()+
+  geom_smooth(method='lm')+
+  stat_regline_equation(label.x = 0.2)+
+  stat_cor(label.x = 0.3)+
+  ylab("ND-UW2 (m)")+
+  xlab("FR-OW (m)")+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size=12))
+
+#ND-UW vs FR-SW
+TS_GW_FR <- hf_WL_OW_wide %>% 
+  dplyr::select(Timestamp,Year,Month,TS_UW1,BD_CH,FR_OW) %>% drop_na()
+
+ggplot(data=TS_GW_FR,aes(x=FR_OW,y=BD_CH,col=Year))+
+  geom_point()+
+  geom_smooth(method='lm')+
+  stat_regline_equation(label.x = 0.2)+
+  stat_cor(label.x = 0.3)+
+  ylab("TS-UW1 (m)")+
+  xlab("FR-OW (m)")+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size=12))
+
+ggplot(data=TS_GW_FR,aes(x=FR_OW,y=TS_UW1,col=Year))+
+  geom_point()+
+  geom_smooth(method='lm')+
+  stat_regline_equation(label.x = 0.2)+
+  stat_cor(label.x = 0.3)+
+  ylab("TS-UW2 (m)")+
+  xlab("FR-OW (m)")+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size=12))
 
 # 3.4 SW vs GW relationships --------------------------
+
+#ND SW vs ND-UW1 and ND-UW2
+ND_all <- hf_WL_OW_wide %>% 
+  dplyr::select(Timestamp,Year,Month,ND_SW,ND_UW1,ND_UW2) %>% drop_na()
+
+
+ggplot(data=ND_all,aes(x=ND_SW,y=ND_UW1,col=Year))+
+  geom_point()+
+  geom_smooth(method='lm')+
+  stat_regline_equation(label.x = 0.1)+
+  stat_cor(label.x = 0.3)+
+  ylab("ND-UW1 (m)")+
+  xlab("ND-SW (m)")+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size=12))
+
+ggplot(data=ND_all,aes(x=ND_SW,y=ND_UW2,col=Year))+
+  geom_point()+
+  geom_smooth(method='lm')+
+  stat_regline_equation(label.x = 0.1)+
+  stat_cor(label.x = 0.3)+
+  ylab("ND-UW2 (m)")+
+  xlab("ND-SW (m)")+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size=12))
+
+#TS SW vs TS-UW1 and TS-UW2
+TS_all <- hf_WL_OW_wide %>% 
+  dplyr::select(Timestamp,Year,Month,TS_SW,BD_CH,TS_UW1) %>% drop_na()
+
+
+ggplot(data=TS_all,aes(x=TS_SW,y=BD_CH,col=Year))+
+  geom_point()+
+  geom_smooth(method='lm')+
+  stat_regline_equation(label.x = 0.1)+
+  stat_cor(label.x = 0.3)+
+  ylab("TS-UW1 (m)")+
+  xlab("TS-SW (m)")+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size=12))
+
+ggplot(data=TS_all,aes(x=TS_SW,y=TS_UW1,col=Month))+
+  geom_point()+
+  #geom_smooth(method='lm')+
+  #stat_regline_equation(label.x = 0.1)+
+  #stat_cor(label.x = 0.3)+
+  ylab("TS-UW2 (m)")+
+  xlab("TS-SW (m)")+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size=12))
