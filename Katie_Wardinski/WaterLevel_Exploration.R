@@ -123,21 +123,38 @@ SW_Clean %>%
 
 #Interactive plot
 SW_Clean %>% 
-  #filter(Site_Name %in% c("BD-SW","DB-SW","JB-SW","ND-SW","OB-SW","QB-SW","TB-SW")) %>% 
+  filter(Site_Name %in% c("DB-SW","ND-SW","QB-SW","TB-SW")) %>% 
   plot_ly(x = ~Date) %>% 
   add_trace(y = ~dly_mean_wtrlvl, type = 'scatter', mode = 'lines',color = ~Site_Name) 
+
+SW_Clean %>% 
+  filter(Site_Name %in% c("DB-SW","ND-SW","QB-SW","TB-SW")) %>% 
+  ggplot(aes(Date,dly_mean_wtrlvl,col=Site_Name))+
+  geom_line()+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size=12))
 
 #zoom in on summer storm events
 SW_Clean %>% 
   filter(Date > "2020-06-30" & Date < "2020-08-15") %>% 
   ggplot(aes(Date,dly_mean_wtrlvl,col=Site_Name))+
-  geom_line()
+  geom_line()+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size=12))
+
+
 
 ## 3.2 GW Only --------------------------------
 #all GW data
 GW %>% 
+  filter(Site_Name %in% c("DB-UW1","ND-UW1","ND-UW2","QB-UW1","QB-UW2","TB-UW1","TB-UW2")) %>% 
   ggplot(aes(Date,dly_mean_wtrlvl,col=Site_Name))+
-  geom_line()
+  geom_line()+
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.text = element_text(size=12))
 
 
 ## 3.3 Individual Sites -----------------------------------
